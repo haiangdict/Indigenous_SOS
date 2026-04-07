@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>語言學習資料庫</title>
+<title>Payrang族語自救會</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 @font-face {
@@ -1037,7 +1037,7 @@ function audioPath(r){
 async function loadBuiltInCSV(){
   // Always try CSV first (source of truth), then JSON as fallback
   let loaded = false;
-  const csvNames = ['27.csv','data.csv'];
+  const csvNames = ['data.csv'];
   for(const name of csvNames){
     try{
       const res = await fetch('./data/'+name);
