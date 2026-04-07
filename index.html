@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>語言學習資料庫</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+@font-face {
+  font-family: 'jf-openhuninn';
+  src: url('https://cdn.jsdelivr.net/gh/justfont/open-huninn-font@v2.1/font/jf-openhuninn-2.1.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/justfont/open-huninn-font@v2.1/font/jf-openhuninn-2.1.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #0e0e0e;
+  --surface: #1a1a1a;
+  --surface2: #242424;
+  --border: #2e2e2e;
+  --accent: #d4a843;
+  --accent2: #8bc4a8;
+  --text: #e8e4dc;
+  --muted: #777;
+  --playing: #8bc4a8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'jf-openhuninn', 'Noto Serif TC', serif;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 18px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: rgba(14,14,14,0.96);
+  backdrop-filter: blur(12px);
+  z-index: 200;
+}
+.logo { display: flex; flex-direction: column; gap: 2px; }
+.logo-main { font-size: 1.2rem; font-weight: 900; letter-spacing: 0.05em; color: var(--accent); font-family: 'Noto Serif TC', serif; }
+.logo-sub { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+.stats-badge {
+  font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--muted);
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 5px 13px; border-radius: 20px;
+}
+.stats-badge span { color: var(--accent); font-weight: 700; }
+
+.btn {
+  padding: 7px 15px; border-radius: 7px; border: 1px solid var(--border);
+  font-family: 'Space Mono', monospace; font-size: 0.7rem; cursor: pointer;
+  letter-spacing: 0.05em; transition: all 0.2s; text-transform: uppercase;
+}
+.btn-primary { background: var(--accent); color: #0e0e0e; border-color: var(--accent); font-weight: 700; }
+.btn-primary:hover { background: #e0b855; }
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── UPLOAD PANEL ── */
+.upload-panel {
+  display: none; padding: 16px 28px; border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.upload-panel.open { display: block; animation: slideDown 0.2s ease; }
+@keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+.upload-area {
+  border: 2px dashed var(--border); border-radius: 10px; padding: 24px;
+  text-align: center; cursor: pointer; position: relative; font-size: 0.88rem;
+  transition: all 0.2s;
+}
+.upload-area:hover, .upload-area.drag-over { border-color: var(--accent); background: rgba(212,168,67,0.04); }
+.upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.upload-icon { font-size: 1.6rem; margin-bottom: 8px; }
+.upload-hint { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--muted); margin-top: 5px; }
+.audio-config { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+.audio-config label { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--muted); white-space: nowrap; }
+
+/* ── CONTROLS ── */
+.controls {
+  padding: 12px 28px; border-bottom: 1px solid var(--border);
+  display: flex; flex-wrap: wrap; gap: 9px; align-items: center; background: var(--surface);
+}
+.search-wrap { position: relative; flex: 1; min-width: 160px; }
+.search-scope {
+  display: flex; gap: 10px; align-items: center; flex-shrink: 0;
+}
+.scope-label {
+  display: flex; align-items: center; gap: 5px;
+  font-family: 'Space Mono', monospace; font-size: 0.68rem;
+  color: var(--muted); cursor: pointer; user-select: none;
+  transition: color 0.13s;
+}
+.scope-label:hover { color: var(--text); }
+.scope-label.active { color: var(--accent2); }
+.scope-chk {
+  width: 14px; height: 14px; border-radius: 3px;
+  border: 1.5px solid var(--border); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; transition: all 0.12s; color: transparent;
+}
+.scope-label.active .scope-chk { background: var(--accent2); border-color: var(--accent2); color: #0e0e0e; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; font-size: 0.9rem; }
+input[type="text"] {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 12px 8px 36px; border-radius: 7px;
+  font-family: 'jf-openhuninn', 'Noto Serif TC', serif;
+  font-size: 0.88rem; outline: none; transition: border-color 0.2s;
+}
+input[type="text"]:focus { border-color: var(--accent); }
+input[type="text"]::placeholder { color: var(--muted); }
+/* ── MULTISELECT DROPDOWN ── */
+.ms-wrap {
+  position: relative;
+}
+.ms-btn {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 12px; border-radius: 7px;
+  font-family: 'jf-openhuninn', 'Noto Serif TC', serif;
+  font-size: 0.82rem; cursor: pointer; transition: border-color 0.2s;
+  white-space: nowrap; user-select: none; min-width: 108px;
+}
+.ms-btn:hover, .ms-btn.open { border-color: var(--accent); }
+.ms-btn .ms-arrow { font-size: 0.55rem; margin-left: auto; opacity: 0.5; }
+.ms-pills {
+  display: flex; gap: 4px; flex-wrap: nowrap; overflow: hidden;
+  max-width: 180px;
+}
+.ms-pill {
+  font-family: 'Space Mono', monospace; font-size: 0.58rem;
+  padding: 1px 6px; border-radius: 6px; background: var(--accent);
+  color: #0e0e0e; font-weight: 700; white-space: nowrap;
+}
+.ms-pill.level { background: var(--accent2); }
+.ms-placeholder { color: var(--muted); }
+
+.ms-dropdown {
+  display: none;
+  position: absolute; top: calc(100% + 5px); left: 0; z-index: 300;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 9px; min-width: 170px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+  overflow: hidden;
+  animation: fadeIn 0.15s ease;
+}
+.ms-dropdown.open { display: block; }
+
+.ms-dropdown-header {
+  display: flex; justify-content: space-between;
+  padding: 8px 12px 6px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Space Mono', monospace; font-size: 0.6rem;
+  color: var(--muted);
+}
+.ms-dropdown-header button {
+  background: none; border: none; cursor: pointer;
+  font-family: 'Space Mono', monospace; font-size: 0.6rem;
+  padding: 0; transition: color 0.15s;
+}
+.ms-dropdown-header button:hover { color: var(--accent); }
+
+.ms-option {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 13px; cursor: pointer;
+  font-size: 0.85rem; color: var(--muted);
+  transition: background 0.12s;
+}
+.ms-option:hover { background: var(--surface); color: var(--text); }
+.ms-option.selected { color: var(--text); }
+
+.ms-checkbox {
+  width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0;
+  border: 1.5px solid var(--border); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s; font-size: 0.6rem;
+}
+.ms-option.selected .ms-checkbox {
+  background: var(--accent); border-color: var(--accent); color: #0e0e0e;
+}
+.ms-option.selected.level-opt .ms-checkbox {
+  background: var(--accent2); border-color: var(--accent2);
+}
+
+/* ── LAYOUT ── */
+.main { display: flex; height: calc(100vh - 114px); }
+
+/* ── CONTENT ── */
+.content { flex: 1; overflow-y: auto; padding: 0; padding-right: 8px; }
+.content::-webkit-scrollbar { width: 8px; }
+.content::-webkit-scrollbar-track { background: var(--surface2); border-radius: 4px; }
+.content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.content::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+.result-info {
+  font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--muted);
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; background: var(--bg); z-index: 5;
+}
+.result-info span { color: var(--accent); }
+
+/* ── CARD GRID — responsive columns ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+  padding: 12px 16px 24px;
+}
+
+/* ── CARD BLOCK (each language×group) ── */
+.card-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Card header: lang/dialect + source label */
+.card-hdr {
+  padding: 9px 13px 8px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.card-hdr-lang {
+  font-family: 'jf-openhuninn', 'Noto Serif TC', serif;
+  font-size: 0.9rem; font-weight: 700;
+  color: var(--text);
+}
+.card-hdr-source {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem; color: var(--accent);
+  letter-spacing: 0.05em;
+}
+
+/* Card controls bar: sentence+translation headers + play buttons */
+.card-ctrl {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 13px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.card-ctrl-labels {
+  display: flex; flex: 1; gap: 0;
+  font-family: 'Space Mono', monospace; font-size: 0.58rem;
+  color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase;
+}
+.card-ctrl-s { flex: 1; }
+.card-ctrl-t { flex: 1; }
+
+/* Row inside card: no col-tags */
+.row-item {
+  display: flex; align-items: flex-start; gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 0; transition: background 0.15s;
+  animation: fadeIn 0.22s ease;
+  margin: 0 13px;
+}
+.row-item:last-child { border-bottom: none; }
+.row-item:hover { background: rgba(255,255,255,0.02); margin: 0; padding: 10px 13px; }
+.row-item.playing { background: rgba(139,196,168,0.04); margin: 0; padding: 10px 13px; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
+
+.col-play { flex-shrink:0; width:32px; padding-top:2px; margin-right:10px; }
+.col-sentence { flex:1; min-width:0; padding-right:12px; }
+.col-translation { flex:1; min-width:0; }
+
+.row-speaker { font-family:'Space Mono',monospace; font-size:0.6rem; color:var(--accent2); margin-bottom:2px; }
+.row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1rem; font-weight:normal; line-height:1.5; color:var(--text); word-break:break-word; }
+.row-translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1rem; line-height:1.5; color:var(--text); word-break:break-word; }
+.row-id { font-family:'Space Mono',monospace; font-size:0.5rem; color:var(--border); margin-top:2px; }
+
+/* Tag styles kept for backward compat but not used in card rows */
+.row-tags { display:flex; flex-wrap:wrap; gap:5px; }
+.tag { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:0.78rem; padding:2px 8px; border-radius:8px; letter-spacing:0.01em; white-space:nowrap; }
+.tag-type { background:rgba(212,168,67,0.13); color:var(--accent); }
+.tag-level { background:rgba(139,196,168,0.13); color:var(--accent2); }
+.tag-cat { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+
+/* ── PLAY BUTTON ── */
+.play-btn {
+  width:32px; height:32px; border-radius:50%;
+  border:1.5px solid var(--border); background:transparent; color:var(--muted);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:0.75rem; transition:all 0.18s; flex-shrink:0;
+}
+.play-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(212,168,67,0.08); }
+.play-btn.active { border-color:var(--playing); color:var(--playing); background:rgba(139,196,168,0.1); }
+.play-btn:disabled { opacity:0.22; cursor:not-allowed; }
+
+/* ── GROUP PLAY CONTROLS (inside card) ── */
+.group-header { display:flex; align-items:center; gap:8px; padding:6px 13px; background:var(--bg); border-bottom:1px solid var(--border); }
+.group-title { display:none; } /* title moved to card-hdr */
+.group-meta { font-family:'Space Mono',monospace; font-size:0.58rem; color:var(--muted); flex-shrink:0; }
+.group-play-btn {
+  display:flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px;
+  border:1.5px solid var(--border); background:transparent; color:var(--muted);
+  font-family:'Space Mono',monospace; font-size:0.65rem; cursor:pointer; transition:all 0.18s; flex-shrink:0;
+}
+.group-play-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(212,168,67,0.06); }
+.group-play-btn.gp-playing { border-color:var(--playing); color:var(--playing); background:rgba(139,196,168,0.08); }
+.group-play-btn.gp-paused { border-color:var(--accent); color:var(--accent); }
+.group-next-btn {
+  width:26px; height:26px; border-radius:50%; border:1.5px solid var(--border);
+  background:transparent; color:var(--muted); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:0.65rem; transition:all 0.15s; flex-shrink:0;
+}
+.group-next-btn:hover { border-color:var(--accent2); color:var(--accent2); }
+.group-next-btn:disabled { opacity:0.2; cursor:not-allowed; }
+.group-rows { padding:0 16px 0 12px; }
+.group-rows .row-item:last-child { border-bottom:none; }
+.row-item.gp-current { background:rgba(139,196,168,0.05); }
+
+/* ── EMPTY ── */
+.empty { text-align:center; padding:70px 20px; color:var(--muted); }
+.empty-icon { font-size:2.6rem; margin-bottom:12px; opacity:0.35; }
+.empty-text { font-size:0.88rem; }
+
+/* ── PAGINATION ── */
+.pagination { display:flex; justify-content:center; gap:7px; margin-top:20px; padding-bottom:24px; }
+.page-btn {
+  font-family:'Space Mono',monospace; font-size:0.7rem; padding:6px 13px;
+  border:1px solid var(--border); background:transparent; color:var(--muted);
+  border-radius:6px; cursor:pointer; transition:all 0.14s;
+}
+.page-btn:hover, .page-btn.active { border-color:var(--accent); color:var(--accent); }
+.page-btn:disabled { opacity:0.25; cursor:not-allowed; }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:20px; right:20px; background:var(--surface2);
+  border:1px solid var(--border); color:var(--text); padding:10px 17px;
+  border-radius:9px; font-family:'Space Mono',monospace; font-size:0.7rem;
+  z-index:999; animation:slideUp 0.22s ease; box-shadow:0 8px 28px rgba(0,0,0,0.45);
+}
+@keyframes slideUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+@media (max-width:720px) {
+  .sidebar { display:none; }
+  .main { height:auto; }
+  .content { height:calc(100vh - 120px); }
+  .card-grid { grid-template-columns: 1fr; padding: 8px; }
+}
+
+/* ══════════════════════════════════════════════════
+   SIDEBAR — unified design system
+   Accent colours:
+     L1 headers  → var(--accent)   gold
+     L2 lang/cat → var(--accent2)  teal
+     L3 dial/sub → #a8c4d4         blue-grey
+   ══════════════════════════════════════════════════ */
+
+.sidebar {
+  width: 252px; min-width: 252px; border-right: 1px solid var(--border);
+  overflow-y: auto; background: var(--bg); flex-shrink: 0;
+  display: flex; flex-direction: column;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── L0: top-level section header (語言/方言, 分類, 等級) ── */
+.sb-sec-hdr {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 13px 8px;
+  font-family: 'Space Mono', monospace; font-size: 0.62rem;
+  font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent); border-bottom: 1px solid var(--border);
+  cursor: pointer; user-select: none; transition: color 0.15s;
+  position: sticky; top: 0; background: var(--bg); z-index: 12;
+}
+.sb-sec-hdr:hover { color: #e0c060; }
+.sb-sec-hdr .sb-arrow { margin-left: auto; font-size: 0.55rem; opacity: 0.6; }
+.sb-sec-body { }
+.sb-sec-body.closed { display: none; }
+
+/* ── L1: language row / category row ── */
+.sb-l1-row {
+  display: flex; align-items: center;
+  border-left: 3px solid transparent;
+  transition: border-color 0.14s;
+}
+.sb-l1-row.sel { border-left-color: var(--accent2); }
+.sb-l1-btn {
+  flex: 1; display: flex; align-items: center; gap: 8px;
+  padding: 7px 4px 7px 13px; cursor: pointer; font-size: 0.86rem;
+  color: var(--text); transition: background 0.12s; min-width: 0;
+}
+.sb-l1-btn:hover { background: var(--surface); }
+.sb-l1-expand {
+  flex-shrink: 0; padding: 7px 11px; cursor: pointer;
+  color: var(--muted); font-size: 0.6rem; transition: color 0.13s;
+  background: none; border: none; border-left: 1px solid var(--border);
+}
+.sb-l1-expand:hover { color: var(--accent2); }
+
+/* "全部語言" special row */
+.sb-all-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 13px;
+  cursor: pointer; font-size: 0.82rem; color: var(--muted);
+  transition: all 0.13s; border-left: 3px solid transparent;
+}
+.sb-all-row:hover { background: var(--surface); color: var(--text); }
+.sb-all-row.sel { color: var(--accent2); border-left-color: var(--accent2); background: rgba(139,196,168,0.06); }
+
+/* ── L2: dialect / sub-category ── */
+.sb-l2-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 13px 5px 32px;
+  font-size: 0.80rem; color: var(--muted); cursor: pointer;
+  transition: background 0.12s;
+}
+.sb-l2-item:hover { background: var(--surface); color: var(--text); }
+.sb-l2-item.sel { color: var(--text); }
+
+/* ── L3: sub-sub-category (T/P 三層) ── */
+.sb-l3-group-hdr {
+  padding: 5px 13px 2px 32px;
+  font-family: 'Space Mono', monospace; font-size: 0.58rem;
+  color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase;
+}
+.sb-l3-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 13px 4px 44px;
+  font-size: 0.77rem; color: var(--muted); cursor: pointer;
+  transition: background 0.12s;
+}
+.sb-l3-item:hover { background: var(--surface); color: var(--text); }
+.sb-l3-item.sel { color: var(--text); }
+
+/* ── Checkbox ── */
+.sb-chk {
+  width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0;
+  border: 1.5px solid var(--border); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; transition: all 0.12s; color: transparent;
+}
+.sb-l1-btn .sb-chk.sel   { background: var(--accent2); border-color: var(--accent2); color: #0e0e0e; }
+.sb-l2-item .sb-chk.sel  { background: var(--accent2); border-color: var(--accent2); color: #0e0e0e; }
+.sb-l3-item .sb-chk.sel  { background: #a8c4d4;        border-color: #a8c4d4;        color: #0e0e0e; }
+.sb-all-row .sb-chk.sel  { background: var(--accent2); border-color: var(--accent2); color: #0e0e0e; }
+.sb-chk.partial { background: rgba(139,196,168,0.3); border-color: var(--accent2); color: var(--accent2); }
+
+/* ── Collapse container ── */
+.sb-children { display: none; }
+.sb-children.open { display: block; }
+
+/* ── Full/clear actions row ── */
+.sb-actions {
+  display: flex; gap: 6px; align-items: center;
+  padding: 4px 13px 6px 13px;
+  font-family: 'Space Mono', monospace; font-size: 0.62rem;
+  color: var(--muted);
+}
+.sb-actions button {
+  background: none; border: none; cursor: pointer;
+  font-family: 'Space Mono', monospace; font-size: 0.62rem;
+  color: var(--muted); padding: 0; transition: color 0.13s;
+}
+.sb-actions button:hover { color: var(--accent); }
+.sb-actions .dot { opacity: 0.4; }
+
+/* ── Section divider ── */
+.sb-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* ── Selected subkeys clear banner ── */
+.sb-clear-banner {
+  padding: 7px 13px;
+  font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+.sb-clear-banner button {
+  margin-top: 4px; width: 100%; background: none;
+  border: 1px solid var(--border); color: var(--muted);
+  border-radius: 5px; padding: 3px 10px; font-size: 0.62rem;
+  cursor: pointer; font-family: 'Space Mono', monospace; transition: all 0.13s;
+}
+.sb-clear-banner button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* keep legacy classes used elsewhere */
+.sb-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-expand-btn {
+  flex-shrink: 0; padding: 6px 10px; cursor: pointer;
+  color: var(--muted); font-size: 0.6rem; transition: color 0.14s;
+  background: none; border: none; border-left: 1px solid var(--border);
+}
+.sb-expand-btn:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-main">Indigenous SOS</div>
+    <div class="logo-sub">Payrang族語自救會</div>
+  </div>
+  <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;">
+    <div class="stats-badge" id="totalBadge">載入中…</div>
+    <button class="btn btn-ghost" onclick="toggleUpload()">⇧ 更新資料</button>
+  </div>
+</header>
+
+<div class="upload-panel" id="uploadPanel">
+  <div class="upload-area" id="dropZone">
+    <input type="file" accept=".csv" id="csvInput" onchange="handleCSV(this)">
+    <div class="upload-icon">📂</div>
+    <div>拖曳或點擊上傳新的 CSV 檔案</div>
+    <div class="upload-hint">欄位需包含：語句、翻譯、音檔路徑</div>
+  </div>
+  <div class="audio-config">
+    <label>音檔基底路徑：</label>
+    <input type="text" id="audioBase" placeholder="./audio/ 或 https://你的網域/audio/" value="./audio/" style="padding-left:12px;">
+    <button class="btn btn-primary" onclick="applyAudioBase()">套用</button>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="搜尋…" oninput="applyFilters()">
+  </div>
+  <div class="search-scope">
+    <label class="scope-label" id="scope-s" onclick="toggleScope('sentence')" title="搜尋語句">
+      <span class="scope-chk" id="schk-s">✓</span> 語句
+    </label>
+    <label class="scope-label" id="scope-t" onclick="toggleScope('translation')" title="搜尋翻譯">
+      <span class="scope-chk" id="schk-t">✓</span> 翻譯
+    </label>
+  </div>
+  <button class="btn btn-ghost" onclick="clearFilters()">清除全部</button>
+</div>
+
+<div class="main">
+  <div class="sidebar" id="sidebar">
+    <div id="sb-lang-section"></div>
+  </div>
+  <div class="content" id="content">
+    <div class="empty"><div class="empty-icon">⟳</div><div class="empty-text">載入資料中…</div></div>
+  </div>
+</div>
+
+<script>
+let allData = [];
+let filteredData = [];
+let currentPage = 1;
+const PAGE_SIZE = 60;
+let audioBase = './audio/';
+let currentAudio = null;
+let currentPlayBtn = null;
+// sel.langkeys: Set of "語別key" or "語別key|方言別key"
+// empty = show all (single-lang CSV) or require selection (multi-lang)
+let sel = { types:new Set(), levels:new Set(), subkeys:new Set(), langkeys:new Set() };
+let searchScope = { sentence: true, translation: true }; // both on by default
+
+const LANG_LIST = [
+  {key:'阿美語',  name:'阿美語',   dialects:[['1','南勢'],['2','秀姑巒'],['3','海岸'],['4','馬蘭'],['5','恆春']]},
+  {key:'泰雅語',  name:'泰雅語',   dialects:[['6','賽考利克'],['7','澤敖利'],['8','汶水'],['9','萬大'],['10','四季'],['11','宜蘭澤敖利']]},
+  {key:'13',      name:'賽夏語',   dialects:[]},
+  {key:'14',      name:'邵語',     dialects:[]},
+  {key:'賽德克語',name:'賽德克語', dialects:[['15','都達'],['16','德固達雅'],['17','德鹿谷']]},
+  {key:'布農語',  name:'布農語',   dialects:[['18','卓群'],['19','卡群'],['20','丹群'],['21','巒群'],['22','郡群']]},
+  {key:'排灣語',  name:'排灣語',   dialects:[['23','東'],['24','北'],['25','中'],['26','南']]},
+  {key:'魯凱語',  name:'魯凱語',   dialects:[['27','東'],['28','霧台'],['29','大武'],['30','多納'],['31','茂林'],['32','萬山']]},
+  {key:'33',      name:'太魯閣語', dialects:[]},
+  {key:'34',      name:'噶瑪蘭語', dialects:[]},
+  {key:'35',      name:'鄒語',     dialects:[]},
+  {key:'卑南語',  name:'卑南語',   dialects:[['38','南王'],['39','知本'],['40','西群'],['41','建和']]},
+  {key:'42',      name:'雅美語',   dialects:[]},
+  {key:'43',      name:'撒奇萊雅語',dialects:[]},
+  {key:'36',      name:'卡那卡那富語',dialects:[]},
+  {key:'37',      name:'拉阿魯哇語',dialects:[]},
+];
+
+// ── Language selection state ──────────────────────────────────────
+
+// ── Lang sidebar ──────────────────────────────────────────────────
+// langkey format: "語別key" (no dialect) or "語別key|方言別key"
+// sel.langkeys empty = show all (single-lang) or prompt (multi-lang)
+
+// Track expanded state (persists across rebuilds)
+const _langExpanded = new Set(['__lang_section__']); // default: lang section open
+let _langIdxMap = {};
+const _sbLangAllKeys = {};
+
+function buildLangSidebar(){
+  const langKeysInData = new Set(allData.map(r=>r['語別']));
+  const isMultiLang = langKeysInData.size > 1;
+
+  // Build stable numeric id map
+  _langIdxMap = {};
+  let idx = 0;
+  for(const lang of LANG_LIST){ if(langKeysInData.has(lang.key)) _langIdxMap[lang.key]=idx++; }
+
+  // Pre-compute langkeys per language
+  for(const lang of LANG_LIST){
+    if(!langKeysInData.has(lang.key)) continue;
+    const dialsInData=new Set(allData.filter(r=>r['語別']===lang.key).map(r=>r['方言別']).filter(Boolean));
+    const avail=lang.dialects.filter(([dk])=>dialsInData.has(dk));
+    _sbLangAllKeys[lang.key]=avail.length===0?[lang.key]:avail.map(([dk])=>lang.key+'|'+dk);
+  }
+
+  const langSecOpen = _langExpanded.has('__lang_section__');
+  const catSecOpen  = _langExpanded.has('__cat_section__');
+  const lvlSecOpen  = _langExpanded.has('__lvl_section__');
+
+  let html='';
+
+  // ── Section 1: 語言 / 方言 ─────────────────────────────────
+  html+=`<div class="sb-sec-hdr" onclick="sbSecToggle('__lang_section__')">
+    語言 / 方言
+    <span class="sb-arrow">${langSecOpen?'▾':'▸'}</span>
+  </div>
+  <div class="sb-sec-body ${langSecOpen?'':'closed'}">`;
+
+  if(isMultiLang){
+    const allKeys=Object.values(_sbLangAllKeys).flat();
+    const allSel=allKeys.length>0&&allKeys.every(k=>sel.langkeys.has(k));
+    html+=`<div class="sb-all-row ${allSel?'sel':''}" onclick="langSelectAllLangs()">
+      <div class="sb-chk ${allSel?'sel':''}">${allSel?'✓':''}</div>
+      <span>全部語言</span>
+    </div>`;
+  }
+
+  for(const lang of LANG_LIST){
+    if(!langKeysInData.has(lang.key)) continue;
+    const langAllKeys=_sbLangAllKeys[lang.key]||[];
+    const dialsInData=new Set(allData.filter(r=>r['語別']===lang.key).map(r=>r['方言別']).filter(Boolean));
+    const avail=lang.dialects.filter(([dk])=>dialsInData.has(dk));
+    const selCount=langAllKeys.filter(k=>sel.langkeys.has(k)).length;
+    const allChk=selCount===langAllKeys.length&&langAllKeys.length>0;
+    const lid='ld-'+_langIdxMap[lang.key];
+    const isOpen=_langExpanded.has(lang.key);
+
+    let chkCls=selCount>0?(allChk?'sel':'partial'):'';
+    let chkTxt=allChk?'✓':(selCount>0?'–':'');
+
+    let dialHtml='';
+    if(avail.length>0){
+      for(const [dk,dn] of avail){
+        const lk=lang.key+'|'+dk;
+        const chk=sel.langkeys.has(lk);
+        dialHtml+=`<div class="sb-l2-item ${chk?'sel':''}" data-lk="${lk.replace(/"/g,'&quot;')}" onclick="langToggleByEl(this)">
+          <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+          <span>${dn}</span>
+        </div>`;
+      }
+    }
+
+    html+=`<div class="sb-l1-row ${selCount>0?'sel':''}">
+      <div class="sb-l1-btn" data-langkey="${lang.key.replace(/"/g,'&quot;')}" onclick="langSelectAllByEl(this)">
+        <div class="sb-chk ${chkCls}">${chkTxt}</div>
+        <span>${lang.name}</span>
+      </div>
+      ${avail.length>0?`<button class="sb-l1-expand" data-lid="${lid}" data-langkey="${lang.key.replace(/"/g,'&quot;')}" onclick="langExpandToggle(this)">${isOpen?'▾':'▸'}</button>`:''}
+    </div>
+    ${avail.length>0?`<div class="sb-children ${isOpen?'open':''}" id="${lid}">${dialHtml}</div>`:''}`;
+  }
+  html+='</div><div class="sb-divider"></div>';
+
+  // ── Section 2: 分類 ───────────────────────────────────────
+  html+=`<div class="sb-sec-hdr" onclick="sbSecToggle('__cat_section__')">
+    分類
+    <span class="sb-arrow">${catSecOpen?'▾':'▸'}</span>
+  </div>
+  <div class="sb-sec-body ${catSecOpen?'':'closed'}" id="catSecBody">`;
+
+  const types=['C','T','P','V'];
+  for(const type of types){
+    const td=allData.filter(r=>r['分類']===type);
+    if(!td.length) continue;
+    const isC=type==='C';
+    const tid='t-'+type;
+    const allSksForType=[];
+    let subHtml='';
+
+    if(isC||type==='V'){
+      const cat1s=[...new Set(td.map(r=>r['分類1']).filter(Boolean))];
+      for(const cat1 of cat1s){
+        const sk=type+'|'+cat1;
+        allSksForType.push(sk);
+        const chk=sel.subkeys.has(sk);
+        const label=isC?cat1:cat1;
+        subHtml+=`<div class="sb-l2-item ${chk?'sel':''}" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
+          <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+          <span>${label}</span>
+        </div>`;
+      }
+    } else if(type==='T'){
+      // T (十二階): 冊(分類1) → 課(分類2) two-level with 全選 per 冊
+      const cat1s=[...new Set(td.map(r=>r['分類1']).filter(Boolean))].sort((a,b)=>+a-+b);
+      for(const cat1 of cat1s){
+        const c1d=td.filter(r=>r['分類1']===cat1);
+        const cat2s=[...new Set(c1d.map(r=>r['分類2']).filter(Boolean))].sort((a,b)=>+a-+b);
+        const ceSks=cat2s.map(cat2=>type+'|'+cat1+'|'+cat2);
+        ceSks.forEach(sk=>allSksForType.push(sk));
+        const ceSelCount=ceSks.filter(sk=>sel.subkeys.has(sk)).length;
+        const ceAllSel=ceSelCount===ceSks.length&&ceSks.length>0;
+        const ceId='t-ce-'+cat1;
+        const ceOpen=_langExpanded.has('T-ce-'+cat1);
+        const ceSksJson=ceSks.map(s=>s.replace(/"/g,'&quot;')).join('||');
+
+        let ceSubHtml=`<div class="sb-all-row ${ceAllSel?'sel':''}" onclick="sbToggleSetStr('${ceSksJson}')">
+          <div class="sb-chk ${ceAllSel?'sel':ceSelCount>0?'partial':''}">${ceAllSel?'✓':ceSelCount>0?'–':''}</div>
+          <span>全選</span>
+        </div>`;
+        for(const cat2 of cat2s){
+          const sk=type+'|'+cat1+'|'+cat2;
+          const chk=sel.subkeys.has(sk);
+          ceSubHtml+=`<div class="sb-l3-item ${chk?'sel':''}" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
+            <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+            <span>第${cat2}課</span>
+          </div>`;
+        }
+        subHtml+=`<div class="sb-l2-item ${ceSelCount>0?'sel':''}">
+          <div class="sb-chk ${ceAllSel?'sel':ceSelCount>0?'partial':''}" style="flex-shrink:0;pointer-events:none;">${ceAllSel?'✓':ceSelCount>0?'–':''}</div>
+          <span style="flex:1;cursor:pointer;" onclick="sbSecToggleExpand('T-ce-${cat1}','${ceId}')">第${cat1}冊</span>
+          <button class="sb-l1-expand" onclick="sbSecToggleExpand('T-ce-${cat1}','${ceId}')">${ceOpen?'▾':'▸'}</button>
+        </div>
+        <div class="sb-children ${ceOpen?'open':''}" id="${ceId}">${ceSubHtml}</div>`;
+      }
+    } else {
+      // P: 分類1 as group headers, 分類2 as checkable items
+      const cat1s=[...new Set(td.map(r=>r['分類1']).filter(Boolean))];
+      for(const cat1 of cat1s){
+        const c1d=td.filter(r=>r['分類1']===cat1);
+        const cat2s=[...new Set(c1d.map(r=>r['分類2']).filter(Boolean))];
+        if(!cat2s.length){
+          const sk=type+'|'+cat1;
+          allSksForType.push(sk);
+          const chk=sel.subkeys.has(sk);
+          subHtml+=`<div class="sb-l2-item ${chk?'sel':''}" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
+            <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+            <span>${cat1}</span>
+          </div>`;
+        } else {
+          subHtml+=`<div class="sb-l3-group-hdr">${cat1}</div>`;
+          for(const cat2 of cat2s){
+            const sk=type+'|'+cat1+'|'+cat2;
+            allSksForType.push(sk);
+            const chk=sel.subkeys.has(sk);
+            subHtml+=`<div class="sb-l3-item ${chk?'sel':''}" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
+              <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+              <span>${cat2}</span>
+            </div>`;
+          }
+        }
+      }
+    }
+
+    _sbAllSks['sall-'+tid]=allSksForType;
+    const selCount=allSksForType.filter(sk=>sel.subkeys.has(sk)).length;
+    const allSelected=selCount===allSksForType.length&&allSksForType.length>0;
+    const typeOpen=_langExpanded.has('cat-'+type);
+
+    // "全選" row at top of sub-list (same pattern as 語言/方言)
+    const allSelRow=`<div class="sb-all-row ${allSelected?'sel':''}" onclick="sbSelectAllType('${tid}')">
+      <div class="sb-chk ${allSelected?'sel':selCount>0?'partial':''}">${allSelected?'✓':selCount>0?'–':''}</div>
+      <span>全選</span>
+    </div>`;
+
+    html+=`<div class="sb-l1-row ${selCount>0?'sel':''}">
+      <div class="sb-l1-btn" style="gap:6px;" onclick="event.stopPropagation();sbCatToggle('cat-${type}')">
+        <span style="font-family:'Space Mono',monospace;font-size:0.68rem;background:${TYPE_BG[type]};color:${TYPE_CLR[type]};padding:1px 6px;border-radius:4px;">${type}</span>
+        <span style="font-size:0.82rem;">${TYPE_LABELS[type]}</span>
+      </div>
+      <button class="sb-l1-expand" style="min-width:32px;" onclick="event.stopPropagation();sbCatToggle('cat-${type}')">${typeOpen?'▾':'▸'}</button>
+    </div>
+    <div class="sb-children ${typeOpen?'open':''}" id="cat-sec-${type}">${allSelRow}${subHtml}</div>`;
+  }
+
+  if(sel.subkeys.size>0){
+    html+=`<div class="sb-clear-banner">已選取 ${sel.subkeys.size} 個次分類
+      <button onclick="sbClearSubs()">清除選取</button>
+    </div>`;
+  }
+  html+='</div><div class="sb-divider"></div>';
+
+  // ── Section 3: 等級 ──────────────────────────────────────
+  html+=`<div class="sb-sec-hdr" onclick="sbSecToggle('__lvl_section__')">
+    等級
+    <span class="sb-arrow">${lvlSecOpen?'▾':'▸'}</span>
+  </div>
+  <div class="sb-sec-body ${lvlSecOpen?'':'closed'}">`;
+
+  const levels=[...new Set(allData.map(r=>r['等級']).filter(Boolean))].sort();
+  const allLvlSel=levels.length>0&&levels.every(l=>sel.levels.has(l));
+  // 全選 row (same pattern as 語言/方言)
+  html+=`<div class="sb-all-row ${allLvlSel?'sel':''}" onclick="msAll('level')">
+    <div class="sb-chk ${allLvlSel?'sel':sel.levels.size>0?'partial':''}">${allLvlSel?'✓':sel.levels.size>0?'–':''}</div>
+    <span>全選</span>
+  </div>`;
+  for(const l of levels){
+    const chk=sel.levels.has(l);
+    html+=`<div class="sb-l2-item ${chk?'sel':''}" onclick="msToggle('level','${l}')">
+      <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+      <span>${fmtLevel(l)}</span>
+    </div>`;
+  }
+  // 清除 removed — unchecking 全選 serves same purpose
+  html+='</div>';
+
+  document.getElementById('sb-lang-section').innerHTML=html;
+}
+
+// ── Toggle section open/close ──────────────────────────────
+function sbSecToggle(key){
+  if(_langExpanded.has(key)) _langExpanded.delete(key);
+  else _langExpanded.add(key);
+  buildLangSidebar();
+}
+
+function sbCatToggle(key){
+  if(_langExpanded.has(key)) _langExpanded.delete(key);
+  else _langExpanded.add(key);
+  // Only rebuild the cat section body, not full sidebar
+  buildLangSidebar();
+}
+
+// ── Expand/collapse dialect list (no full rebuild) ─────────
+function langExpandToggle(btn){
+  const lid=btn.dataset.lid;
+  const langKey=btn.dataset.langkey;
+  const el=document.getElementById(lid);
+  if(!el) return;
+  const opening=!el.classList.contains('open');
+  el.classList.toggle('open');
+  btn.textContent=opening?'▾':'▸';
+  if(opening) _langExpanded.add(langKey);
+  else _langExpanded.delete(langKey);
+}
+
+function langToggleByEl(el){
+  // Walk up to find the element with data-lk (handles clicks on child elements)
+  const target = el.dataset && el.dataset.lk ? el : el.closest('[data-lk]');
+  if(!target) return;
+  const lk = target.dataset.lk;
+  if(!lk) return;
+  if(sel.langkeys.has(lk)) sel.langkeys.delete(lk);
+  else sel.langkeys.add(lk);
+  buildLangSidebar(); applyFilters();
+}
+
+function langSelectAllByEl(el){
+  langSelectAll(el.dataset.langkey);
+}
+
+function langSelectAll(langKey){
+  const keys=_sbLangAllKeys[langKey]||[];
+  if(!keys.length){ sel.langkeys.add(langKey); buildLangSidebar(); applyFilters(); return; }
+  const allSel=keys.every(k=>sel.langkeys.has(k));
+  if(allSel) keys.forEach(k=>sel.langkeys.delete(k));
+  else keys.forEach(k=>sel.langkeys.add(k));
+  buildLangSidebar(); applyFilters();
+}
+
+function langSelectAllLangs(){
+  const allKeys=Object.values(_sbLangAllKeys).flat();
+  const allSel=allKeys.every(k=>sel.langkeys.has(k));
+  if(allSel) sel.langkeys.clear();
+  else allKeys.forEach(k=>sel.langkeys.add(k));
+  buildLangSidebar(); applyFilters();
+}
+
+function langClearAll(){
+  sel.langkeys.clear();
+  buildLangSidebar(); applyFilters();
+}
+
+function langNameClick(el){ /* legacy stub */ }
+
+
+const TYPE_LABELS = { C:'會話', T:'十二階', P:'句型', V:'詞彙' };
+const LEVEL_MAP = {B:'初',I:'中',S:'中高',U:'高'};
+function fmtLevel(raw){ return (raw||'').split('/').map(p=>LEVEL_MAP[p.trim()]||p.trim()).join('/'); }
+
+// ── Multiselect ────────────────────────────────────────────────────
+// toggleMs: dropdowns moved to sidebar, no longer needed as popup
+function toggleMs(which){}
+
+function toggleScope(which){
+  // Must keep at least one active
+  const other = which==='sentence'?'translation':'sentence';
+  if(searchScope[which] && !searchScope[other]) return; // can't deselect last one
+  searchScope[which] = !searchScope[which];
+  // Update UI
+  const lbl = document.getElementById('scope-'+(which==='sentence'?'s':'t'));
+  const chk = document.getElementById('schk-'+(which==='sentence'?'s':'t'));
+  if(lbl){ lbl.classList.toggle('active', searchScope[which]); }
+  if(chk){ chk.style.color = searchScope[which]?'':'transparent'; }
+  applyFilters();
+}
+
+function initSearchScope(){
+  // Set initial active states
+  ['sentence','translation'].forEach(w=>{
+    const k = w==='sentence'?'s':'t';
+    const lbl=document.getElementById('scope-'+k);
+    if(lbl) lbl.classList.toggle('active', searchScope[w]);
+  });
+}
+
+function msToggle(which, val){
+  const set = which==='type' ? sel.types : sel.levels;
+  if(set.has(val)) set.delete(val); else set.add(val);
+  updateMsPills(which); applyFilters();
+  if(which==='type'){ sel.subkeys=new Set(); buildLangSidebar(); }
+}
+
+function msAll(which){
+  const set = which==='type' ? sel.types : sel.levels;
+  const opts = which==='type'
+    ? ['C','T','P','V']
+    : [...new Set(allData.map(r=>r['等級']).filter(Boolean))].sort();
+  // Toggle: if all selected → deselect all; else → select all
+  const allSelected = opts.length>0 && opts.every(v=>set.has(v));
+  if(allSelected){ opts.forEach(v=>set.delete(v)); }
+  else { opts.forEach(v=>set.add(v)); }
+  updateMsPills(which); applyFilters();
+  if(which==='type'){ sel.subkeys=new Set(); buildLangSidebar(); }
+}
+
+function msClear(which){
+  const set = which==='type' ? sel.types : sel.levels;
+  set.clear();
+  updateMsPills(which); applyFilters();
+  if(which==='type'){ sel.subkeys=new Set(); buildLangSidebar(); }
+}
+
+function updateMsPills(which){ buildLangSidebar(); }
+const TYPE_BG  = { C:'rgba(212,168,67,0.18)', T:'rgba(139,196,168,0.18)', P:'rgba(168,196,212,0.18)', V:'rgba(212,168,212,0.18)' };
+const TYPE_CLR = { C:'#d4a843', T:'#8bc4a8', P:'#a8c4d4', V:'#d4a8c4' };
+
+// ── CSV ────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const headers = lines[0].split(',').map(h=>h.trim().replace(/^\ufeff/,'').replace(/^"|"$/g,''));
+  return lines.slice(1).map(line=>{
+    const cols=[]; let cur='',inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){inQ=!inQ;}
+      else if(c===','&&!inQ){cols.push(cur);cur='';}
+      else{cur+=c;}
+    }
+    cols.push(cur);
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=(cols[i]||'').trim());
+    return obj;
+  }).filter(r=>r['語句']||r['翻譯']);
+}
+
+let rowById = {};
+
+// Pre-built filter index for fast filtering
+let _filterCache = null; // { langkey: Set, type: Set, level: Set, subkey: Set }
+
+function buildRowIndex(){
+  rowById = {};
+  allData.forEach(r=>{ rowById[r['編號']] = r; });
+  _filterCache = null; // invalidate cache
+}
+
+function _buildFilterCache(){
+  // Build lookup sets keyed by row index for fast intersection
+  _filterCache = {
+    byLangDial: new Map(), // "語別|方言別" or "語別" -> [indices]
+    byType:     new Map(), // 分類 -> [indices]
+    byLevel:    new Map(), // 等級 -> [indices]
+    bySubkey:   new Map(), // subkey -> [indices]
+  };
+  allData.forEach((r,i)=>{
+    // lang
+    const lk = r['方言別'] ? r['語別']+'|'+r['方言別'] : r['語別'];
+    if(!_filterCache.byLangDial.has(lk)) _filterCache.byLangDial.set(lk,[]);
+    _filterCache.byLangDial.get(lk).push(i);
+    // also add lang-only key
+    if(r['方言別']){
+      if(!_filterCache.byLangDial.has(r['語別'])) _filterCache.byLangDial.set(r['語別'],[]);
+      // don't add to lang-only if dialect exists — handled in applyFilters
+    }
+    // type
+    if(!_filterCache.byType.has(r['分類'])) _filterCache.byType.set(r['分類'],[]);
+    _filterCache.byType.get(r['分類']).push(i);
+    // level
+    if(!_filterCache.byLevel.has(r['等級'])) _filterCache.byLevel.set(r['等級'],[]);
+    _filterCache.byLevel.get(r['等級']).push(i);
+    // subkey
+    const sk = rowSubkey(r);
+    if(!_filterCache.bySubkey.has(sk)) _filterCache.bySubkey.set(sk,[]);
+    _filterCache.bySubkey.get(sk).push(i);
+  });
+}
+
+// ── Audio path helper ──────────────────────────────────────────
+// Folder = 方言別 number (if present), else 語別 number
+// File   = just the filename from 音檔路徑 (after last \ or /)
+function audioFolder(r){
+  const dial = String(r['方言別']||'').replace(/\.0$/,'').trim();
+  if(dial) return dial;
+  // 語別 might be a number ('13','14'...) or a name ('魯凱語')
+  // For named langs, we shouldn't reach here (they always have 方言別)
+  // but just in case:
+  const lang = String(r['語別']||'').trim();
+  return lang;
+}
+
+function audioFilename(r){
+  const raw = (r['音檔路徑']||'').trim();
+  if(!raw) return '';
+  // Extract just the filename (after last \ or /)
+  return raw.replace(/\\/g,'/').split('/').pop();
+}
+
+function audioPath(r){
+  const filename = audioFilename(r);
+  if(!filename) return '';
+  const folder = audioFolder(r);
+  return folder ? folder+'/'+filename : filename;
+}
+
+async function loadBuiltInCSV(){
+  // Always try CSV first (source of truth), then JSON as fallback
+  let loaded = false;
+  const csvNames = ['27.csv','data.csv'];
+  for(const name of csvNames){
+    try{
+      const res = await fetch('./data/'+name);
+      if(res.ok){ allData=parseCSV(await res.text()); loaded=true; break; }
+    } catch{}
+  }
+  if(!loaded){
+    try{
+      const res = await fetch('./data/data.json');
+      if(res.ok){
+        allData = await res.json();
+        allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
+        loaded = true;
+      }
+    } catch{}
+  }
+  if(loaded){ buildRowIndex(); _filterCache=null; initUI(); }
+  else {
+    document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料，請點擊右上角「更新資料」上傳 CSV</div></div>`;
+    document.getElementById('totalBadge').innerHTML='<span>0</span> 筆資料';
+    toggleUpload();
+  }
+}
+
+function handleCSV(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      allData=parseCSV(e.target.result);
+      if(!allData.length){showToast('❌ CSV 格式錯誤或無資料');return;}
+      buildRowIndex();
+      showToast(`✓ 已載入 ${allData.length} 筆資料`);
+      toggleUpload(); initUI();
+    } catch(err){showToast('❌ 解析失敗：'+err.message);}
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function applyAudioBase(){
+  audioBase=document.getElementById('audioBase').value.trim();
+  if(!audioBase.endsWith('/')) audioBase+='/';
+  showToast('✓ 音檔路徑已更新');
+}
+
+function initUI(){
+  _multiLang = new Set(allData.map(r=>r['語別'])).size > 1;
+  document.getElementById('totalBadge').innerHTML=`共 <span>${allData.length.toLocaleString()}</span> 筆資料`;
+  initSearchScope();
+  buildLangSidebar();
+  applyFilters();
+}
+
+// ── Sidebar ────────────────────────────────────────────────────────
+// subkey format:
+const _sbAllSks = {}; // tid -> array of subkeys, populated during buildSidebar
+//   C: "C|{分類1}"         e.g. "C|1"
+//   V: "V|{分類1}"         e.g. "V|01數字計量"
+//   T: "T|{分類1}|{分類2}" e.g. "T|1|3"  ← cat1 scoped, avoids collision
+//   P: "P|{分類1}|{分類2}" e.g. "P|01基本詞彙|01數字"
+//   T/P no-cat2: "T|{分類1}"
+
+// buildSidebar merged into buildLangSidebar
+
+function sbSelectAllType(tid){
+  const sks=_sbAllSks['sall-'+tid]||[];
+  const allSelected=sks.length>0&&sks.every(sk=>sel.subkeys.has(sk));
+  if(allSelected){ sks.forEach(sk=>sel.subkeys.delete(sk)); }
+  else { sks.forEach(sk=>sel.subkeys.add(sk)); }
+  buildLangSidebar(); applyFilters();
+}
+
+function sbToggleSub(sk){
+  if(sel.subkeys.has(sk)) sel.subkeys.delete(sk);
+  else sel.subkeys.add(sk);
+  buildLangSidebar(); applyFilters();
+}
+
+// Toggle a set of subkeys passed as ||‑joined string (avoids JSON quoting in HTML)
+function sbToggleSetStr(sksStr){
+  const sks = sksStr.replace(/&quot;/g,'"').split('||').filter(Boolean);
+  const allSel = sks.every(sk=>sel.subkeys.has(sk));
+  if(allSel) sks.forEach(sk=>sel.subkeys.delete(sk));
+  else sks.forEach(sk=>sel.subkeys.add(sk));
+  buildLangSidebar(); applyFilters();
+}
+
+// Expand/collapse a 冊 without full rebuild
+function sbSecToggleExpand(key, elId){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  const opening = !el.classList.contains('open');
+  el.classList.toggle('open');
+  if(opening) _langExpanded.add(key); else _langExpanded.delete(key);
+  // Update arrow only — no full rebuild
+  const btn = el.previousElementSibling && el.previousElementSibling.querySelector('.sb-l1-expand');
+  if(btn) btn.textContent = opening?'▾':'▸';
+}
+
+function sbClearSubs(){
+  sel.subkeys.clear();
+  buildLangSidebar(); applyFilters();
+}
+
+function sbClearAll(){
+  sel.types=new Set(); sel.levels=new Set(); sel.subkeys=new Set(); sel.langkeys=new Set();
+  updateMsPills('type'); updateMsPills('level');
+  buildLangSidebar(); applyFilters();
+}
+
+
+function toggleSec(id,event){
+  if(event) event.stopPropagation();
+  const el=document.getElementById(id); if(!el) return;
+  el.classList.toggle('open');
+  const tog=document.getElementById('tog-'+id);
+  if(tog) tog.textContent=el.classList.contains('open')?'▾':'▸';
+}
+
+// sbSelect replaced by sbToggleSub / sbClearAll
+
+
+// onTypeFilterChange removed - handled by msToggle
+
+
+// ── Filters ────────────────────────────────────────────────────────
+function rowSubkey(r){
+  const t=r['分類'];
+  if(t==='C') return t+'|'+r['分類1'];
+  if(t==='V') return t+'|'+r['分類1'];
+  if(t==='T') return r['分類2'] ? t+'|'+r['分類1']+'|'+r['分類2'] : t+'|'+r['分類1']; // 冊|課
+  // P: scoped by cat1+cat2
+  if(r['分類2']) return t+'|'+r['分類1']+'|'+r['分類2'];
+  return t+'|'+r['分類1'];
+}
+
+let _multiLang = false;
+
+function applyFilters(){
+  if(!_filterCache) _buildFilterCache();
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+
+  // Fast path: collect candidate index sets and intersect
+  let candidates = null; // null = all
+
+  function intersect(indices){
+    if(candidates===null){ candidates=new Set(indices); return; }
+    const next=new Set();
+    for(const i of indices){ if(candidates.has(i)) next.add(i); }
+    candidates=next;
+  }
+
+  // Lang filter
+  if(sel.langkeys.size>0){
+    const langIdx=[];
+    for(const lk of sel.langkeys){
+      // lk may be "語別|方言別" or just "語別"
+      if(_filterCache.byLangDial.has(lk)){
+        for(const i of _filterCache.byLangDial.get(lk)) langIdx.push(i);
+      }
+      // if lk is lang-only (no |), also match all dialect rows of that lang
+      if(!lk.includes('|')){
+        for(const [key,idxs] of _filterCache.byLangDial){
+          if(key.startsWith(lk+'|')) for(const i of idxs) langIdx.push(i);
+        }
+      }
+    }
+    intersect([...new Set(langIdx)]);
+  }
+
+  // Type filter
+  if(sel.types.size>0){
+    const typeIdx=[];
+    for(const t of sel.types){
+      if(_filterCache.byType.has(t)) for(const i of _filterCache.byType.get(t)) typeIdx.push(i);
+    }
+    intersect(typeIdx);
+  }
+
+  // Level filter
+  if(sel.levels.size>0){
+    const lvlIdx=[];
+    for(const l of sel.levels){
+      if(_filterCache.byLevel.has(l)) for(const i of _filterCache.byLevel.get(l)) lvlIdx.push(i);
+    }
+    intersect(lvlIdx);
+  }
+
+  // Subkey filter
+  if(sel.subkeys.size>0){
+    const skIdx=[];
+    for(const sk of sel.subkeys){
+      if(_filterCache.bySubkey.has(sk)) for(const i of _filterCache.bySubkey.get(sk)) skIdx.push(i);
+    }
+    intersect(skIdx);
+  }
+
+  // Materialise candidates array
+  let rows;
+  if(candidates===null){
+    rows = allData;
+  } else {
+    const sorted=[...candidates].sort((a,b)=>a-b);
+    rows=sorted.map(i=>allData[i]);
+  }
+
+  // Text search — apply last on filtered set, respecting scope
+  if(q){
+    rows=rows.filter(r=>{
+      if(searchScope.sentence && (r['語句']||'').toLowerCase().includes(q)) return true;
+      if(searchScope.translation && (r['翻譯']||'').includes(q)) return true;
+      return false;
+    });
+  }
+
+  filteredData=rows;
+  currentPage=1;
+  const ct=document.getElementById('content');
+  if(ct) ct.scrollTo(0,0);
+  renderPage();
+}
+
+function clearFilters(){
+  document.getElementById('searchInput').value='';
+  sel={types:new Set(),levels:new Set(),subkeys:new Set(),langkeys:new Set()};
+  updateMsPills('type'); updateMsPills('level');
+  buildLangSidebar(); applyFilters();
+}
+
+// ── Grouping helpers ──────────────────────────────────────────────
+function groupKey(r){
+  if(r['分類']==='C') return r['分類1'];
+  if(r['分類']==='T') return r['分類2'] ? r['分類1']+'|'+r['分類2'] : r['分類1']; // 冊|課
+  return r['分類2']||r['分類1'];
+}
+
+function langLabel(r){
+  // Short display label for language/dialect
+  if(!r['語別']) return '';
+  const lang = LANG_LIST.find(l=>l.key===r['語別']);
+  const langName = lang?lang.name:r['語別'];
+  if(r['方言別']){
+    const dial = lang&&lang.dialects.find(([dk])=>dk===r['方言別']);
+    return langName+(dial?'/'+dial[1]:'');
+  }
+  return langName;
+}
+
+function groupTitle(r,key){
+  // Used for group-title span (now hidden, but kept for audio state)
+  if(r['分類']==='T' && r['分類2']){
+    return 'T 第'+r['分類1']+'冊第'+r['分類2']+'課';
+  }
+  return r['分類']+'-'+key;
+}
+
+function sourceLabel(r){
+  // Display label for card header source line
+  const typeLabel = TYPE_LABELS[r['分類']]||r['分類'];
+  if(r['分類']==='T' && r['分類2']){
+    return typeLabel+' · 第'+r['分類1']+'冊 · 第'+r['分類2']+'課';
+  }
+  if(r['分類1']){
+    return typeLabel+' · '+r['分類1'];
+  }
+  return typeLabel;
+}
+
+// Group sort key: primary=分類+分類1(課次), secondary=語別+方言別
+// This gives: C-1魯凱語, C-1阿美語南勢, C-2魯凱語, C-2阿美語南勢...
+function groupSortKey(r){
+  const cat = r['分類']||'';
+  function pad(s){ return (s||'').replace(/[^\d]/g,'').padStart(4,'0')||(s||''); }
+  const cat1Num = pad(r['分類1']);
+  // For T: sort by 冊(分類1) then 課(分類2) then lang
+  const cat2Num = r['分類']==='T' ? pad(r['分類2']) : '0000';
+  const langOrd = _langIdxMap[r['語別']]!==undefined ? String(_langIdxMap[r['語別']]).padStart(3,'0') : '999';
+  const dialOrd = (r['方言別']||'').padStart(3,'0');
+  return cat+'|'+cat1Num+'|'+cat2Num+'|'+langOrd+'|'+dialOrd;
+}
+
+// ── Render one row (no col-tags — info in card header) ─────────────
+function renderRow(r){
+  const hasAudio=!!audioFilename(r);
+  const isC=r['分類']==='C';
+  const speakerHtml=(isC&&r['分類2'])?`<div class="row-speaker">${r['分類2']}</div>`:'';
+  const af=audioPath(r).replace(/'/g,"’");
+  const eid=r['編號'];
+  return `<div class="row-item" id="row-${eid}">
+    <div class="col-play">
+      <button class="play-btn" id="btn-${eid}"
+        data-af="${af}"
+        onclick="togglePlay(this.dataset.af,'${eid}')"
+        ${hasAudio?'':'disabled'} title="${hasAudio?'播放音檔':'無音檔'}">${hasAudio?'▶':'—'}</button>
+    </div>
+    <div class="col-sentence">
+      ${speakerHtml}
+      <div class="row-sentence">${hl(r['語句'],true)}</div>
+    </div>
+    <div class="col-translation">
+      <div class="row-translation">${hl(r['翻譯'],false)}</div>
+    </div>
+  </div>`;
+}
+
+// ── Render ─────────────────────────────────────────────────────────
+function renderPage(){
+  const content=document.getElementById('content');
+  const total=filteredData.length;
+  if(!total){
+    const hint = '<div class="empty-icon">🔭</div><div class="empty-text">找不到符合條件的資料</div>';
+    content.innerHTML=`<div class="result-info"><span>0</span> 筆結果</div><div class="empty">${hint}</div>`;
+    return;
+  }
+
+  // Build ordered groups — keyed by type+groupKey+lang+dialect, sorted
+  const groupMap=new Map();
+  filteredData.forEach(r=>{
+    const gk=r['分類']+'\x00'+groupKey(r)+'\x00'+(r['語別']||'')+'\x00'+(r['方言別']||'');
+    if(!groupMap.has(gk)){
+      groupMap.set(gk,{
+        key:groupKey(r), type:r['分類'], rows:[],
+        title:groupTitle(r,groupKey(r)),
+        sortKey:groupSortKey(r)
+      });
+    }
+    groupMap.get(gk).rows.push(r);
+  });
+  const groups=[...groupMap.values()].sort((a,b)=>a.sortKey<b.sortKey?-1:a.sortKey>b.sortKey?1:0);
+  const totalPages=Math.ceil(groups.length/PAGE_SIZE);
+  const pageGroups=groups.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
+
+  const cardsHtml=pageGroups.map((g,gi)=>{
+    const gid='grp-'+gi+'-'+g.type+'-'+(g.key||'').replace(/\W/g,'_');
+    const audioIds=g.rows.filter(r=>audioFilename(r)).map(r=>String(r['編號']));
+    const hasAny=audioIds.length>0;
+    const fr=g.rows[0];
+    const ll=langLabel(fr);
+    const sl=sourceLabel(fr);
+    return `<div class="card-block" id="${gid}">
+      <div class="card-hdr">
+        <div class="card-hdr-lang">${ll||'—'}</div>
+        <div class="card-hdr-source">${sl}</div>
+      </div>
+      <div class="group-header">
+        <span class="group-meta">${g.rows.length} 句${audioIds.length>0?' · '+audioIds.length+' 個音檔':''}</span>
+        <button class="group-next-btn" id="gnxt-${gid}"
+          onclick="groupNext('${gid}')" title="跳下一句" ${hasAny?'':'disabled'}>⏭</button>
+        <button class="group-play-btn" id="gplay-${gid}"
+          data-ids="${JSON.stringify(audioIds).replace(/"/g,'&quot;')}"
+          onclick="groupToggle(this)"
+          ${hasAny?'':'disabled'}>
+          <span id="gicon-${gid}">▶</span>
+          <span id="glabel-${gid}">播放全組</span>
+        </button>
+      </div>
+      <div class="card-ctrl">
+        <div style="flex-shrink:0;width:32px;margin-right:10px;"></div>
+        <div class="card-ctrl-labels">
+          <span class="card-ctrl-s">語句</span>
+          <span class="card-ctrl-t">翻譯</span>
+        </div>
+      </div>
+      <div class="group-rows">${g.rows.map(renderRow).join('')}</div>
+    </div>`;
+  }).join('');
+
+  let pages='';
+  if(totalPages>1){
+    pages=`<div class="pagination">
+      <button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>← 上一頁</button>
+      ${pgBtns(currentPage,totalPages)}
+      <button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>下一頁 →</button>
+    </div>`;
+  }
+
+  content.innerHTML=`
+    <div class="result-info">
+      共 <span>${total.toLocaleString()}</span> 筆，<span>${groups.length}</span> 組 &nbsp;·&nbsp; 第 ${currentPage}/${totalPages} 頁
+    </div>
+    <div class="card-grid">${cardsHtml}</div>
+    ${pages}`;
+}
+
+function pgBtns(cur,total){
+  const btns=[],range=[1];
+  for(let i=Math.max(2,cur-2);i<=Math.min(total-1,cur+2);i++) range.push(i);
+  if(total>1) range.push(total);
+  let prev=0;
+  range.forEach(p=>{
+    if(p-prev>1) btns.push(`<span style="color:var(--muted);padding:0 3px">…</span>`);
+    btns.push(`<button class="page-btn ${p===cur?'active':''}" onclick="goPage(${p})">${p}</button>`);
+    prev=p;
+  });
+  return btns.join('');
+}
+
+function goPage(p){
+  const total=Math.ceil(filteredData.length/PAGE_SIZE);
+  if(p<1||p>total) return;
+  currentPage=p; renderPage();
+  document.getElementById('content').scrollTo(0,0);
+}
+
+function hl(text, isSentence){
+  const q=document.getElementById('searchInput').value.trim();
+  if(!q) return text||'';
+  // Only highlight if this field is in scope
+  const inScope = isSentence ? searchScope.sentence : searchScope.translation;
+  if(!inScope) return text||'';
+  return (text||'').replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),
+    m=>`<mark style="background:rgba(212,168,67,0.28);color:var(--text);border-radius:2px;">${m}</mark>`);
+}
+
+// ── Audio state ───────────────────────────────────────────────────
+// Group playback state
+let gpState = null;
+// { gid, ids, idx, paused }
+
+function stopAll(){
+  if(currentAudio){
+    currentAudio.onended=null;
+    currentAudio.pause();
+    currentAudio=null;
+  }
+  if(currentPlayBtn){
+    currentPlayBtn.textContent='▶';
+    currentPlayBtn.classList.remove('active');
+    const pr=currentPlayBtn.closest('.row-item');
+    if(pr) pr.classList.remove('playing','gp-current');
+    currentPlayBtn=null;
+  }
+  if(gpState){
+    const gb=document.getElementById('gplay-'+gpState.gid);
+    if(gb){ gb.classList.remove('gp-playing','gp-paused'); }
+    const gi=document.getElementById('gicon-'+gpState.gid);
+    if(gi) gi.textContent='▶';
+    const gl=document.getElementById('glabel-'+gpState.gid);
+    if(gl) gl.textContent='播放全組';
+    gpState=null;
+  }
+}
+
+// ── Single row play ────────────────────────────────────────────────
+function togglePlay(filename,id){
+  const btn=document.getElementById('btn-'+id);
+  const row=document.getElementById('row-'+id);
+  if(currentPlayBtn===btn && currentAudio && !currentAudio.paused){
+    stopAll(); return;
+  }
+  stopAll();
+  currentAudio=new Audio(audioBase+filename);
+  currentPlayBtn=btn;
+  btn.textContent='⏸'; btn.classList.add('active'); row.classList.add('playing');
+  currentAudio.play().catch(()=>{
+    showToast('⚠ 音檔無法播放，請確認路徑設定');
+    stopAll();
+  });
+  currentAudio.onended=()=>{ stopAll(); };
+}
+
+// ── Group play ─────────────────────────────────────────────────────
+function groupToggle(btnOrGid, ids){
+  const gid = (typeof btnOrGid==='string') ? btnOrGid : btnOrGid.id.replace('gplay-','');
+  if(typeof btnOrGid!=='string') ids=JSON.parse(btnOrGid.dataset.ids.replace(/&quot;/g,'"'));
+  const gb=document.getElementById('gplay-'+gid);
+  const gi=document.getElementById('gicon-'+gid);
+  const gl=document.getElementById('glabel-'+gid);
+
+  // If this group is currently playing → pause
+  if(gpState && gpState.gid===gid && !gpState.paused){
+    currentAudio.pause();
+    gpState.paused=true;
+    gb.classList.remove('gp-playing'); gb.classList.add('gp-paused');
+    gi.textContent='▶'; gl.textContent='繼續';
+    if(currentPlayBtn){ currentPlayBtn.textContent='▶'; currentPlayBtn.classList.remove('active'); }
+    return;
+  }
+  // If paused → resume
+  if(gpState && gpState.gid===gid && gpState.paused){
+    gpState.paused=false;
+    gb.classList.remove('gp-paused'); gb.classList.add('gp-playing');
+    gi.textContent='⏸'; gl.textContent='暫停';
+    currentAudio.play();
+    // re-highlight current row btn
+    const curId=ids[gpState.idx];
+    const btn=document.getElementById('btn-'+curId);
+    const row=document.getElementById('row-'+curId);
+    if(btn){ btn.textContent='⏸'; btn.classList.add('active'); currentPlayBtn=btn; }
+    if(row) row.classList.add('gp-current');
+    return;
+  }
+  // Start fresh
+  stopAll();
+  gpState={ gid, ids, idx:0, paused:false };
+  gb.classList.add('gp-playing');
+  gi.textContent='⏸'; gl.textContent='暫停';
+  playGroupAt(0);
+}
+
+function playGroupAt(idx){
+  if(!gpState) return;
+  const ids=gpState.ids;
+  if(idx>=ids.length){ stopAll(); return; }
+  gpState.idx=idx;
+
+  // Clear previous highlight
+  document.querySelectorAll('.gp-current').forEach(el=>el.classList.remove('gp-current'));
+
+  const id=ids[idx];
+  const row=document.getElementById('row-'+id);
+  const btn=document.getElementById('btn-'+id);
+  const audioSrc=btn?btn.getAttribute('data-audio'):'';
+
+  // Get audio filename from data attribute or find from allData
+  const record=rowById[String(id)]||allData.find(r=>String(r['編號'])===String(id));
+  if(!record||!record['音檔路徑']){ playGroupAt(idx+1); return; }
+
+  const af=audioPath(record);
+  currentAudio=new Audio(audioBase+af);
+  currentPlayBtn=btn;
+  if(btn){ btn.textContent='⏸'; btn.classList.add('active'); }
+  if(row){ row.classList.add('gp-current'); }
+
+  // Scroll row into view
+  if(row) row.scrollIntoView({block:'nearest',behavior:'smooth'});
+
+  currentAudio.play().catch(()=>{ playGroupAt(idx+1); });
+  currentAudio.onended=()=>{
+    if(btn){ btn.textContent='▶'; btn.classList.remove('active'); }
+    if(row){ row.classList.remove('gp-current'); }
+    currentAudio=null; currentPlayBtn=null;
+    if(gpState && !gpState.paused) playGroupAt(idx+1);
+    else if(!gpState){ /* stopped externally */ }
+  };
+}
+
+function groupNext(gid){
+  if(!gpState||gpState.gid!==gid) return;
+  // Advance to next
+  if(currentAudio){ currentAudio.onended=null; currentAudio.pause(); currentAudio=null; }
+  if(currentPlayBtn){ currentPlayBtn.textContent='▶'; currentPlayBtn.classList.remove('active'); currentPlayBtn=null; }
+  document.querySelectorAll('.gp-current').forEach(el=>el.classList.remove('gp-current'));
+  const nextIdx=gpState.idx+1;
+  if(nextIdx>=gpState.ids.length){ stopAll(); return; }
+  gpState.paused=false;
+  const gb=document.getElementById('gplay-'+gid);
+  const gi=document.getElementById('gicon-'+gid);
+  const gl=document.getElementById('glabel-'+gid);
+  if(gb){ gb.classList.remove('gp-paused'); gb.classList.add('gp-playing'); }
+  if(gi) gi.textContent='⏸';
+  if(gl) gl.textContent='暫停';
+  playGroupAt(nextIdx);
+}
+
+// ── Utils ──────────────────────────────────────────────────────────
+function toggleUpload(){ document.getElementById('uploadPanel').classList.toggle('open'); }
+
+function showToast(msg){
+  const old=document.querySelector('.toast'); if(old) old.remove();
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
+}
+
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];
+  if(file&&file.name.endsWith('.csv')){
+    const dt=new DataTransfer(); dt.items.add(file);
+    document.getElementById('csvInput').files=dt.files;
+    handleCSV(document.getElementById('csvInput'));
+  }
+});
+
+loadBuiltInCSV();
+</script>
+</body>
+</html>
