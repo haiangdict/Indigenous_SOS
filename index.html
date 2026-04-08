@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payrang族語自救會</title>
+<title>語言學習資料庫</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 @font-face {
@@ -293,6 +294,39 @@ input[type="text"]::placeholder { color: var(--muted); }
 .tag-level { background:rgba(139,196,168,0.13); color:var(--accent2); }
 .tag-cat { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
 
+/* ── STAR / VOCAB BUTTON ── */
+.star-btn {
+  width:26px; height:26px; border-radius:50%;
+  border:none; background:transparent;
+  color:#555; cursor:pointer; font-size:0.85rem;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.18s; flex-shrink:0; padding:0;
+  opacity:0.5;
+}
+.star-btn:hover { opacity:1; color:#f0c040; transform:scale(1.15); }
+.star-btn.starred { color:#f0c040; opacity:1; }
+
+/* ── AUTH BADGE (top right) ── */
+.auth-badge {
+  display:flex; align-items:center; gap:7px;
+  font-family:'Space Mono',monospace; font-size:0.65rem;
+  color:var(--muted); cursor:pointer;
+  background:var(--surface2); border:1px solid var(--border);
+  padding:4px 10px; border-radius:20px; transition:all 0.15s;
+}
+.auth-badge:hover { border-color:var(--accent2); color:var(--text); }
+.auth-badge .auth-avatar {
+  width:18px; height:18px; border-radius:50%; object-fit:cover;
+}
+.vocab-link-btn {
+  font-family:'Space Mono',monospace; font-size:0.65rem;
+  color:var(--accent2); background:transparent;
+  border:1px solid var(--accent2); padding:4px 10px;
+  border-radius:20px; cursor:pointer; transition:all 0.15s; text-decoration:none;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.vocab-link-btn:hover { background:rgba(139,196,168,0.1); }
+
 /* ── PLAY BUTTON ── */
 .play-btn {
   width:32px; height:32px; border-radius:50%;
@@ -513,6 +547,10 @@ input[type="text"]::placeholder { color: var(--muted); }
   <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;">
     <div class="stats-badge" id="totalBadge">載入中…</div>
     <button class="btn btn-ghost" onclick="toggleUpload()">⇧ 更新資料</button>
+    <a class="vocab-link-btn" href="vocab.html" target="_blank">⭐ 詞彙表</a>
+    <div class="auth-badge" id="authBadge" onclick="handleAuthClick()">
+      <span id="authLabel">登入</span>
+    </div>
   </div>
 </header>
 
@@ -1037,7 +1075,7 @@ function audioPath(r){
 async function loadBuiltInCSV(){
   // Always try CSV first (source of truth), then JSON as fallback
   let loaded = false;
-  const csvNames = ['data.csv'];
+  const csvNames = ['27.csv','data.csv'];
   for(const name of csvNames){
     try{
       const res = await fetch('./data/'+name);
@@ -1089,6 +1127,10 @@ function initUI(){
   initSearchScope();
   buildLangSidebar();
   applyFilters();
+  // If already logged in from session restore, load starred
+  if(_gToken && !_spreadsheetId){
+    initSpreadsheet().then(()=>loadStarredIds()).then(()=>renderPage()).catch(()=>{});
+  }
 }
 
 // ── Sidebar ────────────────────────────────────────────────────────
@@ -1326,6 +1368,7 @@ function renderRow(r){
   const speakerHtml=(isC&&r['分類2'])?`<div class="row-speaker">${r['分類2']}</div>`:'';
   const af=audioPath(r).replace(/'/g,"’");
   const eid=r['編號'];
+  const isStarred=_starredIds.has(String(eid));
   return `<div class="row-item" id="row-${eid}">
     <div class="col-play">
       <button class="play-btn" id="btn-${eid}"
@@ -1340,6 +1383,9 @@ function renderRow(r){
     <div class="col-translation">
       <div class="row-translation">${hl(r['翻譯'],false)}</div>
     </div>
+    <button class="star-btn ${isStarred?'starred':''}" id="star-${eid}"
+      title="${isStarred?'從詞彙表移除':'加入詞彙表'}"
+      onclick="toggleStar('${eid}')">⭐</button>
   </div>`;
 }
 
@@ -1614,6 +1660,205 @@ dz.addEventListener('drop',e=>{
     handleCSV(document.getElementById('csvInput'));
   }
 });
+
+// ── Google Auth & Vocab ─────────────────────────────────────────
+const GAPI_CLIENT_ID = '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com';
+const GAPI_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+const SPREADSHEET_TITLE = 'Indigenous SOS 詞彙表';
+const SHEET_HEADERS = ['語句','翻譯','語別','教材','等級','音檔路徑','編號','收藏時間'];
+
+let _gToken = null;       // Google access token
+let _gUser = null;        // {name, email, picture}
+let _spreadsheetId = null;// user's spreadsheet id
+let _starredIds = new Set(); // set of 編號 strings
+let _vocabRows = [];      // local cache of vocab rows
+
+// ── Token persistence ──────────────────────────────────────────
+function _saveToken(token, user) {
+  _gToken=token; _gUser=user;
+  try {
+    sessionStorage.setItem('gsis_token', JSON.stringify({token,user,exp:Date.now()+3500000}));
+  } catch(e) {}
+}
+function _loadToken() {
+  try {
+    const raw=sessionStorage.getItem('gsis_token');
+    if(!raw) return false;
+    const {token,user,exp}=JSON.parse(raw);
+    if(Date.now()>exp) { sessionStorage.removeItem('gsis_token'); return false; }
+    _gToken=token; _gUser=user;
+    return true;
+  } catch(e) { return false; }
+}
+
+// ── Auth UI ────────────────────────────────────────────────────
+function updateAuthUI() {
+  const badge = document.getElementById('authBadge');
+  const label = document.getElementById('authLabel');
+  if(!badge||!label) return;
+  if(_gUser) {
+    label.innerHTML = _gUser.picture
+      ? `<img class="auth-avatar" src="${_gUser.picture}" alt=""> ${_gUser.name.split(' ')[0]}`
+      : _gUser.name.split(' ')[0];
+    badge.title = '點擊登出';
+  } else {
+    label.textContent = '登入';
+    badge.title = '登入以使用詞彙表';
+  }
+}
+
+function handleAuthClick() {
+  if(_gToken) { signOut(); } else { signIn(); }
+}
+
+function signIn() {
+  if(typeof google==='undefined') { showToast('⚠ Google 登入載入中，請稍後再試'); return; }
+  google.accounts.oauth2.initTokenClient({
+    client_id: GAPI_CLIENT_ID,
+    scope: GAPI_SCOPES,
+    callback: async (resp) => {
+      if(resp.error) { showToast('❌ 登入失敗：'+resp.error); return; }
+      // Get user info
+      const uinfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers:{Authorization:'Bearer '+resp.access_token}
+      }).then(r=>r.json()).catch(()=>({}));
+      const user = {name:uinfo.name||'使用者', email:uinfo.email||'', picture:uinfo.picture||''};
+      _saveToken(resp.access_token, user);
+      updateAuthUI();
+      showToast('✓ 已登入：'+user.name);
+      await initSpreadsheet();
+      await loadStarredIds();
+      renderPage(); // re-render to show star states
+    }
+  }).requestAccessToken();
+}
+
+function signOut() {
+  if(_gToken && typeof google!=='undefined') {
+    google.accounts.oauth2.revoke(_gToken, ()=>{});
+  }
+  _gToken=null; _gUser=null; _spreadsheetId=null;
+  _starredIds=new Set(); _vocabRows=[];
+  try { sessionStorage.removeItem('gsis_token'); } catch(e) {}
+  updateAuthUI();
+  renderPage();
+  showToast('✓ 已登出');
+}
+
+// ── Sheets API helpers ─────────────────────────────────────────
+async function sheetsReq(method, path, body) {
+  const url='https://sheets.googleapis.com/v4/spreadsheets'+path;
+  const opts={method, headers:{'Authorization':'Bearer '+_gToken,'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(url,opts);
+  if(!r.ok) {
+    const e=await r.json().catch(()=>({}));
+    throw new Error(e.error?.message||r.status);
+  }
+  return r.json();
+}
+async function driveReq(method, path, body) {
+  const url='https://www.googleapis.com/drive/v3'+path;
+  const opts={method, headers:{'Authorization':'Bearer '+_gToken,'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(url,opts);
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+// ── Find or create spreadsheet ─────────────────────────────────
+async function initSpreadsheet() {
+  if(_spreadsheetId) return;
+  // Search Drive for existing sheet
+  const q=encodeURIComponent(`name='${SPREADSHEET_TITLE}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`);
+  const res=await driveReq('GET',`/files?q=${q}&fields=files(id,name)`);
+  if(res.files&&res.files.length>0) {
+    _spreadsheetId=res.files[0].id;
+    return;
+  }
+  // Create new spreadsheet
+  const create=await sheetsReq('POST','',{
+    properties:{title:SPREADSHEET_TITLE},
+    sheets:[{properties:{title:'詞彙表'}}]
+  });
+  _spreadsheetId=create.spreadsheetId;
+  // Write headers
+  await sheetsReq('PUT',`/${_spreadsheetId}/values/詞彙表!A1:H1?valueInputOption=RAW`,{
+    values:[SHEET_HEADERS]
+  });
+}
+
+// ── Load starred IDs from sheet ────────────────────────────────
+async function loadStarredIds() {
+  if(!_gToken||!_spreadsheetId) return;
+  try {
+    const res=await sheetsReq('GET',`/${_spreadsheetId}/values/詞彙表!A:H`);
+    const rows=res.values||[];
+    _vocabRows=rows.slice(1); // skip header
+    _starredIds=new Set(_vocabRows.map(r=>r[6]||'').filter(Boolean)); // col G = 編號
+  } catch(e) { console.warn('loadStarredIds error:',e); }
+}
+
+// ── Toggle star ────────────────────────────────────────────────
+async function toggleStar(eid) {
+  if(!_gToken) {
+    showToast('請先登入以使用詞彙表功能');
+    signIn();
+    return;
+  }
+  const r=rowById[eid];
+  if(!r) return;
+  const btn=document.getElementById('star-'+eid);
+
+  if(_starredIds.has(String(eid))) {
+    // Remove — find row index in sheet
+    await removeStar(eid, btn);
+  } else {
+    // Add
+    await addStar(r, btn);
+  }
+}
+
+async function addStar(r, btn) {
+  if(!_spreadsheetId) await initSpreadsheet();
+  const ll=langLabel(r);
+  const sl=sourceLabel(r);
+  const lvl=fmtLevel(r['等級']||'');
+  const af=audioPath(r);
+  const now=new Date().toISOString();
+  const row=[r['語句'],r['翻譯'],ll,sl,lvl,af,String(r['編號']),now];
+  try {
+    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A:H:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
+      values:[row]
+    });
+    _starredIds.add(String(r['編號']));
+    _vocabRows.push(row);
+    if(btn) { btn.classList.add('starred'); btn.title='從詞彙表移除'; }
+    showToast('⭐ 已加入詞彙表');
+  } catch(e) { showToast('❌ 儲存失敗：'+e.message); }
+}
+
+async function removeStar(eid, btn) {
+  // Find row number in sheet (1-indexed, +1 for header)
+  const rowIdx=_vocabRows.findIndex(r=>(r[6]||'')==String(eid));
+  if(rowIdx<0) { _starredIds.delete(String(eid)); if(btn)btn.classList.remove('starred'); return; }
+  const sheetRow=rowIdx+2; // +1 header +1 1-indexed
+  try {
+    // Clear the row (Sheets API doesn't easily delete rows, so we clear then clean up)
+    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A${sheetRow}:H${sheetRow}:clear`,null);
+    _starredIds.delete(String(eid));
+    _vocabRows.splice(rowIdx,1);
+    if(btn) { btn.classList.remove('starred'); btn.title='加入詞彙表'; }
+    showToast('✓ 已從詞彙表移除');
+  } catch(e) { showToast('❌ 移除失敗：'+e.message); }
+}
+
+// ── Boot ───────────────────────────────────────────────────────
+// Try restore session
+if(_loadToken()) {
+  updateAuthUI();
+  // Lazily init spreadsheet after data loads
+}
 
 loadBuiltInCSV();
 </script>
