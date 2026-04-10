@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>語言學習資料庫</title>
+<title>Payrang族語自救會</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -283,7 +283,9 @@ input[type="text"]::placeholder { color: var(--muted); }
 .col-translation { flex:1; min-width:0; }
 
 .row-speaker { font-family:'Space Mono',monospace; font-size:0.6rem; color:var(--accent2); margin-bottom:2px; }
-.row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1rem; font-weight:normal; line-height:1.5; color:var(--text); word-break:break-word; }
+/* Invisible spacer in col-translation to align with row-sentence when speaker exists */
+.row-speaker-spacer { font-family:'Space Mono',monospace; font-size:0.6rem; margin-bottom:2px; visibility:hidden; content:'​'; min-height:1em; }
+.row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1rem; font-weight:normal; line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:anywhere; }
 .row-translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1rem; line-height:1.5; color:var(--text); word-break:break-word; }
 .row-id { font-family:'Space Mono',monospace; font-size:0.5rem; color:var(--border); margin-top:2px; }
 
@@ -1366,7 +1368,9 @@ function groupSortKey(r){
 function renderRow(r){
   const hasAudio=!!audioFilename(r);
   const isC=r['分類']==='C';
-  const speakerHtml=(isC&&r['分類2'])?`<div class="row-speaker">${r['分類2']}</div>`:'';
+  const hasSpeaker=isC&&r['分類2'];
+  const speakerHtml=hasSpeaker?`<div class="row-speaker">${r['分類2']}</div>`:'';
+  const translationSpacerHtml=hasSpeaker?`<div class="row-speaker-spacer"></div>`:'';
   const af=audioPath(r).replace(/'/g,"’");
   const eid=r['編號'];
   const isStarred=_starredIds.has(String(eid));
@@ -1382,6 +1386,7 @@ function renderRow(r){
       <div class="row-sentence">${hl(r['語句'],true)}</div>
     </div>
     <div class="col-translation">
+      ${translationSpacerHtml}
       <div class="row-translation">${hl(r['翻譯'],false)}</div>
     </div>
     <button class="star-btn ${isStarred?'starred':''}" id="star-${eid}"
@@ -1424,7 +1429,8 @@ function renderPage(){
     const fr=g.rows[0];
     const ll=langLabel(fr);
     const sl=sourceLabel(fr);
-    return `<div class="card-block" id="${gid}">
+    const grpKey=g.type+'|'+g.key;
+    return `<div class="card-block" id="${gid}" data-grpkey="${grpKey.replace(/"/g,'&quot;')}">
       <div class="card-hdr">
         <div class="card-hdr-lang">${ll||'—'}</div>
         <div class="card-hdr-source">${sl}</div>
@@ -1465,9 +1471,87 @@ function renderPage(){
     <div class="result-info">
       共 <span>${total.toLocaleString()}</span> 筆，<span>${groups.length}</span> 組 &nbsp;·&nbsp; 第 ${currentPage}/${totalPages} 頁
     </div>
-    <div class="card-grid">${cardsHtml}</div>
+    <div class="card-grid" id="cardGrid">${cardsHtml}</div>
     ${pages}`;
+  // Align row heights for adjacent cards with same data point
+  alignRows();
 }
+
+// ── Row height alignment ─────────────────────────────────────────
+// Aligns row-items across adjacent cards in the same grid row
+// when those cards share the same data point (grpkey).
+
+let _alignRO = null; // ResizeObserver instance
+
+function alignRows(){
+  const grid = document.getElementById('cardGrid');
+  if(!grid) return;
+
+  // PASS 1: Reset all min-heights so natural heights can be measured
+  grid.querySelectorAll('.row-item').forEach(el=>{
+    el.style.minHeight='';
+  });
+
+  // Must wait for browser to reflow before measuring.
+  // Double requestAnimationFrame guarantees the reset has been painted.
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const cards = [...grid.querySelectorAll('.card-block')];
+    if(cards.length < 2) return;
+
+    // Group cards into visual grid rows by offsetTop
+    // Use offsetTop (relative to offsetParent) — more stable than getBoundingClientRect
+    const rowGroups = [];
+    let curRow = [];
+    let lastTop = null;
+    cards.forEach(card=>{
+      const top = card.offsetTop;
+      if(lastTop === null || Math.abs(top - lastTop) > 8){
+        if(curRow.length) rowGroups.push(curRow);
+        curRow = [card];
+        lastTop = top;
+      } else {
+        curRow.push(card);
+      }
+    });
+    if(curRow.length) rowGroups.push(curRow);
+
+    // PASS 2: For each visual grid row, find adjacent cards with same grpkey
+    rowGroups.forEach(row=>{
+      if(row.length < 2) return;
+
+      let i=0;
+      while(i < row.length){
+        const grpkey = row[i].dataset.grpkey;
+        let j=i+1;
+        while(j < row.length && row[j].dataset.grpkey === grpkey) j++;
+        const group = row.slice(i,j);
+
+        if(group.length >= 2){
+          // Get row-items per card
+          const rowsPerCard = group.map(card=>[...card.querySelectorAll('.group-rows .row-item')]);
+          const maxRows = Math.max(...rowsPerCard.map(r=>r.length));
+
+          for(let ri=0; ri<maxRows; ri++){
+            const items = rowsPerCard.map(rows=>rows[ri]).filter(Boolean);
+            if(items.length < 2) continue;
+            // Measure natural offsetHeight (no transforms, no margin collapse issues)
+            const maxH = Math.max(...items.map(el=>el.offsetHeight));
+            items.forEach(el=>{ el.style.minHeight = maxH+'px'; });
+          }
+        }
+        i=j;
+      }
+    });
+  }));
+}
+
+// Re-align on resize (debounced)
+let _alignTimer = null;
+function _scheduleAlign(){
+  clearTimeout(_alignTimer);
+  _alignTimer = setTimeout(alignRows, 150);
+}
+window.addEventListener('resize', _scheduleAlign);
 
 function pgBtns(cur,total){
   const btns=[],range=[1];
