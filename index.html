@@ -282,9 +282,10 @@ input[type="text"]::placeholder { color: var(--muted); }
 .col-sentence { flex:1; min-width:0; padding-right:12px; }
 .col-translation { flex:1; min-width:0; }
 
-.row-speaker { font-family:'Space Mono',monospace; font-size:0.6rem; color:var(--accent2); margin-bottom:2px; }
-/* Invisible spacer in col-translation to align with row-sentence when speaker exists */
-.row-speaker-spacer { font-family:'Space Mono',monospace; font-size:0.6rem; margin-bottom:2px; visibility:hidden; content:'​'; min-height:1em; }
+.row-speaker { font-family:'Space Mono',monospace; font-size:0.6rem; line-height:1.4; color:var(--accent2); margin-bottom:2px; }
+/* When speaker exists, push translation down by exact same height as speaker label */
+/* speaker height = font-size(0.6rem) * line-height(1.4) + margin-bottom(2px) */
+.col-translation.has-speaker { padding-top: calc(0.6rem * 1.4 + 2px); }
 .row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1rem; font-weight:normal; line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:anywhere; }
 .row-translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1rem; line-height:1.5; color:var(--text); word-break:break-word; }
 .row-id { font-family:'Space Mono',monospace; font-size:0.5rem; color:var(--border); margin-top:2px; }
@@ -1370,7 +1371,6 @@ function renderRow(r){
   const isC=r['分類']==='C';
   const hasSpeaker=isC&&r['分類2'];
   const speakerHtml=hasSpeaker?`<div class="row-speaker">${r['分類2']}</div>`:'';
-  const translationSpacerHtml=hasSpeaker?`<div class="row-speaker-spacer"></div>`:'';
   const af=audioPath(r).replace(/'/g,"’");
   const eid=r['編號'];
   const isStarred=_starredIds.has(String(eid));
@@ -1385,8 +1385,7 @@ function renderRow(r){
       ${speakerHtml}
       <div class="row-sentence">${hl(r['語句'],true)}</div>
     </div>
-    <div class="col-translation">
-      ${translationSpacerHtml}
+    <div class="col-translation${hasSpeaker?' has-speaker':''}">
       <div class="row-translation">${hl(r['翻譯'],false)}</div>
     </div>
     <button class="star-btn ${isStarred?'starred':''}" id="star-${eid}"
@@ -1487,56 +1486,50 @@ function alignRows(){
   const grid = document.getElementById('cardGrid');
   if(!grid) return;
 
-  // PASS 1: Reset all min-heights so natural heights can be measured
-  grid.querySelectorAll('.row-item').forEach(el=>{
-    el.style.minHeight='';
-  });
+  // PASS 1: Reset all min-heights to get natural sizes
+  grid.querySelectorAll('.row-item').forEach(el=>{ el.style.minHeight=''; });
 
-  // Must wait for browser to reflow before measuring.
-  // Double requestAnimationFrame guarantees the reset has been painted.
+  // Double rAF: first frame applies the reset, second frame measures after reflow
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    const cards = [...grid.querySelectorAll('.card-block')];
-    if(cards.length < 2) return;
+    const cards=[...grid.querySelectorAll('.card-block')];
+    if(cards.length<2) return;
 
-    // Group cards into visual grid rows by offsetTop
-    // Use offsetTop (relative to offsetParent) — more stable than getBoundingClientRect
-    const rowGroups = [];
-    let curRow = [];
-    let lastTop = null;
+    // Detect grid rows by comparing card top positions
+    // Use getBoundingClientRect relative to grid container
+    const gridTop = grid.getBoundingClientRect().top;
+    const rowGroups=[];
+    let curRow=[];
+    let lastTop=null;
     cards.forEach(card=>{
-      const top = card.offsetTop;
-      if(lastTop === null || Math.abs(top - lastTop) > 8){
+      const top = Math.round(card.getBoundingClientRect().top - gridTop);
+      if(lastTop===null || Math.abs(top-lastTop)>8){
         if(curRow.length) rowGroups.push(curRow);
-        curRow = [card];
-        lastTop = top;
+        curRow=[card];
+        lastTop=top;
       } else {
         curRow.push(card);
       }
     });
     if(curRow.length) rowGroups.push(curRow);
 
-    // PASS 2: For each visual grid row, find adjacent cards with same grpkey
+    // PASS 2: Align row-items across adjacent same-grpkey cards in same grid row
     rowGroups.forEach(row=>{
-      if(row.length < 2) return;
-
+      if(row.length<2) return;
       let i=0;
-      while(i < row.length){
-        const grpkey = row[i].dataset.grpkey;
+      while(i<row.length){
+        const grpkey=row[i].dataset.grpkey;
         let j=i+1;
-        while(j < row.length && row[j].dataset.grpkey === grpkey) j++;
-        const group = row.slice(i,j);
-
-        if(group.length >= 2){
-          // Get row-items per card
-          const rowsPerCard = group.map(card=>[...card.querySelectorAll('.group-rows .row-item')]);
-          const maxRows = Math.max(...rowsPerCard.map(r=>r.length));
-
-          for(let ri=0; ri<maxRows; ri++){
-            const items = rowsPerCard.map(rows=>rows[ri]).filter(Boolean);
-            if(items.length < 2) continue;
-            // Measure natural offsetHeight (no transforms, no margin collapse issues)
-            const maxH = Math.max(...items.map(el=>el.offsetHeight));
-            items.forEach(el=>{ el.style.minHeight = maxH+'px'; });
+        while(j<row.length && row[j].dataset.grpkey===grpkey) j++;
+        const group=row.slice(i,j);
+        if(group.length>=2){
+          const rowsPerCard=group.map(c=>[...c.querySelectorAll('.group-rows .row-item')]);
+          const maxRows=Math.max(...rowsPerCard.map(r=>r.length));
+          for(let ri=0;ri<maxRows;ri++){
+            const items=rowsPerCard.map(rows=>rows[ri]).filter(Boolean);
+            if(items.length<2) continue;
+            // scrollHeight includes padding but not border/margin — most reliable
+            const maxH=Math.max(...items.map(el=>el.scrollHeight));
+            items.forEach(el=>{ el.style.minHeight=maxH+'px'; });
           }
         }
         i=j;
@@ -1546,12 +1539,12 @@ function alignRows(){
 }
 
 // Re-align on resize (debounced)
-let _alignTimer = null;
+let _alignTimer=null;
 function _scheduleAlign(){
   clearTimeout(_alignTimer);
-  _alignTimer = setTimeout(alignRows, 150);
+  _alignTimer=setTimeout(alignRows,200);
 }
-window.addEventListener('resize', _scheduleAlign);
+window.addEventListener('resize',_scheduleAlign);
 
 function pgBtns(cur,total){
   const btns=[],range=[1];
