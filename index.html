@@ -26,7 +26,31 @@
   --text: #e8e4dc;
   --muted: #777;
   --playing: #8bc4a8;
+  --fs-base: 1rem;       /* font size scale root */
 }
+
+/* ── LIGHT MODE ── */
+body.light {
+  --bg: #f5f3ef;
+  --surface: #ffffff;
+  --surface2: #ede9e3;
+  --border: #d4cfc8;
+  --text: #1a1814;
+  --muted: #888;
+}
+body.light header { background: rgba(245,243,239,0.96); }
+body.light .result-info,
+body.light .sb-sec-hdr { background: var(--bg); }
+
+/* ── FONT SIZE SCALE ── */
+body.fs-sm  { font-size: 0.88rem; }
+body.fs-md  { font-size: 1rem;    }
+body.fs-lg  { font-size: 1.13rem; }
+body.fs-xl  { font-size: 1.28rem; }
+
+/* Scale sentence/translation text with body font size */
+.row-sentence    { font-size: var(--fs-base, 1em); }
+.row-translation { font-size: var(--fs-base, 1em); }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -58,6 +82,31 @@ header {
   background: var(--surface2); border: 1px solid var(--border);
   padding: 5px 13px; border-radius: 20px;
 }
+
+/* ── THEME & FONT CONTROLS ── */
+.ui-ctrl-btn {
+  font-family: 'Space Mono', monospace; font-size: 0.68rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); padding: 5px 10px; border-radius: 20px;
+  cursor: pointer; transition: all 0.15s; display:flex; align-items:center; gap:5px;
+}
+.ui-ctrl-btn:hover { border-color: var(--accent2); color: var(--text); }
+.ui-ctrl-btn.active { border-color: var(--accent2); color: var(--accent2); }
+
+.fs-ctrl {
+  display:flex; align-items:center; gap:3px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 6px;
+}
+.fs-btn {
+  font-family: 'Space Mono', monospace; font-size: 0.72rem;
+  background: transparent; border: none;
+  color: var(--muted); padding: 2px 6px; border-radius: 14px;
+  cursor: pointer; transition: all 0.13s; line-height:1;
+}
+.fs-btn:hover { color: var(--text); background: var(--surface); }
+.fs-btn.active { background: var(--accent2); color: #0e0e0e; font-weight:700; }
+.fs-divider { width:1px; height:14px; background:var(--border); flex-shrink:0; }
 .stats-badge span { color: var(--accent); font-weight: 700; }
 
 .btn {
@@ -208,10 +257,20 @@ input[type="text"]::placeholder { color: var(--muted); }
 .result-info {
   font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--muted);
   padding: 10px 16px; border-bottom: 1px solid var(--border);
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; align-items: center; gap: 10px;
   position: sticky; top: 0; background: var(--bg); z-index: 5;
 }
 .result-info span { color: var(--accent); }
+.result-info .result-count { flex: 1; }
+.star-all-btn {
+  font-family: 'Space Mono', monospace; font-size: 0.65rem;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted); padding: 4px 12px; border-radius: 20px;
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+  display: flex; align-items: center; gap: 5px;
+}
+.star-all-btn:hover { border-color: #f0c040; color: #f0c040; }
+.star-all-btn.all-starred { border-color: #f0c040; color: #f0c040; background: rgba(240,192,64,0.08); }
 
 /* ── CARD GRID — responsive columns ── */
 .card-grid {
@@ -286,8 +345,8 @@ input[type="text"]::placeholder { color: var(--muted); }
 /* When speaker exists, push translation down by exact same height as speaker label */
 /* speaker height = font-size(0.6rem) * line-height(1.4) + margin-bottom(2px) */
 .col-translation.has-speaker { padding-top: calc(0.6rem * 1.4 + 2px); }
-.row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1rem; font-weight:normal; line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:anywhere; }
-.row-translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1rem; line-height:1.5; color:var(--text); word-break:break-word; }
+.row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em; font-weight:normal; line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:anywhere; }
+.row-translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em; line-height:1.5; color:var(--text); word-break:break-word; }
 .row-id { font-family:'Space Mono',monospace; font-size:0.5rem; color:var(--border); margin-top:2px; }
 
 /* Tag styles kept for backward compat but not used in card rows */
@@ -549,6 +608,18 @@ input[type="text"]::placeholder { color: var(--muted); }
   </div>
   <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;">
     <div class="stats-badge" id="totalBadge">載入中…</div>
+    <!-- Font size control -->
+    <div class="fs-ctrl" title="字體大小">
+      <button class="fs-btn" id="fs-sm" onclick="setFontSize('sm')" title="小">A</button>
+      <div class="fs-divider"></div>
+      <button class="fs-btn active" id="fs-md" onclick="setFontSize('md')" title="中" style="font-size:0.85rem;">A</button>
+      <div class="fs-divider"></div>
+      <button class="fs-btn" id="fs-lg" onclick="setFontSize('lg')" title="大" style="font-size:1rem;">A</button>
+      <div class="fs-divider"></div>
+      <button class="fs-btn" id="fs-xl" onclick="setFontSize('xl')" title="特大" style="font-size:1.15rem;">A</button>
+    </div>
+    <!-- Dark/light toggle -->
+    <button class="ui-ctrl-btn" id="themeBtn" onclick="toggleTheme()" title="切換深色/淺色模式">🌙</button>
     <button class="btn btn-ghost" onclick="toggleUpload()">⇧ 更新資料</button>
     <a class="vocab-link-btn" href="vocab.html" target="_blank">⭐ 詞彙表</a>
     <a class="vocab-link-btn" href="about.html" target="_blank" style="border-color:var(--border);color:var(--muted);">關於</a>
@@ -1076,32 +1147,114 @@ function audioPath(r){
   return folder ? folder+'/'+filename : filename;
 }
 
+// ── IndexedDB cache ──────────────────────────────────────────────
+const IDB_NAME = 'sos-data';
+const IDB_STORE = 'csv';
+const IDB_KEY = 'allData';
+const IDB_META_KEY = 'meta';
+
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains(IDB_STORE))
+        db.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = e => res(e.target.result);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+async function idbGet(key){
+  const db = await idbOpen();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction(IDB_STORE,'readonly');
+    const req = tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess = e => res(e.target.result);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+async function idbPut(key, val){
+  const db = await idbOpen();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction(IDB_STORE,'readwrite');
+    const req = tx.objectStore(IDB_STORE).put(val, key);
+    req.onsuccess = () => res();
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
 async function loadBuiltInCSV(){
-  // Always try CSV first (source of truth), then JSON as fallback
-  let loaded = false;
-  const csvNames = ['27.csv','data.csv'];
-  for(const name of csvNames){
-    try{
-      const res = await fetch('./data/'+name);
-      if(res.ok){ allData=parseCSV(await res.text()); loaded=true; break; }
-    } catch{}
-  }
-  if(!loaded){
-    try{
-      const res = await fetch('./data/data.json');
-      if(res.ok){
-        allData = await res.json();
-        allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
-        loaded = true;
+  // 1. Show loading indicator
+  document.getElementById('totalBadge').innerHTML='載入中…';
+
+  // 2. Try to get ETag/Last-Modified of CSV to detect changes
+  let remoteEtag = null;
+  let csvName = null;
+  for(const name of ['27.csv','data.csv']){
+    try {
+      const head = await fetch('./data/'+name, {method:'HEAD'});
+      if(head.ok){
+        csvName = name;
+        remoteEtag = head.headers.get('etag') || head.headers.get('last-modified') || '';
+        break;
       }
     } catch{}
   }
-  if(loaded){ buildRowIndex(); _filterCache=null; initUI(); }
-  else {
-    document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料，請點擊右上角「更新資料」上傳 CSV</div></div>`;
-    document.getElementById('totalBadge').innerHTML='<span>0</span> 筆資料';
-    toggleUpload();
+
+  // 3. Check IndexedDB cache
+  let useCache = false;
+  if(csvName){
+    try {
+      const meta = await idbGet(IDB_META_KEY);
+      if(meta && meta.etag && meta.etag === remoteEtag && meta.csvName === csvName){
+        const cached = await idbGet(IDB_KEY);
+        if(cached && cached.length){
+          allData = cached;
+          useCache = true;
+          showToast('⚡ 已從快取載入');
+        }
+      }
+    } catch(e){ console.warn('IDB read error:', e); }
   }
+
+  // 4. Fetch fresh data if cache miss
+  if(!useCache){
+    let loaded = false;
+    if(csvName){
+      try{
+        const res = await fetch('./data/'+csvName);
+        if(res.ok){ allData=parseCSV(await res.text()); loaded=true; }
+      } catch{}
+    }
+    if(!loaded){
+      try{
+        const res = await fetch('./data/data.json');
+        if(res.ok){
+          allData = await res.json();
+          allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
+          loaded=true;
+        }
+      } catch{}
+    }
+    if(!loaded){
+      document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料，請點擊右上角「更新資料」上傳 CSV</div></div>`;
+      document.getElementById('totalBadge').innerHTML='<span>0</span> 筆資料';
+      toggleUpload();
+      return;
+    }
+    // 5. Save to IndexedDB
+    if(csvName && remoteEtag !== null){
+      try {
+        await idbPut(IDB_KEY, allData);
+        await idbPut(IDB_META_KEY, { etag: remoteEtag, csvName, ts: Date.now() });
+      } catch(e){ console.warn('IDB write error:', e); }
+    }
+  }
+
+  buildRowIndex(); _filterCache=null; initUI();
 }
 
 function handleCSV(input){
@@ -1112,6 +1265,8 @@ function handleCSV(input){
       allData=parseCSV(e.target.result);
       if(!allData.length){showToast('❌ CSV 格式錯誤或無資料');return;}
       buildRowIndex();
+      // Clear IDB cache so next load picks up this new data
+      idbPut(IDB_META_KEY,{etag:'',csvName:''}).catch(()=>{});
       showToast(`✓ 已載入 ${allData.length} 筆資料`);
       toggleUpload(); initUI();
     } catch(err){showToast('❌ 解析失敗：'+err.message);}
@@ -1468,12 +1623,68 @@ function renderPage(){
 
   content.innerHTML=`
     <div class="result-info">
-      共 <span>${total.toLocaleString()}</span> 筆，<span>${groups.length}</span> 組 &nbsp;·&nbsp; 第 ${currentPage}/${totalPages} 頁
+      <span class="result-count">共 <span>${total.toLocaleString()}</span> 筆，<span>${groups.length}</span> 組 &nbsp;·&nbsp; 第 ${currentPage}/${totalPages} 頁</span>
+      <button class="star-all-btn" id="starAllBtn" onclick="toggleStarAll()" title="全選／取消全選本頁所有語句">
+        ⭐ 全選本頁
+      </button>
     </div>
     <div class="card-grid" id="cardGrid">${cardsHtml}</div>
     ${pages}`;
+  // Store current page row ids for bulk star
+  _currentPageEids = pageGroups.flatMap(g=>g.rows.map(r=>String(r['編號'])));
+  _updateStarAllBtn();
   // Align row heights for adjacent cards with same data point
   alignRows();
+}
+
+// ── Bulk star ───────────────────────────────────────────────────
+let _currentPageEids = [];
+
+function _updateStarAllBtn(){
+  const btn = document.getElementById('starAllBtn');
+  if(!btn || !_currentPageEids.length) return;
+  const allStarred = _currentPageEids.every(eid=>_starredIds.has(eid));
+  btn.classList.toggle('all-starred', allStarred);
+  btn.innerHTML = allStarred ? '⭐ 取消全選' : '⭐ 全選本頁';
+}
+
+async function toggleStarAll(){
+  if(!_gToken){ showToast('請先登入以使用詞彙表功能'); signIn(); return; }
+  if(!_currentPageEids.length) return;
+
+  const allStarred = _currentPageEids.every(eid=>_starredIds.has(eid));
+  const btn = document.getElementById('starAllBtn');
+  if(btn){ btn.disabled=true; btn.textContent='處理中…'; }
+
+  if(allStarred){
+    // Remove all — process sequentially to avoid rate limits
+    let count=0;
+    for(const eid of _currentPageEids){
+      if(_starredIds.has(eid)){
+        const rowBtn=document.getElementById('star-'+eid);
+        await removeStar(eid, rowBtn);
+        count++;
+      }
+    }
+    showToast(`✓ 已取消 ${count} 筆收藏`);
+  } else {
+    // Add all not yet starred
+    let count=0;
+    for(const eid of _currentPageEids){
+      if(!_starredIds.has(eid)){
+        const r=rowById[eid];
+        if(r){
+          const rowBtn=document.getElementById('star-'+eid);
+          await addStar(r, rowBtn);
+          count++;
+        }
+      }
+    }
+    showToast(`⭐ 已加入 ${count} 筆至詞彙表`);
+  }
+
+  if(btn){ btn.disabled=false; }
+  _updateStarAllBtn();
 }
 
 // ── Row height alignment ─────────────────────────────────────────
@@ -1739,6 +1950,51 @@ dz.addEventListener('drop',e=>{
   }
 });
 
+
+// ── Theme & Font Size ─────────────────────────────────────────
+const FS_SIZES = ['sm','md','lg','xl'];
+let _currentFs = 'md';
+let _currentTheme = 'dark';
+
+function _loadPrefs(){
+  try {
+    const fs = localStorage.getItem('sos_fs') || 'md';
+    const th = localStorage.getItem('sos_theme') || 'dark';
+    setFontSize(fs, true);
+    if(th === 'light') _applyTheme('light', true);
+  } catch(e){}
+}
+
+function setFontSize(size, silent){
+  if(!FS_SIZES.includes(size)) size='md';
+  _currentFs = size;
+  document.body.className = document.body.className
+    .replace(/\bfs-\w+\b/g,'').trim();
+  document.body.classList.add('fs-'+size);
+  // Update buttons
+  FS_SIZES.forEach(s=>{
+    const btn=document.getElementById('fs-'+s);
+    if(btn) btn.classList.toggle('active', s===size);
+  });
+  try { localStorage.setItem('sos_fs', size); } catch(e){}
+  if(!silent) alignRows(); // re-align after font change
+}
+
+function _applyTheme(theme, silent){
+  _currentTheme = theme;
+  document.body.classList.toggle('light', theme==='light');
+  const btn = document.getElementById('themeBtn');
+  if(btn) btn.textContent = theme==='light' ? '🌙' : '☀️';
+  try { localStorage.setItem('sos_theme', theme); } catch(e){}
+}
+
+function toggleTheme(){
+  _applyTheme(_currentTheme==='dark' ? 'light' : 'dark');
+}
+
+// Apply saved prefs immediately (before data loads)
+_loadPrefs();
+
 // ── Google Auth & Vocab ─────────────────────────────────────────
 const GAPI_CLIENT_ID = '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com';
 const GAPI_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
@@ -1913,6 +2169,7 @@ async function addStar(r, btn) {
     _vocabRows.push(row);
     if(btn) { btn.classList.add('starred'); btn.title='從詞彙表移除'; }
     showToast('⭐ 已加入詞彙表');
+    _updateStarAllBtn();
   } catch(e) { showToast('❌ 儲存失敗：'+e.message); }
 }
 
@@ -1928,6 +2185,7 @@ async function removeStar(eid, btn) {
     _vocabRows.splice(rowIdx,1);
     if(btn) { btn.classList.remove('starred'); btn.title='加入詞彙表'; }
     showToast('✓ 已從詞彙表移除');
+    _updateStarAllBtn();
   } catch(e) { showToast('❌ 移除失敗：'+e.message); }
 }
 
