@@ -256,12 +256,12 @@
 10255,C,I,20,Hungti :,,,"Hayi, Caay kanca kataluma’ kami!",會啊，一定會回部落啊！,1c20s4.mp3,阿美語,1
 10256,C,I,20,Sawmah :,,,Micaluk kisu tu lusid nu Pangcah haw？,妳會穿傳統服飾嗎？,1c20s5.mp3,阿美語,1
 10257,C,I,20,Hungti :,,,"Hayi, vangcal saan ku lusid nu Pangcah.",是的，傳統服飾很漂亮。,1c20s6.mp3,阿美語,1
-10258,C,I,21,Sawmah :,,,I kalalikidan mipacuk haw tu vavuy atu rarapa？,豐年祭時有殺豬或牛嗎？,1c20s7.mp3,阿美語,1
-10259,C,I,22,Hungti :,,,"Hayi! Mipacuk tu, sapasasisi atu vinawlan a kemaen.",有的！那是要和族人們一起分享的食物。,1c20s8.mp3,阿美語,1
-10260,C,I,23,Hungti :,,,Ira ku masakapahay atu kayuing tahedavak ku nikalalikid.,還有年輕男女一起共舞通宵到凌晨。,1c20s9.mp3,阿美語,1
-10261,C,I,24,Sawmah :,,,"Su’linay haw? kapah a tengilan, mangalay tuwaca kaku a tayra!",真的嗎？聽起來很有趣，我很想去看看耶！,1c20s10.mp3,阿美語,1
-10262,C,I,25,Sawmah :,,,hay i! karuyaruy tu amin a tayni.,好啊！非常希望你們全家一起來參加。,1c20s11.mp3,阿美語,1
-10263,C,I,26,Hungti :,,,Mihalhal tuwaca tu lisin nu Pangcah i matini.,真的非常期待豐年祭的到來。,1c20s12.mp3,阿美語,1
+10258,C,I,20,Sawmah :,,,I kalalikidan mipacuk haw tu vavuy atu rarapa？,豐年祭時有殺豬或牛嗎？,1c20s7.mp3,阿美語,1
+10259,C,I,20,Hungti :,,,"Hayi! Mipacuk tu, sapasasisi atu vinawlan a kemaen.",有的！那是要和族人們一起分享的食物。,1c20s8.mp3,阿美語,1
+10260,C,I,20,Hungti :,,,Ira ku masakapahay atu kayuing tahedavak ku nikalalikid.,還有年輕男女一起共舞通宵到凌晨。,1c20s9.mp3,阿美語,1
+10261,C,I,20,Sawmah :,,,"Su’linay haw? kapah a tengilan, mangalay tuwaca kaku a tayra!",真的嗎？聽起來很有趣，我很想去看看耶！,1c20s10.mp3,阿美語,1
+10262,C,I,20,Sawmah :,,,hay i! karuyaruy tu amin a tayni.,好啊！非常希望你們全家一起來參加。,1c20s11.mp3,阿美語,1
+10263,C,I,20,Hungti :,,,Mihalhal tuwaca tu lisin nu Pangcah i matini.,真的非常期待豐年祭的到來。,1c20s12.mp3,阿美語,1
 10264,C,S,21,,,,Misakilemelay a tamdaw cira,他是一個努力的人,,阿美語,1
 10265,C,S,21,,,,Kadademakan,辦公室,1c21p1.mp3,阿美語,1
 10266,C,S,21,Sayan :,,,U mamaanay a tamdaw cira？,他是怎麼樣的一個人？,1c21s1.mp3,阿美語,1
@@ -391,6 +391,386 @@
 10390,C,S,30,A’ic :,,,"U Pangcah, u Puyuma, u Kavalan atu Sakizaya.",阿美族，卑南族，噶瑪蘭族和撒奇萊雅族。,1c30s10.mp3,阿美語,1
 10391,C,S,30,Ayal :,,,Icuwacuwaan ku sipaselalay a vinacadan hani？,哪些民族有年齡階級制度？,1c30s11.mp3,阿美語,1
 10392,C,S,30,A’ic :,,,"U Pangcah, u Puyuma atu Sakizaya.",阿美族，卑南族和撒奇萊雅族。,1c30s12.mp3,阿美語,1
+20001,C,B,1,,,,Maratar,早安,,阿美語,2
+20002,C,B,1,,,,I niyaro’,部落,2c1p1.mp3,阿美語,2
+20003,C,B,1,Mayaw :,,,"Maratar, talacowa^ kiso, Panay?",早安！Panay，妳要去哪裡？,2c1s1.mp3,阿美語,2
+20004,C,B,1,Panay :,,,Miliso’ kako toya ina^ ato ya mama^.,我要去探望父母。,2c1s2.mp3,阿美語,2
+20005,C,B,1,Mayaw :,,,Mamaa:n caira?,他們都還好嗎？,2c1s3.mp3,阿美語,2
+20006,C,B,1,Panay :,,,Fa^ca:l to.,還好啦。,2c1s4.mp3,阿美語,2
+20007,C,B,1,Mayaw :,,,O maan ko tayal so anini^?,妳現在做什麼事？,2c1s5.mp3,阿美語,2
+20008,C,B,1,Panay :,,,"O maan sa, i loma:’ kako.",沒做什麼呀，我都在家裡。,2c1s6.mp3,阿美語,2
+20009,C,B,1,Mayaw :,,,Cilimaw kiso anocila^?,明天有空嗎？,2c1s7.mp3,阿美語,2
+20010,C,B,1,Panay :,,,"Cilimaw to, nimaan kita?",有啊，幹嘛？,2c1s8.mp3,阿美語,2
+20011,C,B,1,Mayaw :,,,Mapolonga ho a malahok ri !,一起吃個中餐吧!,2c1s9.mp3,阿美語,2
+20012,C,B,1,Panay :,,,"Fa^ca:l to, ri icowa^ kita?",好啊！那麼我們的地點呢？,2c1s10.mp3,阿美語,2
+20013,C,B,1,Mayaw :,,,I loma’ ako.,在我家。,2c1s11.mp3,阿美語,2
+20014,C,B,1,Panay :,,,"Hay, nga’ay to.",好，可以。,2c1s12.mp3,阿美語,2
+20015,C,B,2,,,,Cima^ kiso?,你是誰？(你叫什麼名字？),,阿美語,2
+20016,C,B,2,,,,Ka’ayaw no picodadan,部落教室前,2c2p1.mp3,阿美語,2
+20017,C,B,2,Mayaw :,,,Nga’ay ho! Cima^ kiso?,你好！請問你叫什麼名字？,2c2s1.mp3,阿美語,2
+20018,C,B,2,Calaw :,,,Ci Calaw kako.,我叫Calaw。,2c2s2.mp3,阿美語,2
+20019,C,B,2,Mayaw :,,,Cima^ kora?,那位是誰？,2c2s3.mp3,阿美語,2
+20020,C,B,2,Calaw :,,,O tihi^ ako ci Tanaka^.,我的朋友Tanaka^。,2c2s4.mp3,阿美語,2
+20021,C,B,2,Mayaw :,,,Nanicowaay ciira?,他是打從哪裡來的？,2c2s5.mp3,阿美語,2
+20022,C,B,2,Calaw :,,,"NaniRiponay, tayni minanam to sowal no Pangcah.",從日本來，來學阿美語。,2c2s6.mp3,阿美語,2
+20023,C,B,2,Mayaw :,,,Cima^ haca^ kirawan?,那位又是誰？,2c2s7.mp3,阿美語,2
+20024,C,B,2,Panay :,,,"Ci Panay kako, naniPoskoay.",我是Panay，從玉里來的。,2c2s8.mp3,阿美語,2
+20025,C,B,2,Mayaw :,,,Mimaanay ko tayal iso?,妳是從事什麼工作？,2c2s9.mp3,阿美語,2
+20026,C,B,2,Panay :,,,O singsi^ kako.,我是老師。,2c2s10.mp3,阿美語,2
+20027,C,B,2,Mayaw :,,,O maan ko pasifana’en iso?,妳是教什麼的？,2c2s11.mp3,阿美語,2
+20028,C,B,2,Panay :,,,O sowal no Pangcah.,阿美語。,2c2s12.mp3,阿美語,2
+20029,C,B,3,,,,Masolep,肚子餓,,阿美語,2
+20030,C,B,3,,,,I loma’,家裡,2c3p1.mp3,阿美語,2
+20031,C,B,3,Kaniw :,,,"Masolep kako, ina^.",媽媽，我肚子餓。,2c3s1.mp3,阿美語,2
+20032,C,B,3,Ina :,,,Herek saho malahok masolepto?,剛吃過午餐就肚子餓啦？,2c3s2.mp3,阿美語,2
+20033,C,B,3,Kaniw :,,,Caay ka lahok kami.,我們沒吃午餐。,2c3s3.mp3,阿美語,2
+20034,C,B,3,Ina :,,,Enaw caay ka lahok kamo?,為什麼你們沒吃午餐？,2c3s4.mp3,阿美語,2
+20035,C,B,3,Kaniw :,,,Caay palahoken no singsi^ kami.,老師不讓我們吃午餐。,2c3s5.mp3,阿美語,2
+20036,C,B,3,Ina :,,,Enaw caay palahoken no singsi^ kamo?,為什麼老師不讓你們吃午餐？,2c3s6.mp3,阿美語,2
+20037,C,B,3,Kaniw :,,,Masasangi^ no singsi^ kami.,我們被老師罰站。,2c3s7.mp3,阿美語,2
+20038,C,B,3,Ina :,,,Namimaan kamo?,你們究竟做了什麼？,2c3s8.mp3,阿美語,2
+20039,C,B,3,Kaniw :,,,Mililoc kami i kengkeng.,我們去河邊游泳。,2c3s9.mp3,阿美語,2
+20040,C,B,3,Ina :,,,Ira koti’!,活該!,2c3s10.mp3,阿美語,2
+20041,C,B,4,,,,Masamaan ko romi’ad anini^?,今天天氣怎麼樣？,,阿美語,2
+20042,C,B,4,,,,I ’alo,河邊,2c4p1.mp3,阿美語,2
+20043,C,B,4,’Afo :,,,Masamaan ko romi’ad anini^?,今天天氣怎麼樣？,2c4s1.mp3,阿美語,2
+20044,C,B,4,Lalan :,,,Macidal anini^.,今天天晴。,2c4s2.mp3,阿美語,2
+20045,C,B,4,’Afo :,,,Cifaliyos sa ko sowal no tilifi^ kiya!,據電視報導明天有颱風。,2c4s3.mp3,阿美語,2
+20046,C,B,4,Lalan :,,,"Ano mafaliyos, fa^cal kira!",如果有颱風，那好啊!,2c4s4.mp3,阿美語,2
+20047,C,B,4,’Afo :,,,Fa^cal to maan?,有什麼好的？,2c4s5.mp3,阿美語,2
+20048,C,B,4,Lalan :,,,"Ano mafaliyos i, adihay ko foting i ’alo^.",如果有颱風，河裡就有很多魚。,2c4s6.mp3,阿美語,2
+20049,C,B,4,’Afo :,,,Samaanen namo a mifoting?,你們要如何捕魚？,2c4s7.mp3,阿美語,2
+20050,C,B,4,Lalan :,,,Tafokoden ano cai cadiwayen.,用八掛網或用網子抓。,2c4s8.mp3,阿美語,2
+20051,C,B,4,’Afo :,,,Masamanay ko mamatafokod a foting?,可網到什麼樣的魚？,2c4s9.mp3,阿美語,2
+20052,C,B,4,Lalan :,,,"O poter, o coang, o fokong, o ’ili^ ato lilas.",有小烏魚、大烏魚、鯽魚，也有黏壁魚和羅漢魚。,2c4s10.mp3,阿美語,2
+20053,C,B,5,,,,Sakapina^ nanilipay anini^?,今天星期幾？,,阿美語,2
+20054,C,B,5,,,,I picodadan,學校,2c5p1.mp3,阿美語,2
+20055,C,B,5,Dongi^ :,,,Hacowaay a mihcaan kiso a masofoc?,你是哪一年出生的？,2c5s1.mp3,阿美語,2
+20056,C,B,5,Sawmah :,,,Itiya i 1984 a mihcaan.,在1984年。,2c5s2.mp3,阿美語,2
+20057,C,B,5,Dongi^ :,,,I lalood kiso a masofoc hay?,你在夏天生的嗎？,2c5s3.mp3,阿美語,2
+20058,C,B,5,Sawmah :,,,"Cai, i kasi^nawan.",不是，在冬天。,2c5s4.mp3,阿美語,2
+20059,C,B,5,Dongi^ :,,,Sakapina^ nanilipay anini^?,今天是星期幾？,2c5s5.mp3,阿美語,2
+20060,C,B,5,Sawmah :,,,Sakaenem.,星期六。,2c5s6.mp3,阿美語,2
+20061,C,B,5,Dongi^ :,,,Mafohat ko yofing hay?,郵局有開嗎？,2c5s7.mp3,阿美語,2
+20062,C,B,5,Sawmah :,,,"Hay, o dafak a cecay.",有，只有早上開 。,2c5s8.mp3,阿美語,2
+20063,C,B,5,Dongi^ :,,,Pinaayto ko toki^ i matini?,現在幾點了？,2c5s9.mp3,阿美語,2
+20064,C,B,5,Sawmah :,,,Mangata^to kalahokan.,快中午了。,2c5s10.mp3,阿美語,2
+20065,C,B,5,Dongi^ :,,,Ma^dengay ho a mi^pod to payso^ hay?,領錢還來得及嗎？,2c5s11.mp3,阿美語,2
+20066,C,B,5,Sawmah :,,,Ano narikay ma^deng ho^.,快的話還來得及。,2c5s12.mp3,阿美語,2
+20067,C,B,6,,,,Milicay to lalan,問路,,阿美語,2
+20068,C,B,6,,,,I lalan,路上,2c6p1.mp3,阿美語,2
+20069,C,B,6,Hongay :,,,Ira ko yofing itini hay?,這兒有郵局嗎？,2c6s1.mp3,阿美語,2
+20070,C,B,6,Kayting :,,,"Hay, irato!",有啊!,2c6s2.mp3,阿美語,2
+20071,C,B,6,Hongay :,,,Maraay haw?,很遠嗎？,2c6s3.mp3,阿美語,2
+20072,C,B,6,Kayting :,,,"Caay, mangata^.",不會啦，很近。,2c6s4.mp3,阿美語,2
+20073,C,B,6,Hongay :,,,I sacowa^?,在哪裡呢？,2c6s5.mp3,阿美語,2
+20074,C,B,6,Kayting :,,,Do^do^ han kina lalan ta pasa’amisen.,順著路直走，然後往北走。,2c6s6.mp3,阿美語,2
+20075,C,B,6,Hongay :,,,I sacowa^ no kingsifo^?,是在縣政府的哪邊?,2c6s7.mp3,阿美語,2
+20076,C,B,6,Kayting :,,,I ka’ayaw no kingsifo^.,就在縣政府正前方。,2c6s8.mp3,阿美語,2
+20077,C,B,6,Hongay :,,,"Ha, mafana’to kako. Aray.",哦，我知道了，謝謝。,2c6s9.mp3,阿美語,2
+20078,C,B,6,Kayting :,,,Sanga’ay hato ko rakat.,一路平安(慢走)!,2c6s10.mp3,阿美語,2
+20079,C,B,7,,,,Pina^ ko ’aca^,多少錢,,阿美語,2
+20080,C,B,7,,,,Pilicayan,服務台,2c7p1.mp3,阿美語,2
+20081,C,B,7,Matayalay :,,,O maan ko cakayen so?,你要買什麼？,2c7s1.mp3,阿美語,2
+20082,C,B,7,Awa^ :,,,O tamohong.,(我要)買帽子。,2c7s2.mp3,阿美語,2
+20083,C,B,7,Matayalay :,,,Ira i sakatolo^ a tongroh.,請上三樓。,2c7s3.mp3,阿美語,2
+20084,C,B,7,Awa^ :,,,Ha! Mafana’to kako.,謝謝，我知道了!,2c7s4.mp3,阿美語,2
+20085,C,B,7,,,,Sakatolo a tongroh,百貨公司三樓,2c7p2.mp3,阿美語,2
+20086,C,B,7,Awa^ :,,,Mangalay kako a micakay to tamohong.,我要買一頂帽子。,2c7s5.mp3,阿美語,2
+20087,C,B,7,Matayalay :,,,Masamanay ko tilid ko kaolahan so?,你喜歡什麼顏色的？,2c7s6.mp3,阿美語,2
+20088,C,B,7,Awa^ :,,,Fohcalay anocai o kohtingay.,白色或黑色的。,2c7s7.mp3,阿美語,2
+20089,C,B,7,Matayalay :,,,"Ari, tanamen kiniyan!",來，試試這頂!,2c7s8.mp3,阿美語,2
+20090,C,B,7,Awa^ :,,,"Tata:’ak kiniyan, hanta koya mamangay.",這頂稍大了些，換頂小一點的看看。,2c7s9.mp3,阿美語,2
+20091,C,B,7,Matayalay :,,,Talaen ho^! Alaen ako.,稍等一下，我去拿。,2c7s10.mp3,阿美語,2
+20092,C,B,7,Awa^ :,,,"Matatodong kiniyan, pina^ ko ’aca^?",這頂很適合，(請問)多少錢？,2c7s11.mp3,阿美語,2
+20093,C,B,7,Matayalay :,,,"Cai ka ’atekes, li:ma^ polo' ko pida^.",不貴，只要50元。,2c7s12.mp3,阿美語,2
+20094,C,B,8,,,,Tayni masa’opo^ kiso anocila^?,你明天會來聚會嗎？,,阿美語,2
+20095,C,B,8,,,,I kosi^,公司,2c8p1.mp3,阿美語,2
+20096,C,B,8,Kawlo :,,,Tayni a masa’opo^ kiso anocila^?,你明天會來聚會嗎？,2c8s1.mp3,阿美語,2
+20097,C,B,8,Foting :,,,"Maanen aca^, ira ko demak ako anodafak.",對不起，我明天有事。,2c8s2.mp3,阿美語,2
+20098,C,B,8,Kawlo :,,,Dengan kiso ko caayay ka tayni yo!,只有你沒有來參加喔!,2c8s3.mp3,阿美語,2
+20099,C,B,8,Foting :,,,"Samaanen, i sakatosa^ to a rekad kako a mikihatiya.",沒辦法呢，第二屆我再參加。,2c8s4.mp3,阿美語,2
+20100,C,B,8,Foting :,,,Pina ko sorot?,會費多少？,2c8s5.mp3,阿美語,2
+20101,C,B,8,Kawlo :,,,Cecay eli’an ira ko mo^tep pida^.,110元。,2c8s6.mp3,阿美語,2
+20102,C,B,8,Foting :,,,Pasorot kako?,我要繳會費嗎？,2c8s7.mp3,阿美語,2
+20103,C,B,8,Kawlo :,,,Kayman ho ko no miso to nini a rekad.,你這次先不必繳。,2c8s8.mp3,阿美語,2
+20104,C,B,8,Kawlo :,,,"Mikayki^ i saka lima no lipay, cilimaw kiso?",星期五要開會，你有空嗎？,2c8s9.mp3,阿美語,2
+20105,C,B,8,Foting :,,,"Maanen aca^, tala-Kalingko kako.",抱歉，我要去花蓮。,2c8s10.mp3,阿美語,2
+20106,C,B,9,,,,Fa^cal ko pisanoPangcah so,你的族語說得很好,,阿美語,2
+20107,C,B,9,,,,I picodadan,學校,2c9p1.mp3,阿美語,2
+20108,C,B,9,Singsi^ :,,,"Onak, nawiro fa^cal ko pisanoPangcah so?",Onak，你的阿美語怎麼講得那麼好啊？,2c9s1.mp3,阿美語,2
+20109,C,B,9,Onak :,,,Cowa^ sa! adihay ho^ ko kafokilan ako.,哪裡！哪裡！我還有很多不會的。,2c9s2.mp3,阿美語,2
+20110,C,B,9,Singsi^ :,,,Cima^ ko pasifana’ay?,是誰教的呢？,2c9s3.mp3,阿美語,2
+20111,C,B,9,Onak :,,,Ci akong aci ama:.,是阿公和阿嬷。,2c9s4.mp3,阿美語,2
+20112,C,B,9,Singsi^ :,,,"Micodad kiso i Taypak, ihacowa^ a pasifana’ caira?",你都在臺北讀書，他們什麼時候教你呢？,2c9s5.mp3,阿美語,2
+20113,C,B,9,Onak :,,,"Mihifang ko picodadan i, taloma’ a:ca^ kako. Itiya kako a minanam.",學校放假時，我都會回家，我就是在這個時候學習的。,2c9s6.mp3,阿美語,2
+20114,C,B,9,Singsi^ :,,,Watah! o lalok so.,哇！好認真。,2c9s7.mp3,阿美語,2
+20115,C,B,9,Onak :,,,Akaa ka pawan to sowal no Pangcah sa ci akong.,阿公說千萬不要忘了自已的母語。,2c9s8.mp3,阿美語,2
+20116,C,B,9,Singsi^ :,,,O maan ko pasifana’en ni akong?,阿公是教些什麼？,2c9s9.mp3,阿美語,2
+20117,C,B,9,Onak :,,,O sowal no Pangcah ato sakanga’ay no tireng.,除了阿美語，還有身體保健。,2c9s10.mp3,阿美語,2
+20118,C,B,9,Singsi^ :,,,"Watah, tadakahemekan ci akong so.",哇！你的阿公真了不起。,2c9s11.mp3,阿美語,2
+20119,C,B,10,,,,Kasofocan a romi’ad,生日,,阿美語,2
+20120,C,B,10,,,,I loma’,家裡,2c10p1.mp3,阿美語,2
+20121,C,B,10,Piyaw :,,,"Nikar, o sapafeli^ i tisowanan kiniyan.",Nikar，這是要送給妳的禮物。,2c10s1.mp3,阿美語,2
+20122,C,B,10,Nikar :,,,Enaw?,哦，為什麼？,2c10s2.mp3,阿美語,2
+20123,C,B,10,Piyaw :,,,"Aya, mapawan kiso sa? O kasofocan iso anini!",哈，妳忘了哦？今天是妳的生日啊!,2c10s3.mp3,阿美語,2
+20124,C,B,10,Nikar :,,,Hay haw!,對哦。,2c10s4.mp3,阿美語,2
+20125,C,B,10,Piyaw :,,,Nanay malemed kiso to kasofocan so a romi’ad!,祝你生日快樂!,2c10s5.mp3,阿美語,2
+20126,C,B,10,Nikar :,,,"Hay, lipahak kako, miso i? Anohacowa^?",謝謝！我很高興。你的呢？什麼時候？,2c10s6.mp3,阿美語,2
+20127,C,B,10,Piyaw :,,,"Mamangata^ to, anocila^ a lipay.",就快到了，下個禮拜。,2c10s7.mp3,阿美語,2
+20128,C,B,10,Nikar :,,,O maan ko kaolahan iso?,那你喜歡什麼呢？,2c10s8.mp3,阿美語,2
+20129,C,B,10,Piyaw :,,,"Hamanen! ano tayniyan kiso i, lipahak kako.",不用啦！你人來，我就很高興。,2c10s9.mp3,阿美語,2
+20130,C,B,10,Nikar :,,,"Anomatira, tata miholola ho kita!",那麼，走吧！我們出去走走。,2c10s10.mp3,阿美語,2
+20131,C,B,10,,,,Papina^ kamo a malakaka^?,你有幾個兄弟姐妹？,,阿美語,2
+20132,C,B,10,,,,I kamaenan,餐廳,2c11p1.mp3,阿美語,2
+20133,C,I,11,Namoh :,,,Papina^ kamo a malakaka^?,你有幾個兄弟姐妹？,2c11s1.mp3,阿美語,2
+20134,C,I,11,Karo^ :,,,Tatolo^ kami a malakaka^.,我有三個兄弟姐妹。,2c11s2.mp3,阿美語,2
+20135,C,I,11,Namoh :,,,Ira ko kaka^ so to fa’inayan?,你有哥哥嗎？,2c11s3.mp3,阿美語,2
+20136,C,I,11,Karo^ :,,,"Awaay, cikaka^ kako to fafahian.",沒有，我有姐姐。,2c11s4.mp3,阿美語,2
+20137,C,I,11,Namoh :,,,Ciramodto kiso hay?,你結婚了嗎？,2c11s5.mp3,阿美語,2
+20138,C,I,11,Karo^ :,,,"Hay, Tatosa^to ko wawa^ niyam.",是的，我有二個小孩。,2c11s6.mp3,阿美語,2
+20139,C,I,11,Namoh :,,,Micodadto tatosa hay?,二個都上小學了嗎？,2c11s7.mp3,阿美語,2
+20140,C,I,11,Karo^ :,,,Caay ho! Miyociing ho ko sakakaay a wawa.,還沒，大的還在讀幼稚園。,2c11s8.mp3,阿美語,2
+20141,C,I,11,Namoh :,,,O safa^ i?,那小的呢？,2c11s9.mp3,阿美語,2
+20142,C,I,11,Karo^ :,,,O ’inafa^ ho^. Mapadipot i ama: i niyaro’.,還在襁褓中，是部落的奶奶照顧他。,2c11s10.mp3,阿美語,2
+20143,C,I,12,,,,Mimanay ko tayal iso?,你是做什麼的？,,阿美語,2
+20144,C,I,12,,,,I loma’,家裡,2c12p1.mp3,阿美語,2
+20145,C,I,12,Kolas :,,,Mimanay ko tayal iso?,你是做什麼的？,2c12s1.mp3,阿美語,2
+20146,C,I,12,Lifok :,,,O malatayringay kako.,我當警察。,2c12s2.mp3,阿美語,2
+20147,C,I,12,Kolas :,,,O masamaanay ko tayal no tayring?,警察都忙哪些工作呢？,2c12s3.mp3,阿美語,2
+20148,C,I,12,Lifok :,,,Adihay ko tayal niyam.,我們的工作非常繁雜。,2c12s4.mp3,阿美語,2
+20149,C,I,12,Kolas :,,,O maamaan to?,有哪些工作呢？,2c12s5.mp3,阿美語,2
+20150,C,I,12,Lifok :,,,"Milepel to mari’angay, mikoliniway, misa’efitay....",抓壞人、抓小偷、詐欺犯…。,2c12s6.mp3,阿美語,2
+20151,C,I,12,Kolas :,,,Lifok! Caay ko rahodayay ko tayal namo kini?,哇！你們的工作真不簡單哪!,2c12s7.mp3,阿美語,2
+20152,C,I,12,Lifok :,,,Hay! miso i? O maan ko tayal iso?,是啊！那你呢？你是做什麼的呢？,2c12s8.mp3,阿美語,2
+20153,C,I,12,Kolas :,,,Malasingsiay kako.,我當老師。,2c12s9.mp3,阿美語,2
+20154,C,I,12,Lifok :,,,O! Fa^cal ko malasingsiay.,喔！當老師真好。,2c12s10.mp3,阿美語,2
+20155,C,I,13,,,,I kamaenan,在餐廳裡,,阿美語,2
+20156,C,I,13,,,,I kamaenan,餐廳,2c13p1.mp3,阿美語,2
+20157,C,I,13,Komod :,,,"Mangalay kami a malafi^, ira ho^ ko kamaro’an hay?",我們想要用晚餐，還有坐位嗎？,2c13s1.mp3,阿美語,2
+20158,C,I,13,Matayalay :,,,"Ira ho^, Ati do^do^en kako.",有的，請跟我來。,2c13s2.mp3,阿美語,2
+20159,C,I,13,Matayalay :,,,O hahiningan to sinafel kinian.,這是菜單，請參考。,2c13s3.mp3,阿美語,2
+20160,C,I,13,Komod :,,,Icowaay ko saka^so’ay a sinafel?,有特別推薦的菜嗎？,2c13s4.mp3,阿美語,2
+20161,C,I,13,Matayalay :,,,"O dongec, o ma^cel ato piya’.",藤心、山羌、笠貝。,2c13s5.mp3,阿美語,2
+20162,C,I,13,Komod :,,,"Saka^so’ sa a tengilen, ano matira, sadaken a^min patahka.",聽起來好好吃，那麼，每一樣都端出來。,2c13s6.mp3,阿美語,2
+20163,C,I,13,Matayalay :,,,"Hay, mangalay to hemay?",好的，需要白飯嗎？,2c13s7.mp3,阿美語,2
+20164,C,I,13,Komod :,,,"Hay, mangala:y to.",是的，也要。,2c13s8.mp3,阿美語,2
+20165,C,I,13,Matayalay :,,,Mangalay to nananomen hay?,需要飲料嗎？,2c13s9.mp3,阿美語,2
+20166,C,I,13,Komod :,,,"Hay, pataynien ko filu^, o sayda^ ato ociya^.",好，請給我們啤酒、汽水和茶。,2c13s10.mp3,阿美語,2
+20167,C,I,13,Matayalay :,,,"Hay, mafana’ to.",好，沒問題。,2c13s11.mp3,阿美語,2
+20168,C,I,14,,,,Pakafaso^,坐公車,,阿美語,2
+20169,C,I,14,,,,I ciyataw,車站,2c14p1.mp3,阿美語,2
+20170,C,I,14,Panay :,,,"Manaca^, maapac kako, macaco^co^ ko paliding i lalan.",抱歉，我來晚了，路上塞車。,2c14s1.mp3,阿美語,2
+20171,C,I,14,Dongi^ :,,,Pakamaan kiso a tayni?,你搭什麼車來的？,2c14s2.mp3,阿美語,2
+20172,C,I,14,Panay :,,,Pakafaso^ kako. Kiso i?,我搭公車。你呢？,2c14s3.mp3,阿美語,2
+20173,C,I,14,Dongi^ :,,,Rakat sa kako. Mangata^ ko loma’ ako.,我走路來，我家很近。,2c14s4.mp3,阿美語,2
+20174,C,I,14,Panay :,,,O maan ko dakawen ita a talaFata’an?,我們搭什麼交通工具去光復？,2c14s5.mp3,阿美語,2
+20175,C,I,14,Dongi^ :,,,O cilamalay ko tahenayay.,搭火車比較快。,2c14s6.mp3,阿美語,2
+20176,C,I,14,Panay :,,,Pinaay ko toki^ a paliding.,火車幾點開？,2c14s7.mp3,阿美語,2
+20177,C,I,14,Dongi^ :,,,Siwaay ko toki^.,九點鐘。,2c14s8.mp3,阿美語,2
+20178,C,I,14,Panay :,,,O kalahokan a tangasa^ kira!,這樣中午才到呀!,2c14s9.mp3,阿美語,2
+20179,C,I,14,Dongi^ :,,,"Fa^cal, tahira i loma’ malahok.",很好，到家就可以吃午飯了。,2c14s10.mp3,阿美語,2
+20180,C,I,15,,,,Adada^,生病,,阿美語,2
+20181,C,I,15,,,,I lalan,路上,2c15p1.mp3,阿美語,2
+20182,C,I,15,Fayi^ :,,,"O maan kira niawitan so, Payo^?",Payo^，你手裡拿著的是什麼？,2c15s1.mp3,阿美語,2
+20183,C,I,15,Payo^ :,,,O sapaiyo^ no fafahi^ ako.,我太太的藥。,2c15s2.mp3,阿美語,2
+20184,C,I,15,Fayi^ :,,,Mamaan ko fafahi^ so?,你太太怎麼啦？,2c15s3.mp3,阿美語,2
+20185,C,I,15,Payo^ :,,,Adada^ ko tangal. Mafaha^ ri cilalisan. Ca:^ ka ha^deng.,頭痛，咳嗽又發燒，一直沒好轉。,2c15s4.mp3,阿美語,2
+20186,C,I,15,Fayi^ :,,,Cipatala-isingen?,怎麼不送到醫院檢查？,2c15s5.mp3,阿美語,2
+20187,C,I,15,Payo^ :,,,Cai pakalowad.,(她)起不來。,2c15s6.mp3,阿美語,2
+20188,C,I,15,Fayi^ :,,,"Papikinsaen ko ising, aka pacefa^ maen to sapaiyo^.",要先給醫生檢查，不要亂吃藥。,2c15s7.mp3,阿美語,2
+20189,C,I,15,Payo^ :,,,"Hay, patayra hato ako i herek no lafi^.",好的，吃過晚飯後載她過去。,2c15s8.mp3,阿美語,2
+20190,C,I,15,Fayi^ :,,,Adihayen pinanom han. Aka pinanom to li^tecay.,叫她多喝水，但不要喝冰冷的水。,2c15s9.mp3,阿美語,2
+20191,C,I,15,Payo^ :,,,"Mafana’to, aka ka rawraw, sanga’aye:nto ko no miso.",知道了，別擔心，妳自已也要多保重。,2c15s10.mp3,阿美語,2
+20192,C,I,16,,,,Padingwa^,打電話,,阿美語,2
+20193,C,I,16,,,,I niyaro’,部落,2c16p1.mp3,阿美語,2
+20194,C,I,16,Kolas :,,,Oy! i loma’ ci Piyaw hay?,喂！Piyaw在家嗎？,2c16s1.mp3,阿美語,2
+20195,C,I,16,Ina :,,,Cima^ kiso?,你是哪位啊？,2c16s2.mp3,阿美語,2
+20196,C,I,16,Kolas :,,,Ci Kolas kako.,我是Kolas。,2c16s3.mp3,阿美語,2
+20197,C,I,16,Ina :,,,Ha! O maan ko demak?,喔！有什麼事嗎？,2c16s4.mp3,阿美語,2
+20198,C,I,16,Kolas :,,,Ira ko tahidang no i faleday a misanga’ to codad no Pangcah.,上級單位有請，要編輯族語教材。,2c16s5.mp3,阿美語,2
+20199,C,I,16,Ina :,,,"Ano matira, talaen ho! tahidangen ako.",那麼，請等一下，我去叫他。,2c16s6.mp3,阿美語,2
+20200,C,I,16,Piyaw :,,,"Oy, Kolas singsi^, ani:ni^ sa, mimaan kita?",喂！Kolas老師，今天(打電話來)，有什麼事嗎？,2c16s7.mp3,阿美語,2
+20201,C,I,16,Kolas :,,,Cilimaw kiso i herek no lahok? maainia ho kita!,吃過午餐你有事嗎？我們聊聊吧!,2c16s8.mp3,阿美語,2
+20202,C,I,16,Piyaw :,,,"Hay, ri, i cowa^ kita a malalitemoh?",好，那麼我們在哪裡見面？,2c16s9.mp3,阿美語,2
+20203,C,I,16,Kolas :,,,I soraratan no Fata’an.,在光復的聚會所。,2c16s10.mp3,阿美語,2
+20204,C,I,16,Piyaw :,,,"Hay, hanaw ita.",就這麼決定!,2c16s11.mp3,阿美語,2
+20205,C,I,17,,,,Kakaenen,飲食,,阿美語,2
+20206,C,I,17,,,,I kamaenan no niyaro’,部落風味餐店,2c17p1.mp3,阿美語,2
+20207,C,I,17,Kawah :,,,O maan ko kangalayan so?,你想要（吃）什麼?,2c17s1.mp3,阿美語,2
+20208,C,I,17,Molik :,,,"Fa^sis ko siraw sanay, tanamay ako kinian.",聽說這裡的醃肉很香，我要點這個看看。,2c17s2.mp3,阿美語,2
+20209,C,I,17,Kawah :,,,Halisiraw kiso haw！ O maanto haca^?,你真的很愛吃醃肉耶！還要點什麼？,2c17s3.mp3,阿美語,2
+20210,C,I,17,Molik :,,,"O comoli^, o kalang, o pahko^, ato hakhak.",蝸牛、螃蟹、蕨類菜、還有糯米飯。,2c17s4.mp3,阿美語,2
+20211,C,I,17,Kawah :,,,O maan ko kafi^ ta?,我們要喝什麼湯？,2c17s5.mp3,阿美語,2
+20212,C,I,17,Molik :,,,No dongec mamaan?,藤心湯怎麼樣？,2c17s6.mp3,阿美語,2
+20213,C,I,17,Kawah :,,,"Aya ! ’Angerer ko dongec, falicen.",唉呀！藤心很苦，換別的。,2c17s7.mp3,阿美語,2
+20214,C,I,17,Molik :,,,O no ap^ap i? Matakaw kako.,青蛙湯呢？我好想喝喔!,2c17s8.mp3,阿美語,2
+20215,C,I,17,Kawah :,,,"Licayaw ako, ano ira:to? ",我問問看，有沒有?,2c17s9.mp3,阿美語,2
+20216,C,I,17,Molik :,,,Hayda!,好吧!,2c17s10.mp3,阿美語,2
+20217,C,I,18,,,,O maan ko kaolahan iso a midemak?,你的興趣是什麼？,,阿美語,2
+20218,C,I,18,,,,I riyar,海邊,2c18p1.mp3,阿美語,2
+20219,C,I,18,Kapa’ :,,,O maan ko kaolahan iso a midemak?,你的興趣是什麼？,2c18s1.mp3,阿美語,2
+20220,C,I,18,Foting :,,,Maolah kako midangoy.,我的興趣是游泳。,2c18s2.mp3,阿美語,2
+20221,C,I,18,Kapa’ :,,,O maan ko iraay a midangoy?,游泳有什麼好處？,2c18s3.mp3,阿美語,2
+20222,C,I,18,Foting :,,,"Saka tanektek no tireng, ta manga’ay micelem, mipacing, ato mikidamay.",可以使身體健康，還可以潛水、射魚、和撿海菜。,2c18s4.mp3,阿美語,2
+20223,C,I,18,Kapa’ :,,,"I kacidalan i, talariyar ko fafahiyan no niyaro’ a misadipit, micekiw.",在炎熱的夏天，部落的婦女都去海邊撿貝類。,2c18s5.mp3,阿美語,2
+20224,C,I,18,Foting :,,,O maan ko no miso a kaolahan?,你的興趣是什麼呢？,2c18s6.mp3,阿美語,2
+20225,C,I,18,Kapa’ :,,,Maolah kako a misasing.,我喜歡攝影。,2c18s7.mp3,阿美語,2
+20226,C,I,18,Foting :,,,"Watah, ano kako, sasingen ako ko ma’oripay i lalinik no riyar.",哇！如果是我，我就拍攝海底世界。,2c18s8.mp3,阿美語,2
+20227,C,I,18,Kapa’ :,,,Mimaan kiso i kasa^sa’an?,你放假時都做什麼？,2c18s9.mp3,阿美語,2
+20228,C,I,18,Foting :,,,Mipaloma^ to hana ato misadateng. Kiso i?,種花、還有種菜，那你呢？,2c18s10.mp3,阿美語,2
+20229,C,I,18,Kapa’ :,,,Talalotok kako a misasing.,我去山上拍攝。,2c18s11.mp3,阿美語,2
+20230,C,I,19,,,,Lalood ko kaola:han ako,我最喜歡夏天,,阿美語,2
+20231,C,I,19,,,,I niyaro’,部落,2c19p1.mp3,阿美語,2
+20232,C,I,19,Panay :,,,"O maan ko kaola:han so a romi’ad? O kacanglahan, o lalood, o piporangan, ri o kasi^nawan?",你最喜歡什麼季節？是春天、夏天、秋天還是冬天？,2c19s1.mp3,阿美語,2
+20233,C,I,19,Nakaw :,,,O lalood ko kaola:han ako.,我最喜歡夏天了。,2c19s2.mp3,阿美語,2
+20234,C,I,19,Panay :,,,Enaw maolah kiso to lalood?,你為什麼喜歡夏天？,2c19s3.mp3,阿美語,2
+20235,C,I,19,Nakaw :,,,Nga’ay midangoy. Ira ko ilisin no niyaro’. Kiso i?,(因為夏天)可以游泳，部落也有豐年祭。那你呢？,2c19s4.mp3,阿美語,2
+20236,C,I,19,Panay :,,,"Cay ka si^naw, cay ka fa^det.",我最喜歡秋天，(因為秋天)不冷不熱。,2c19s5.mp3,阿美語,2
+20237,C,I,19,Nakaw :,,,"Fa^det to lalood, nika sa^pi’ to dadaya^.",(我覺得)夏天雖然很熱，但是晚上很涼爽。,2c19s6.mp3,阿美語,2
+20238,C,I,19,Panay :,,,"Malikat ko folad to dadaya^, mimaan kamo? ",夏天的月光很亮，那你們都做些什麼呢？,2c19s7.mp3,阿美語,2
+20239,C,I,19,Nakaw :,,,"Romadiw, masakero^ kami. Tomatira, mipakongko^ ko mama^ ako.",我們唱歌跳舞，有時候我的爸爸會說故事。,2c19s8.mp3,阿美語,2
+20240,C,I,19,Panay :,,,Hay sa! Ka’inalan ko ’orip namo kini.,是喔！你們的生活真令人羨慕哩。,2c19s9.mp3,阿美語,2
+20241,C,I,19,Nakaw :,,,"Hay, tahanini^ ma’ilol kako to ’ayaway a ’orip.",對呀，到現在我還會嚮往以前的生活呢。,2c19s10.mp3,阿美語,2
+20242,C,I,20,,,,Taloma’ a Miilisin,回家過豐年祭,,阿美語,2
+20243,C,I,20,,,,Msasowal i dingwa^,電話中,2c20p1.mp3,阿美語,2
+20244,C,I,20,Kawah :,,,Taloma’ kiso piilisinan no niyaro’?,豐年祭時你會回部落嗎？,2c20s1.mp3,阿美語,2
+20245,C,I,20,Dongi^ :,,,Hay! Taloma’ kako ato wawa^.,是的，我會跟孩子一起回去。,2c20s2.mp3,阿美語,2
+20246,C,I,20,Kawah :,,,Sakapina^ a folad ko piilisinan namo?,你們的豐年祭是在哪個月份？,2c20s3.mp3,阿美語,2
+20247,C,I,20,Dongi^ :,,,"Sakafalo^ a folad, lima^ a romi’ad.",(每年的)八月份舉辦，共五天。,2c20s4.mp3,阿美語,2
+20248,C,I,20,Kawah :,,,O maan ko kalimela^an a demak i piilisinan?,豐年祭有什麼重點特色？,2c20s5.mp3,阿美語,2
+20249,C,I,20,Dongi^ :,,,Cilosid a ma^min ko polong no niyaro’ay.,部落的人全都盛裝參加。,2c20s6.mp3,阿美語,2
+20250,C,I,20,Kawah :,,,Manga’ay a mikapot ko lafang haw?,來賓可以參加嗎？,2c20s7.mp3,阿美語,2
+20251,C,I,20,Dongi^ :,,,"Manga’ay to, lipahak kami to pikapot namo.",當然可以，我們很高興你們來參加。,2c20s8.mp3,阿美語,2
+20252,C,I,20,Kawah :,,,Cilosi:d kami haw?,我們也要穿傳統服飾嗎？,2c20s9.mp3,阿美語,2
+20253,C,I,20,Dongi^ :,,,"Hay, cilosid kita a masakero^.",是的，我們穿傳統服飾跳舞。,2c20s10.mp3,阿美語,2
+20254,C,I,20,Kawah :,,,O maamaanto ko demak itiya?,那天還有舉行哪些儀式？,2c20s11.mp3,阿美語,2
+20255,C,I,20,Dongi^ :,,,"Ira ko likoda^, mipacok to fafoy, patireng to fa^lohay a awid.",有豐年歌舞表演、殺豬、設立新年齡階層。,2c20s12.mp3,阿美語,2
+20256,C,S,21,,,,O misa’icelay a tamdaw ciira,他是一個努力的人,,阿美語,2
+20257,C,S,21,,,,I picodadan no niyaro’,部落校園,2c21p1.mp3,阿美語,2
+20258,C,S,21,Doho^ :,,,O masamaanay a tamdaw ciira?,他是怎麼樣的一個人？,2c21s1.mp3,阿美語,2
+20259,C,S,21,Ingay :,,,Caay ka fana’ kako. Tengilen ko tihi^ ni^ra ci Saway.,不知道，聽聽他的朋友Saway(怎麼說好了)。,2c21s2.mp3,阿美語,2
+20260,C,S,21,Doho^ :,,,O masamaanay a tamdaw ciira?,他是怎樣的一個人？,2c21s3.mp3,阿美語,2
+20261,C,S,21,Saway :,,,"Fa^cal to tihi^, kaolahan no kapot ciira i picodadan. Tengilen ko singsi^ niira.",對朋友很好，在學校同學都很喜歡他，可以問問他的老師。,2c21s4.mp3,阿美語,2
+20262,C,S,21,Doho^ :,,,O masamaanay a tamdaw ciira?,他是怎樣的一個人？,2c21s5.mp3,阿美語,2
+20263,C,S,21,Singsi^ :,,,"Mafana’ a mimali^, mafa:na’ a micodad.",很會打球又會讀書。,2c21s6.mp3,阿美語,2
+20264,C,S,21,Doho^ :,,,Saki ina^ ato mama^ i ?,對父母親呢？,2c21s7.mp3,阿美語,2
+20265,C,S,21,Singsi^ :,,,Mafana’ay a mangodo^ to ina^ ato mama^.,懂得孝敬父母。,2c21s8.mp3,阿美語,2
+20266,C,S,21,Doho^ :,,,Masamaan ko tayal niira?,他的工作的態度如何？,2c21s9.mp3,阿美語,2
+20267,C,S,21,Singsi^ :,,,Fa^cal ko tayal niira. O misa’icelay a tamdaw cingra.,他的工作態度很好，他是個很努力的人。,2c21s10.mp3,阿美語,2
+20268,C,S,22,,,,Damaen ho^ kako,幫個忙,,阿美語,2
+20269,C,S,22,,,,Pilicayan i pilafinan,旅館櫃台,2c22p1.mp3,阿美語,2
+20270,C,S,22,Ina^ :,,,"Wawaaw, damaen ho^ kako?",服務生，請幫幫我好嗎？,2c22s1.mp3,阿美語,2
+20271,C,S,22,Matayalay :,,,Mamaan kiso?,妳怎麼啦？,2c22s2.mp3,阿美語,2
+20272,C,S,22,Ina^ :,,,Mapali’edef kako. Ira i laloma’ ko safohat.,我被反鎖，鑰匙在房間裡面。,2c22s3.mp3,阿美語,2
+20273,C,S,22,Matayalay :,,,I sakapina^ a tongroh ko pilafinan iso?,妳的房間在幾樓？,2c22s4.mp3,阿美語,2
+20274,C,S,22,Ina^ :,,,I sakaenem.,在六樓。,2c22s5.mp3,阿美語,2
+20275,C,S,22,Matayalay :,,,Talaen ho^! Kilimay ako koya roma^ a safohat.,請稍等！我去找另外的鑰匙。,2c22s6.mp3,阿美語,2
+20276,C,S,22,Matayalay :,,,Inito! Maherekto a mifohat i panokas hato haw?,找到了，用完請自行送回來好嗎？,2c22s7.mp3,阿美語,2
+20277,C,S,22,Ina^ :,,,"Hay! O roma^ sato, manga’ay kiso a midama^ a patalafalef tona lalosidan haw?",好的！另外，你可否幫我將這些行李提到樓上去？,2c22s8.mp3,阿美語,2
+20278,C,S,22,Matayalay :,,,Hay! kakoway to!,好的，讓我來。,2c22s9.mp3,阿美語,2
+20279,C,S,22,Ina :,,,Aray ko pidama^ iso.,謝謝你的幫忙。,2c22s10.mp3,阿美語,2
+20280,C,S,23,,,,Icowa^ ko picodadan no miso?,你的學校在哪裡？,,阿美語,2
+20281,C,S,23,,,,I soraratan,部落廣場,2c23p1.mp3,阿美語,2
+20282,C,S,23,’Olam :,,,Icowa^ ko picodadan no miso?,你的學校在哪裡？,2c23s1.mp3,阿美語,2
+20283,C,S,23,Kawlo^ :,,,I Kalingko^.,在花蓮。,2c23s2.mp3,阿美語,2
+20284,C,S,23,’Olam :,,,Anohacowa^ kiso a mico^yap?,你何時畢業呢？,2c23s3.mp3,阿美語,2
+20285,C,S,23,Kawlo^ :,,,I sakafalo^ no aniniay a mihcaan.,在今年八月份。,2c23s4.mp3,阿美語,2
+20286,C,S,23,’Olam :,,,Mipararid kiso a tala-tata’angay picodadan hay?,你會繼續讀大學嗎？,2c23s5.mp3,阿美語,2
+20287,C,S,23,Kawlo^ :,,,"Hay, mipararid kako a micodad.",是的，我會繼續讀書。,2c23s6.mp3,阿美語,2
+20288,C,S,23,’Olam :,,,O maan ko kaolahan so a minanam?,你最喜歡學習哪一門課？,2c23s7.mp3,阿美語,2
+20289,C,S,23,Kawlo^ :,,,O no romadiway ato mipiyanoay.,是音樂(歌唱和彈鋼琴)課。,2c23s8.mp3,阿美語,2
+20290,C,S,23,’Olam :,,,Sa’icelen a minanam haw!,要努力學習喔!,2c23s9.mp3,阿美語,2
+20291,C,S,23,Kawlo^ :,,,"Hay, aray ko pipa’icel no miso.",好的，謝謝你的鼓勵。,2c23s10.mp3,阿美語,2
+20292,C,S,24,,,,Ko^sit a nanamen ko sowal no Pangcah hay?,阿美語難學嗎？,,阿美語,2
+20293,C,S,24,,,,I picodadan,學校,2c24p1.mp3,阿美語,2
+20294,C,S,24,Singsi^ :,,,Ko^sit a nanamen ko sowal no Pangcah hay?,阿美語很難學嗎？,2c24s1.mp3,阿美語,2
+20295,C,S,24,Mili^ :,,,"Hay, o maranam, malahok, malafi^ a cecay ko kafana’an ako.",是的，我只會說「早餐、午餐、晚餐」。,2c24s2.mp3,阿美語,2
+20296,C,S,24,Singsi^ :,,,I cowa^ kiso a ninanam?,你在哪裡學習？,2c24s3.mp3,阿美語,2
+20297,C,S,24,Mili^ :,,,I niyaro’ kako a ninanam.,我在部落學習。,2c24s4.mp3,阿美語,2
+20298,C,S,24,Singsi^ :,,,Kiso i? Mafana’ kiso to sowal no Pangcah hay?,你呢？你會阿美語嗎？,2c24s5.mp3,阿美語,2
+20299,C,S,24,Fosay :,,,"Hay, o sowal no tato’asan ako kora.",會，那是我的母語。,2c24s6.mp3,阿美語,2
+20300,C,S,24,Singsi^ :,,,Fa^cal ko pisanoPangcah so kira!,你說的阿美語很不錯耶!,2c24s7.mp3,阿美語,2
+20301,C,S,24,Fosay :,,,O no Pangcah ko sakalalicay niyam i loma’.,我們在家經常用母語溝通。,2c24s8.mp3,阿美語,2
+20302,C,S,24,Singsi^ :,,,Cima^ ko pakafana’ay?,誰來教導？,2c24s9.mp3,阿美語,2
+20303,C,S,24,Fosay :,,,"Mararid kako a taloma’ i niyaro’, malalicay to mato’asay.",我經常回到部落去，跟長輩們交談。,2c24s10.mp3,阿美語,2
+20304,C,S,25,Talacowa^ kamo niholol inaci:la?,,,,你們上一回去哪裡玩？,,阿美語,2
+20305,C,S,25,,,,Kamaenan to kafoy,咖啡館,2c25p1.mp3,阿美語,2
+20306,C,S,25,Sawmah :,,,Talacowa^ kamo inaci:la^?,你們上回到哪裡去了？,2c25s1.mp3,阿美語,2
+20307,C,S,25,Nakaw :,,,TalaRipon kami miholol.,我們去日本玩。,2c25s2.mp3,阿美語,2
+20308,C,S,25,Sawmah :,,,Papina^ kamo a mapolong?,你們幾個人一起去？,2c25s3.mp3,阿美語,2
+20309,C,S,25,Nakaw :,,,Lalima^ kami.,我們一共5個人。,2c25s4.mp3,阿美語,2
+20310,C,S,25,Sawmah :,,,TalaHokaydo^ kamo hay?,你們有去北海道嗎？,2c25s5.mp3,阿美語,2
+20311,C,S,25,Nakaw :,,,Tayraa:n to.,有的。,2c25s6.mp3,阿美語,2
+20312,C,S,25,Sawmah :,,,Masamaan ko tiraay a niyaro’?,那裡的風景如何？,2c25s7.mp3,阿美語,2
+20313,C,S,25,Nakaw :,,,"Fa^cal a ’arawen ko kalomaamaan, nikawrira, si^naw itira!",風景很漂亮，但是那裡(天氣)很冷。,2c25s8.mp3,阿美語,2
+20314,C,S,25,Sawmah :,,,"Watah! Ka’inalan kamo, anohacowa:^ kono mako a tahira?",哇！真羨慕你們，我什麼時候才有機會去啊？,2c25s9.mp3,阿美語,2
+20315,C,S,25,Nakaw :,,,"Ano matira, dada! TalaAmilikaa ho kita anocilaay a mihcaan.",那麼，走啊！明年我們去一趟美國吧!,2c25s10.mp3,阿美語,2
+20316,C,S,25,Sawmah :,,,"Mihayi kako, o todong sapitongal to fana’ ko piliwko^.",我讚成，旅遊正好可以增廣見識。,2c25s11.mp3,阿美語,2
+20317,C,S,26,,,,Hacowa^to kahalafin kiso a matayal?,你工作多久了？,,阿美語,2
+20318,C,S,26,,,,I katayalan,辦公室,2c26p1.mp3,阿美語,2
+20319,C,S,26,Tawki^ :,,,Siyokayen ho^ kami to ’orip iso.,請簡單地自我介紹。,2c26s1.mp3,阿美語,2
+20320,C,S,26,Kayting :,,,"Nga’ay ho^! ci Kayting kako, naniKalingkoay.",大家好，我是Kayting，來自花蓮。,2c26s2.mp3,阿美語,2
+20321,C,S,26,Tawki^ :,,,O maamaan a tayalan ko manina’ay so?,你有什麼工作經驗？,2c26s3.mp3,阿美語,2
+20322,C,S,26,Kayting :,,,Namalasingsi^to kako.,我曾經當過老師。,2c26s4.mp3,阿美語,2
+20323,C,S,26,Tawki^ :,,,Hacowa^to kahalafin kiso a malasingsi^?,你當老師多久了？,2c26s5.mp3,阿美語,2
+20324,C,S,26,Kayting :,,,Lima^to a mihecaan.,已經有5年的時間了。,2c26s6.mp3,阿美語,2
+20325,C,S,26,Tawki^ :,,,O maan ko pasifana’en so?,你教的是什麼？,2c26s7.mp3,阿美語,2
+20326,C,S,26,Kayting :,,,O sowal ato serangawan no Yincoming.,教原住民語言及文化。,2c26s8.mp3,阿美語,2
+20327,C,S,26,Tawki^ :,,,Manga’ay pasowalen kami to pinangan iso?,可以談談你的個性嗎？,2c26s9.mp3,阿美語,2
+20328,C,S,26,Kayting :,,,"Hay, caay karangodo^ kako, maolah kako a malalicay.",好的，我的個性外向，我喜歡與人溝通。,2c26s10.mp3,阿美語,2
+20329,C,S,26,Tawki^ :,,,"Mafana’to kami, hatinito ko pilicay niyam.",我們大概知道了，就問到這裡。,2c26s11.mp3,阿美語,2
+20330,C,S,26,Kayting :,,,Aray.,謝謝。,2c26s12.mp3,阿美語,2
+20331,C,S,27,,,,Cimami’olidto ciira,他談戀愛了,,阿美語,2
+20332,C,S,27,,,,Picodadan,校園,2c27p1.mp3,阿美語,2
+20333,C,S,27,Fadah :,,,Cimami’olidto ci Lahok ray!,Lahok談戀愛了耶!,2c27s1.mp3,阿美語,2
+20334,C,S,27,Ado^ :,,,Cima ko sakafana’ so?,你怎麼知道呢？,2c27s2.mp3,阿美語,2
+20335,C,S,27,Fadah :,,,Ma’araw ako ko padingwa^ nira to ngohah nira.,我看到他打電話給他的女朋友。,2c27s3.mp3,阿美語,2
+20336,C,S,27,Ado^ :,,,Han o kaka: niira ko nipadingwaan.,也許是他打給他的哥哥（或姐姐）。,2c27s4.mp3,阿美語,2
+20337,C,S,27,Fadah :,,,"Caay, lipahak sa halafila:fin ko nikasasowal.",不可能，他每次講電話很久又很興奮。,2c27s5.mp3,阿美語,2
+20338,C,S,27,Ado^ :,,,"Masamaanay a fa’inayan ko kaolahan iso? O takaraway, o maso^so^ay, o cipidaay, ri o malalokay?",妳喜歡什麼樣的男生？高的？胖的？有錢的或勤奮的？,2c27s6.mp3,阿美語,2
+20339,C,S,27,Fadah :,,,Mitengi:l to faloco’ no ina^ ato mama^ i.,還是要聽聽父母的心意呀。,2c27s7.mp3,阿美語,2
+20340,C,S,27,Ado^ :,,,Masamaan ko hirateng nangra?,他們的想法如何？,2c27s8.mp3,阿美語,2
+20341,C,S,27,Fadah :,,,"Kaoya malalokay a Pangcah ko fa’inay, saan.",他們說，最好嫁給勤勞的阿美族人。,2c27s9.mp3,阿美語,2
+20342,C,S,27,Ado^ :,,,"""Kao mafana’ay a mangodo^ to mato’asay"" san ko no mako a ina^ ato mama^.",而我的父母親說，(最好嫁給)懂得孝敬長輩的。,2c27s10.mp3,阿美語,2
+20343,C,S,28,,,,Nano rayray a kero^,傳統的舞蹈,,阿美語,2
+20344,C,S,28,,,,Soraratan,聚會所,2c28p1.mp3,阿美語,2
+20345,C,S,28,Namoh :,,,"Makapah kiso anini, o tadalosid namo koni hay?",妳今天好漂亮，這是你們的正統的傳統服飾嗎？,2c28s1.mp3,阿美語,2
+20346,C,S,28,Nikar :,,,"Hay, no Fata’an a losid kinian.",是的，這是馬太鞍的傳統服飾。,2c28s2.mp3,阿美語,2
+20347,C,S,28,Namoh :,,,Mikihatiya kiso a malikoda^ hay?,你會參與祭典的唱歌跳舞嗎？,2c28s3.mp3,阿美語,2
+20348,C,S,28,Nikar :,,,Hay.,會。,2c28s4.mp3,阿美語,2
+20349,C,S,28,Namoh :,,,Ira to mihecahecaan hay?,每年都有(祭典歌舞)嗎？,2c28s5.mp3,阿美語,2
+20350,C,S,28,Nikar :,,,Hay.,是的。,2c28s6.mp3,阿美語,2
+20351,C,S,28,Namoh :,,,Manga’ay kami a mikihatiya?,我們可以參加嗎？,2c28s7.mp3,阿美語,2
+20352,C,S,28,Nikar :,,,"Manga’ay to, lipahak kami a mihamham tamowanan.",當然可以，我們很歡迎你們來參加。,2c28s8.mp3,阿美語,2
+20353,C,S,28,Namoh :,,,Cilosi:d kami?,我們也要穿傳統服飾嗎？,2c28s9.mp3,阿美語,2
+20354,C,S,28,Nikar :,,,"Hay, mapolong kita cilosid a masakero^.",嗯，我們一起穿著傳統服裝跳舞。,2c28s10.mp3,阿美語,2
+20355,C,S,29,,,,Miladis,海祭,,阿美語,2
+20356,C,S,29,,,,Katayalan,辦公室,2c29p1.mp3,阿美語,2
+20357,C,S,29,La’is :,,,Anohacowa^ ko no namo a miladis?,你們的海祭將在哪時候舉行？,2c29s1.mp3,阿美語,2
+20358,C,S,29,Marang :,,,"Mikiyaki’ han ko no niyam. Keno, awaay ho ko pinang.",我們中部的叫Mikiyaki’，不知道，還不確定。,2c29s2.mp3,阿美語,2
+20359,C,S,29,La’is :,,,Enaw awaay ho ko pinang?,怎麼還不確定？,2c29s3.mp3,阿美語,2
+20360,C,S,29,Marang :,,,Cai:cai ko no niyam o Fata'an. Anohacowa^ ko no namo?,我們Fata’an的不一定會舉行。那麼你們的在什麼時候？,2c29s4.mp3,阿美語,2
+20361,C,S,29,La’is :,,,Mahere:kto kono niyam.,我們的已經結束了。,2c29s5.mp3,阿美語,2
+20362,C,S,29,Marang :,,,Ihacowa^ ko no namo?,你們的什麼時候舉行的？,2c29s6.mp3,阿美語,2
+20363,C,S,29,La’is :,,,I sakatosa^ a pilipayan no sakaenem a folad.,在六月份的第二個禮拜天。,2c29s7.mp3,阿美語,2
+20364,C,S,29,Marang :,,,Icowa^ ko no namo i ’amisay a miladis?,你們北部的在哪裡舉行海祭？,2c29s8.mp3,阿美語,2
+20365,C,S,29,La’is :,,,"I sawalian no niyaro’, i lawac no riyar.",在我們部落的東側海岸邊。,2c29s9.mp3,阿美語,2
+20366,C,S,29,Marang :,,,’Aloman kamo haw?,你們很熱鬧嗎？,2c29s10.mp3,阿美語,2
+20367,C,S,30,La’is :,,,"Hay, mapo:long ko niyaro’ay a tayraan.",是的，全部落的人都去參加。,2c29s11.mp3,阿美語,2
+20368,C,S,30,,,,Pina^ ko kasafinacadan no Yincoming anini^ ?,請問現在原住民族有幾族呢？,,阿美語,2
+20369,C,S,30,,,,Laeno no kilang,樹下,2c30p1.mp3,阿美語,2
+20370,C,S,30,Ingay :,,,Pina^ ko kasafinacadan no Yincoming anini^?,請問現在原住民族有幾族呢？,2c30s1.mp3,阿美語,2
+20371,C,S,30,Kamih :,,,Safaw-sepat.,有十四族。,2c30s2.mp3,阿美語,2
+20372,C,S,30,Ingay :,,,O maamaanto a finacadan?,請問是哪些族呢？,2c30s3.mp3,阿美語,2
+20373,C,S,30,Kamih :,,,"O Pangcah, Tayan, Pariwan, Iwatan, Lokay, Piyuma^, Fotod, Saysiyat, Congaw, Co, Kaliyawan, Sakiraya^, Secik ato Saw.",有阿美族、泰雅族、排灣族、布農族、魯凱族、卑南族、雅美族、賽夏族、太魯閣族、鄒族，噶瑪蘭族、撒奇萊雅族、賽德克族以及邵族。,2c30s4.mp3,阿美語,2
+20374,C,S,30,Ingay :,,,O manan a finacadan ko sa’alomanay ko tamdaw ?,人數最多的是哪一族？,2c30s5.mp3,阿美語,2
+20375,C,S,30,Kamih :,,,O Pangcah.,是阿美族。,2c30s6.mp3,阿美語,2
+20376,C,S,30,Ingay :,,,O manan a finacadan ko samamangay ko tamdaw ?,那人數最少的是哪一族？,2c30s7.mp3,阿美語,2
+20377,C,S,30,Kamih :,,,O saw.,是邵族。,2c30s8.mp3,阿美語,2
+20378,C,S,30,Ingay :,,,O manan a finacadan koya cikonisay ko pising?,哪一個民族有紋面？,2c30s9.mp3,阿美語,2
+20379,C,S,30,Kamih :,,,"O Tayan, Saysiyat, Congaw ato Secik.",泰雅族、賽夏族、太魯閣族及賽德克族等。,2c30s10.mp3,阿美語,2
+20380,C,S,30,Ingay :,,,"Ha, mafana’to kako. Aray.",哦，我知道了，謝謝你。,2c30s11.mp3,阿美語,2
 260001,C,B,1,,,,cuacuai ini tje ucevuvung,好久不見,,排灣語,26
 260002,C,B,1,,,,qinaljan,部落,26c1p1.mp3,排灣語,26
 260003,C,B,1,sauljaljui :,,,cuacuay ini tje ucevucevung.,好久不見。,26c1s1.mp3,排灣語,26
@@ -19287,7 +19667,7 @@
 1270256,T,I,5,7,,,makalra ka lregelrege Taivang.,台灣有很多山。,27-B-05-41.mp3,魯凱語,27
 1270257,T,I,5,7,,,mabebelengenga ki Taivang ki lregelrege ka ’Isang.,台灣最高的山是玉山。,27-B-05-42.mp3,魯凱語,27
 1270258,T,I,5,7,,,ki cekele ta yakai ka lregelrege?,我們的部落有山嗎？,27-B-05-43.mp3,魯凱語,27
-1270259,T,I,5,7,,,"eene, yakai ka makalra ka lregelrege ki cekele nai.",是的，我們的部落有很多山。,27-B-05-44 .mp3,魯凱語,27
+1270259,T,I,5,7,,,"eene, yakai ka makalra ka lregelrege ki cekele nai.",是的，我們的部落有很多山。,27-B-05-44.mp3,魯凱語,27
 1270260,T,I,5,7,,,yakai kwadra mabeleng yakai kwadra malebe.,有的比較高，有的比較低。,27-B-05-45.mp3,魯凱語,27
 1270261,T,I,5,8,,,ki’elaela ki kaelrea,問路,27-B-05-46.mp3,魯凱語,27
 1270262,T,I,5,8,,,"naw ki’elaela, yakaino kwadra Kindo’oro?",請問，肯杜爾山在哪裡？,27-B-05-47.mp3,魯凱語,27
