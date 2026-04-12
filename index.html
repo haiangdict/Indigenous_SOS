@@ -1138,12 +1138,12 @@ function _buildFilterCache(){
 // File   = just the filename from 音檔路徑 (after last \ or /)
 function audioFolder(r){
   const dial = String(r['方言別']||'').replace(/\.0$/,'').trim();
-  if(dial) return dial;
-  // 語別 might be a number ('13','14'...) or a name ('魯凱語')
-  // For named langs, we shouldn't reach here (they always have 方言別)
-  // but just in case:
-  const lang = String(r['語別']||'').trim();
-  return lang;
+  const raw = dial || String(r['語別']||'').trim();
+  if(!raw) return '';
+  // Pad single-digit numbers: 1→01, 9→09, 10→10, 27→27
+  const n = parseInt(raw, 10);
+  if(!isNaN(n) && n >= 1 && n <= 9) return '0'+n;
+  return raw;
 }
 
 function audioFilename(r){
