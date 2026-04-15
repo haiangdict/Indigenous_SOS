@@ -861,31 +861,135 @@ function buildLangSidebar(){
         <div class="sb-children ${ceOpen?'open':''}" id="${ceId}">${ceSubHtml}</div>`;
       }
     } else {
-      // P: 分類1 as group headers, 分類2 as checkable items
+      // P: up to 4 levels — 分類1 > 分類2 > 分類3 > 分類4
+      // Each level has 全選, and can expand/collapse
+      // Selectable keys: P|1, P|1|2, P|1|2|3, P|1|2|3|4
+      function pSks(rows){
+        // Collect deepest selectable subkeys for a set of rows
+        return [...new Set(rows.map(r=>{
+          if(r['分類4']) return type+'|'+r['分類1']+'|'+r['分類2']+'|'+r['分類3']+'|'+r['分類4'];
+          if(r['分類3']) return type+'|'+r['分類1']+'|'+r['分類2']+'|'+r['分類3'];
+          if(r['分類2']) return type+'|'+r['分類1']+'|'+r['分類2'];
+          return type+'|'+r['分類1'];
+        }))];
+      }
+
       const cat1s=[...new Set(td.map(r=>r['分類1']).filter(Boolean))];
       for(const cat1 of cat1s){
         const c1d=td.filter(r=>r['分類1']===cat1);
+        const c1Sks=pSks(c1d);
+        c1Sks.forEach(sk=>allSksForType.push(sk));
+        const c1SelCount=c1Sks.filter(sk=>sel.subkeys.has(sk)).length;
+        const c1AllSel=c1SelCount===c1Sks.length&&c1Sks.length>0;
+        const c1Id='p-c1-'+cat1.replace(/[^a-zA-Z0-9]/g,'_');
+        const c1Open=_langExpanded.has('P-c1-'+cat1);
+        const c1SksStr=c1Sks.join('||');
+
         const cat2s=[...new Set(c1d.map(r=>r['分類2']).filter(Boolean))];
+        let c2Html='';
+
+        // 全選 for 分類1
+        c2Html+=`<div class="sb-all-row ${c1AllSel?'sel':''}" onclick="sbToggleSetStr('${c1SksStr.replace(/'/g,"\\'")}')">
+          <div class="sb-chk ${c1AllSel?'sel':c1SelCount>0?'partial':''}">${c1AllSel?'✓':c1SelCount>0?'–':''}</div>
+          <span>全選</span>
+        </div>`;
+
         if(!cat2s.length){
-          const sk=type+'|'+cat1;
-          allSksForType.push(sk);
-          const chk=sel.subkeys.has(sk);
-          subHtml+=`<div class="sb-l2-item ${chk?'sel':''}" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
-            <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
-            <span>${cat1}</span>
-          </div>`;
+          // 分類1 is leaf — already added to allSksForType above
         } else {
-          subHtml+=`<div class="sb-l3-group-hdr">${cat1}</div>`;
           for(const cat2 of cat2s){
-            const sk=type+'|'+cat1+'|'+cat2;
-            allSksForType.push(sk);
-            const chk=sel.subkeys.has(sk);
-            subHtml+=`<div class="sb-l3-item ${chk?'sel':''}" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
-              <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
-              <span>${cat2}</span>
+            const c2d=c1d.filter(r=>r['分類2']===cat2);
+            const c2Sks=pSks(c2d);
+            const c2SelCount=c2Sks.filter(sk=>sel.subkeys.has(sk)).length;
+            const c2AllSel=c2SelCount===c2Sks.length&&c2Sks.length>0;
+            const c2Id='p-c2-'+cat1.replace(/[^a-zA-Z0-9]/g,'_')+'-'+cat2.replace(/[^a-zA-Z0-9]/g,'_');
+            const c2Open=_langExpanded.has('P-c2-'+cat1+'-'+cat2);
+            const c2SksStr=c2Sks.join('||');
+            const cat3s=[...new Set(c2d.map(r=>r['分類3']).filter(Boolean))];
+
+            let c3Html='';
+            // 全選 for 分類2
+            c3Html+=`<div class="sb-all-row ${c2AllSel?'sel':''}" onclick="sbToggleSetStr('${c2SksStr.replace(/'/g,"\\'")}')">
+              <div class="sb-chk ${c2AllSel?'sel':c2SelCount>0?'partial':''}">${c2AllSel?'✓':c2SelCount>0?'–':''}</div>
+              <span>全選</span>
             </div>`;
+
+            if(!cat3s.length){
+              // 分類2 is leaf
+              const sk=type+'|'+cat1+'|'+cat2;
+              const chk=sel.subkeys.has(sk);
+              c3Html+=`<div class="sb-l3-item ${chk?'sel':''}" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
+                <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+                <span>${cat2}</span>
+              </div>`;
+            } else {
+              for(const cat3 of cat3s){
+                const c3d=c2d.filter(r=>r['分類3']===cat3);
+                const c3Sks=pSks(c3d);
+                const c3SelCount=c3Sks.filter(sk=>sel.subkeys.has(sk)).length;
+                const c3AllSel=c3SelCount===c3Sks.length&&c3Sks.length>0;
+                const c3Id='p-c3-'+cat1.replace(/[^a-zA-Z0-9]/g,'_')+'-'+cat3.replace(/[^a-zA-Z0-9]/g,'_');
+                const c3Open=_langExpanded.has('P-c3-'+cat1+'-'+cat2+'-'+cat3);
+                const c3SksStr=c3Sks.join('||');
+                const cat4s=[...new Set(c3d.map(r=>r['分類4']).filter(Boolean))];
+
+                let c4Html='';
+                if(cat4s.length){
+                  // 全選 for 分類3
+                  c4Html+=`<div class="sb-all-row ${c3AllSel?'sel':''}" onclick="sbToggleSetStr('${c3SksStr.replace(/'/g,"\\'")}')">
+                    <div class="sb-chk ${c3AllSel?'sel':c3SelCount>0?'partial':''}">${c3AllSel?'✓':c3SelCount>0?'–':''}</div>
+                    <span>全選</span>
+                  </div>`;
+                  for(const cat4 of cat4s){
+                    const sk=type+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4;
+                    const chk=sel.subkeys.has(sk);
+                    c4Html+=`<div class="sb-l3-item" style="padding-left:56px;" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
+                      <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+                      <span class="sb-label">${cat4}</span>
+                    </div>`;
+                  }
+                }
+
+                const c3sk=type+'|'+cat1+'|'+cat2+'|'+cat3;
+                const c3chk=!cat4s.length&&sel.subkeys.has(c3sk);
+
+                if(!cat4s.length){
+                  // 分類3 is leaf
+                  c3Html+=`<div class="sb-l3-item ${c3chk?'sel':''}" onclick="sbToggleSub('${c3sk.replace(/'/g,"\\'")}')">
+                    <div class="sb-chk ${c3chk?'sel':''}">${c3chk?'✓':''}</div>
+                    <span>${cat3}</span>
+                  </div>`;
+                } else {
+                  // 分類3 has children (分類4)
+                  c3Html+=`<div class="sb-l2-item ${c3SelCount>0?'sel':''}">
+                    <div class="sb-chk ${c3AllSel?'sel':c3SelCount>0?'partial':''}" style="pointer-events:none;">${c3AllSel?'✓':c3SelCount>0?'–':''}</div>
+                    <span style="flex:1;cursor:pointer;" onclick="sbSecToggleExpand('P-c3-${cat1}-${cat2}-${cat3}','${c3Id}')">${cat3}</span>
+                    <button class="sb-l1-expand" onclick="sbSecToggleExpand('P-c3-${cat1}-${cat2}-${cat3}','${c3Id}')">${c3Open?'▾':'▸'}</button>
+                  </div>
+                  <div class="sb-children ${c3Open?'open':''}" id="${c3Id}">${c4Html}</div>`;
+                }
+              }
+            }
+
+            // 分類2 row with expand
+            c2Html+=`<div class="sb-l2-item ${c2SelCount>0?'sel':''}">
+              <div class="sb-chk ${c2AllSel?'sel':c2SelCount>0?'partial':''}" style="pointer-events:none;">${c2AllSel?'✓':c2SelCount>0?'–':''}</div>
+              <span style="flex:1;cursor:pointer;" onclick="sbSecToggleExpand('P-c2-${cat1}-${cat2}','${c2Id}')">${cat2}</span>
+              ${cat3s.length?`<button class="sb-l1-expand" onclick="sbSecToggleExpand('P-c2-${cat1}-${cat2}','${c2Id}')">${c2Open?'▾':'▸'}</button>`:''}
+            </div>
+            ${cat3s.length?`<div class="sb-children ${c2Open?'open':''}" id="${c2Id}">${c3Html}</div>`:''}`;
           }
         }
+
+        // 分類1 row with expand
+        subHtml+=`<div class="sb-l1-row ${c1SelCount>0?'sel':''}">
+          <div class="sb-l1-btn" onclick="sbSecToggleExpand('P-c1-${cat1}','${c1Id}')">
+            <div class="sb-chk ${c1AllSel?'sel':c1SelCount>0?'partial':''}">${c1AllSel?'✓':c1SelCount>0?'–':''}</div>
+            <span>${cat1}</span>
+          </div>
+          <button class="sb-l1-expand" onclick="sbSecToggleExpand('P-c1-${cat1}','${c1Id}')">${c1Open?'▾':'▸'}</button>
+        </div>
+        <div class="sb-children ${c1Open?'open':''}" id="${c1Id}">${c2Html}</div>`;
       }
     }
 
@@ -1382,8 +1486,10 @@ function rowSubkey(r){
   const t=r['分類'];
   if(t==='C') return t+'|'+r['分類1'];
   if(t==='V') return t+'|'+r['分類1'];
-  if(t==='T') return r['分類2'] ? t+'|'+r['分類1']+'|'+r['分類2'] : t+'|'+r['分類1']; // 冊|課
-  // P: scoped by cat1+cat2
+  if(t==='T') return r['分類2'] ? t+'|'+r['分類1']+'|'+r['分類2'] : t+'|'+r['分類1'];
+  // P: up to 分類4
+  if(r['分類4']) return t+'|'+r['分類1']+'|'+r['分類2']+'|'+r['分類3']+'|'+r['分類4'];
+  if(r['分類3']) return t+'|'+r['分類1']+'|'+r['分類2']+'|'+r['分類3'];
   if(r['分類2']) return t+'|'+r['分類1']+'|'+r['分類2'];
   return t+'|'+r['分類1'];
 }
