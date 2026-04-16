@@ -358,7 +358,28 @@ input[type="text"]::placeholder { color: var(--muted); }
 /* When speaker exists, push translation down by exact same height as speaker label */
 /* speaker height = font-size(0.6rem) * line-height(1.4) + margin-bottom(2px) */
 .col-translation.has-speaker { padding-top: calc(0.72rem * 1.4 + 3px); }
-.row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em; font-weight:normal; line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:anywhere; }
+.row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em; font-weight:normal; line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:anywhere; position:relative; }
+
+/* ── NOTE TOOLTIP ── */
+.note-dot {
+  display:inline-block; margin-left:4px;
+  color:var(--accent2); font-size:0.8em; cursor:help;
+  vertical-align:super; line-height:1;
+}
+.row-sentence.has-note { cursor:help; }
+.row-sentence.has-note::after {
+  content: attr(data-note);
+  position:absolute; bottom:calc(100% + 6px); left:0;
+  background:var(--surface2); border:1px solid var(--border);
+  color:var(--text); padding:6px 10px; border-radius:7px;
+  font-family:'jf-openhuninn','Noto Serif TC',serif;
+  font-size:0.82rem; line-height:1.5;
+  white-space:pre-wrap; max-width:280px; min-width:120px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  opacity:0; pointer-events:none;
+  transition:opacity 0.15s; z-index:50;
+}
+.row-sentence.has-note:hover::after { opacity:1; }
 .row-translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em; line-height:1.5; color:var(--text); word-break:break-word; }
 .row-id { font-family:'Space Mono',monospace; font-size:0.5rem; color:var(--border); margin-top:2px; }
 
@@ -915,7 +936,12 @@ function buildLangSidebar(){
             const c2Id='p-c2-'+cat1.replace(/\W/g,'_')+'-'+cat2.replace(/\W/g,'_');
             const c2Open=_langExpanded.has('P-c2-'+cat1+'-'+cat2);
 
-            const cat3s=[...new Set(c2d.map(r=>r['分類3']).filter(Boolean))];
+            const cat3s=[...new Set(c2d.map(r=>r['分類3']).filter(Boolean))].sort((a,b)=>{
+              // Custom sort: trim whitespace first, then standard sort
+              // Ensures '04選擇題(三)' < '04配合題' (parenthesis before Chinese char)
+              const at=a.trim(), bt=b.trim();
+              if(at<bt) return -1; if(at>bt) return 1; return 0;
+            });
             let c3Html='';
 
             if(!cat3s.length){
@@ -1661,6 +1687,7 @@ function renderRow(r){
   const isC=r['分類']==='C';
   const hasSpeaker=isC&&r['分類2'];
   const speakerHtml=hasSpeaker?`<div class="row-speaker">${r['分類2']}</div>`:'';
+  const note=(r['備註']||'').trim();
   const af=audioPath(r).replace(/'/g,"’");
   const eid=r['編號'];
   const isStarred=_starredIds.has(String(eid));
@@ -1673,7 +1700,7 @@ function renderRow(r){
     </div>
     <div class="col-sentence">
       ${speakerHtml}
-      <div class="row-sentence">${hl(r['語句'],true)}</div>
+      <div class="row-sentence${note?' has-note':''}" ${note?`data-note="${note.replace(/"/g,'&quot;')}"`:''} >${hl(r['語句'],true)}${note?'<span class="note-dot" title="">·</span>':''}</div>
     </div>
     <div class="col-translation${hasSpeaker?' has-speaker':''}">
       <div class="row-translation">${hl(r['翻譯'],false)}</div>
