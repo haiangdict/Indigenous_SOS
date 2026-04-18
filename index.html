@@ -882,12 +882,10 @@ function buildLangSidebar(){
         <div class="sb-children ${ceOpen?'open':''}" id="${ceId}">${ceSubHtml}</div>`;
       }
     } else {
-      // P: up to 4 levels — 分類1 > 分類2 > 分類3 > 分類4
-      // Rules:
-      //   - leaf node  → direct checkbox (sbToggleSub)
-      //   - parent node → expandable header (click=selectAll, ▸=expand only)
-      //   - 全選 appears INSIDE expanded parent, ONLY when parent has children
-      //   - NO separate 全選 row when the node itself IS the selectable unit
+      // P: 分類1 > 分類2 > 分類3 > 分類4
+      // leaf   = no children → direct checkbox
+      // parent = has children → click=selectAll, ▸=expand only
+      // No separate 全選 row — the parent row itself IS the select-all
 
       function pSks(rows){
         return [...new Set(rows.map(r=>{
@@ -898,104 +896,114 @@ function buildLangSidebar(){
         }))];
       }
 
-      // Generic expandable header row (parent node)
-      function pParentRow(label, sks, expandKey, elId, isOpen, level){
-        const allSel=sks.length>0&&sks.every(sk=>sel.subkeys.has(sk));
-        const anySel=sks.some(sk=>sel.subkeys.has(sk));
-        const sksStr=sks.map(s=>s.replace(/"/g,'&quot;')).join('||');
-        const indent = level===1?13 : level===2?13 : 13;
-        const cls = level===1?'sb-l1-btn':'sb-l2-item';
-        if(level===1){
-          return `<div class="sb-l1-row ${anySel?'sel':''}">
-            <div class="${cls}" data-sks="${sksStr}" onclick="pCat1Click(this,'${elId}','${expandKey}')">
-              <div class="sb-chk ${allSel?'sel':anySel?'partial':''}">${allSel?'✓':anySel?'–':''}</div>
-              <span>${label}</span>
-            </div>
-            <button class="sb-l1-expand" onclick="event.stopPropagation();sbSecToggleExpand('${expandKey}','${elId}')">${isOpen?'▾':'▸'}</button>
-          </div>`;
-        } else {
-          return `<div class="sb-l2-item ${anySel?'sel':''}" data-sks="${sksStr}" onclick="pParentClick(this,'${elId}','${expandKey}')">
-            <div class="sb-chk ${allSel?'sel':anySel?'partial':''}">${allSel?'✓':anySel?'–':''}</div>
-            <span style="flex:1;">${label}</span>
-            <button class="sb-l1-expand" onclick="event.stopPropagation();sbSecToggleExpand('${expandKey}','${elId}')">${isOpen?'▾':'▸'}</button>
-          </div>`;
-        }
-      }
-
-      // Leaf row (directly selectable)
-      function pLeafRow(label, sk, level){
-        const chk=sel.subkeys.has(sk);
-        const pad = level===2?32 : level===3?44 : level===4?56 : 13;
-        return `<div class="sb-l2-item ${chk?'sel':''}" style="padding-left:${pad}px;" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
-          <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
-          <span>${label}</span>
-        </div>`;
-      }
-
       const cat1s=[...new Set(td.map(r=>r['分類1']).filter(Boolean))];
       for(const cat1 of cat1s){
         const c1d=td.filter(r=>r['分類1']===cat1);
         const c1Sks=pSks(c1d);
         c1Sks.forEach(sk=>allSksForType.push(sk));
+        const c1AllSel=c1Sks.length>0&&c1Sks.every(sk=>sel.subkeys.has(sk));
+        const c1AnySel=c1Sks.some(sk=>sel.subkeys.has(sk));
         const c1Id='p-c1-'+cat1.replace(/\W/g,'_');
         const c1Open=_langExpanded.has('P-c1-'+cat1);
+        const c1SksStr=c1Sks.map(s=>s.replace(/"/g,'&quot;')).join('||');
         const cat2s=[...new Set(c1d.map(r=>r['分類2']).filter(Boolean))];
-        let c2Html='';
 
         if(!cat2s.length){
-          // 分類1 is leaf
+          // 分類1 leaf → sb-l1-btn style checkbox (no expand)
           const sk=type+'|'+cat1;
-          subHtml+=pLeafRow(cat1, sk, 1);
+          const chk=sel.subkeys.has(sk);
+          subHtml+=`<div class="sb-l1-row">
+            <div class="sb-l1-btn" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
+              <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+              <span>${cat1}</span>
+            </div>
+          </div>`;
           continue;
         }
 
+        // 分類1 parent → click=selectAll, ▸=expand
+        subHtml+=`<div class="sb-l1-row ${c1AnySel?'sel':''}">
+          <div class="sb-l1-btn" data-sks="${c1SksStr}" onclick="pCat1Click(this,'${c1Id}','P-c1-${cat1}')">
+            <div class="sb-chk ${c1AllSel?'sel':c1AnySel?'partial':''}">${c1AllSel?'✓':c1AnySel?'–':''}</div>
+            <span>${cat1}</span>
+          </div>
+          <button class="sb-l1-expand" onclick="event.stopPropagation();sbSecToggleExpand('P-c1-${cat1}','${c1Id}')">${c1Open?'▾':'▸'}</button>
+        </div>`;
+
+        let c2Html='';
         for(const cat2 of cat2s){
           const c2d=c1d.filter(r=>r['分類2']===cat2);
           const c2Sks=pSks(c2d);
+          const c2AllSel=c2Sks.length>0&&c2Sks.every(sk=>sel.subkeys.has(sk));
+          const c2AnySel=c2Sks.some(sk=>sel.subkeys.has(sk));
           const c2Id='p-c2-'+cat1.replace(/\W/g,'_')+'-'+cat2.replace(/\W/g,'_');
           const c2Open=_langExpanded.has('P-c2-'+cat1+'-'+cat2);
+          const c2SksStr=c2Sks.map(s=>s.replace(/"/g,'&quot;')).join('||');
           const cat3s=[...new Set(c2d.map(r=>r['分類3']).filter(Boolean))].sort((a,b)=>{
-            const at=a.trim(), bt=b.trim();
-            return at<bt?-1:at>bt?1:0;
+            const at=a.trim(),bt=b.trim(); return at<bt?-1:at>bt?1:0;
           });
-          let c3Html='';
 
           if(!cat3s.length){
-            // 分類2 is leaf
+            // 分類2 leaf → sb-l2-item checkbox
             const sk=type+'|'+cat1+'|'+cat2;
-            c2Html+=pLeafRow(cat2, sk, 2);
-          } else {
-            for(const cat3 of cat3s){
-              const c3d=c2d.filter(r=>r['分類3']===cat3);
-              const c3Sks=pSks(c3d);
-              const c3Id='p-c3-'+cat1.replace(/\W/g,'_')+'-'+cat2.replace(/\W/g,'_')+'-'+cat3.replace(/\W/g,'_');
-              const c3Open=_langExpanded.has('P-c3-'+cat1+'-'+cat2+'-'+cat3);
-              const cat4s=[...new Set(c3d.map(r=>r['分類4']).filter(Boolean))];
-              let c4Html='';
-
-              if(!cat4s.length){
-                // 分類3 is leaf
-                const sk=type+'|'+cat1+'|'+cat2+'|'+cat3;
-                c3Html+=pLeafRow(cat3, sk, 3);
-              } else {
-                // 分類3 is parent → expandable, click=selectAll
-                for(const cat4 of cat4s){
-                  const sk=type+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4;
-                  c4Html+=pLeafRow(cat4, sk, 4);
-                }
-                const c3SksStr=c3Sks.map(s=>s.replace(/"/g,'&quot;')).join('||');
-                c3Html+=pParentRow(cat3, c3Sks, 'P-c3-'+cat1+'-'+cat2+'-'+cat3, c3Id, c3Open, 2);
-                c3Html+=`<div class="sb-children ${c3Open?'open':''}" id="${c3Id}">${c4Html}</div>`;
-              }
-            }
-            // 分類2 is parent → expandable
-            c2Html+=pParentRow(cat2, c2Sks, 'P-c2-'+cat1+'-'+cat2, c2Id, c2Open, 2);
-            c2Html+=`<div class="sb-children ${c2Open?'open':''}" id="${c2Id}">${c3Html}</div>`;
+            const chk=sel.subkeys.has(sk);
+            c2Html+=`<div class="sb-l2-item ${chk?'sel':''}" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
+              <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+              <span>${cat2}</span>
+            </div>`;
+            continue;
           }
-        }
 
-        // 分類1 is parent → expandable
-        subHtml+=pParentRow(cat1, c1Sks, 'P-c1-'+cat1, c1Id, c1Open, 1);
+          // 分類2 parent → sb-l2-item + expand button
+          c2Html+=`<div class="sb-l2-item ${c2AnySel?'sel':''}" data-sks="${c2SksStr}" onclick="pParentClick(this,'${c2Id}','P-c2-${cat1}-${cat2}')">
+            <div class="sb-chk ${c2AllSel?'sel':c2AnySel?'partial':''}">${c2AllSel?'✓':c2AnySel?'–':''}</div>
+            <span style="flex:1;">${cat2}</span>
+            <button class="sb-l1-expand" onclick="event.stopPropagation();sbSecToggleExpand('P-c2-${cat1}-${cat2}','${c2Id}')">${c2Open?'▾':'▸'}</button>
+          </div>`;
+
+          let c3Html='';
+          for(const cat3 of cat3s){
+            const c3d=c2d.filter(r=>r['分類3']===cat3);
+            const c3Sks=pSks(c3d);
+            const c3AllSel=c3Sks.length>0&&c3Sks.every(sk=>sel.subkeys.has(sk));
+            const c3AnySel=c3Sks.some(sk=>sel.subkeys.has(sk));
+            const c3Id='p-c3-'+cat1.replace(/\W/g,'_')+'-'+cat2.replace(/\W/g,'_')+'-'+cat3.replace(/\W/g,'_');
+            const c3Open=_langExpanded.has('P-c3-'+cat1+'-'+cat2+'-'+cat3);
+            const c3SksStr=c3Sks.map(s=>s.replace(/"/g,'&quot;')).join('||');
+            const cat4s=[...new Set(c3d.map(r=>r['分類4']).filter(Boolean))];
+
+            if(!cat4s.length){
+              // 分類3 leaf → sb-l3-item checkbox
+              const sk=type+'|'+cat1+'|'+cat2+'|'+cat3;
+              const chk=sel.subkeys.has(sk);
+              c3Html+=`<div class="sb-l3-item ${chk?'sel':''}" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
+                <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+                <span>${cat3}</span>
+              </div>`;
+              continue;
+            }
+
+            // 分類3 parent → sb-l3-item + expand
+            c3Html+=`<div class="sb-l3-item ${c3AnySel?'sel':''}" data-sks="${c3SksStr}" onclick="pParentClick(this,'${c3Id}','P-c3-${cat1}-${cat2}-${cat3}')">
+              <div class="sb-chk ${c3AllSel?'sel':c3AnySel?'partial':''}">${c3AllSel?'✓':c3AnySel?'–':''}</div>
+              <span style="flex:1;">${cat3}</span>
+              <button class="sb-l1-expand" onclick="event.stopPropagation();sbSecToggleExpand('P-c3-${cat1}-${cat2}-${cat3}','${c3Id}')">${c3Open?'▾':'▸'}</button>
+            </div>`;
+
+            let c4Html='';
+            for(const cat4 of cat4s){
+              const sk=type+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4;
+              const chk=sel.subkeys.has(sk);
+              // 分類4 always leaf → deepest level, use sb-l3-item with extra indent
+              c4Html+=`<div class="sb-l3-item ${chk?'sel':''}" style="padding-left:56px;" onclick="sbToggleSub('${sk.replace(/'/g,"\\'")}')">
+                <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+                <span>${cat4}</span>
+              </div>`;
+            }
+            c3Html+=`<div class="sb-children ${c3Open?'open':''}" id="${c3Id}">${c4Html}</div>`;
+          }
+          c2Html+=`<div class="sb-children ${c2Open?'open':''}" id="${c2Id}">${c3Html}</div>`;
+        }
         subHtml+=`<div class="sb-children ${c1Open?'open':''}" id="${c1Id}">${c2Html}</div>`;
       }
     }
