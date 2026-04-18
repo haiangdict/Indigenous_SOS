@@ -17,5 +17,10 @@
   "bugs": {
     "url": "https://github.com/haiangdict/Indigenous_SOS/issues"
   },
-  "homepage": "https://github.com/haiangdict/Indigenous_SOS#readme"
+  "homepage": "https://github.com/haiangdict/Indigenous_SOS#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1"
+  }
 }
