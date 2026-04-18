@@ -456,9 +456,12 @@ input[type="text"]::placeholder { color: var(--muted); }
 .group-rows { padding:0 16px 0 12px; }
 .group-rows .row-item:last-child { border-bottom:none; }
 .row-item.gp-current { background:rgba(139,196,168,0.05); }
-/* C conversation: non-title rows without a speaker get subtle background */
+/* C/T: no-speaker non-title body row — subtle tint */
 .row-item.no-speaker-body { background: rgba(255,255,255,0.03); }
 body.light .row-item.no-speaker-body { background: rgba(0,0,0,0.04); }
+/* C/T: first row of each group (lesson title) — stronger tint */
+.row-item.row-title { background: rgba(255,255,255,0.07); }
+body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
 
 /* ── EMPTY ── */
 .empty { text-align:center; padding:70px 20px; color:var(--muted); }
@@ -865,10 +868,7 @@ function buildLangSidebar(){
         const ceOpen=_langExpanded.has('T-ce-'+cat1);
         const ceSksJson=ceSks.map(s=>s.replace(/"/g,'&quot;')).join('||');
 
-        let ceSubHtml=`<div class="sb-all-row ${ceAllSel?'sel':''}" onclick="sbToggleSetStr('${ceSksJson}')">
-          <div class="sb-chk ${ceAllSel?'sel':ceSelCount>0?'partial':''}">${ceAllSel?'✓':ceSelCount>0?'–':''}</div>
-          <span>全選</span>
-        </div>`;
+        let ceSubHtml='';
         for(const cat2 of cat2s){
           const sk=type+'|'+cat1+'|'+cat2;
           const chk=sel.subkeys.has(sk);
@@ -1698,13 +1698,15 @@ function renderRow(r, ri=0){
   const isC=r['分類']==='C';
   const hasSpeaker=isC&&r['分類2'];
   const speakerHtml=hasSpeaker?`<div class="row-speaker">${r['分類2']}</div>`:'';
-  // C rows without speaker (except the first row which is the lesson title)
+  // C rows without speaker (except first row = lesson title)
   const isNoSpeakerBody = isC && !hasSpeaker && ri > 0;
+  // First row of each group is the lesson title (C and T)
+  const isTitle = ri === 0 && (isC || r['分類']==='T');
   const note=(r['備註']||'').trim();
   const af=audioPath(r).replace(/'/g,"’");
   const eid=r['編號'];
   const isStarred=_starredIds.has(String(eid));
-  return `<div class="row-item${isNoSpeakerBody?' no-speaker-body':''}" id="row-${eid}">
+  return `<div class="row-item${isTitle?' row-title':isNoSpeakerBody?' no-speaker-body':''}" id="row-${eid}">
     <div class="col-play">
       <button class="play-btn" id="btn-${eid}"
         data-af="${af}"
