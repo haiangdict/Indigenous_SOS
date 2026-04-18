@@ -456,6 +456,9 @@ input[type="text"]::placeholder { color: var(--muted); }
 .group-rows { padding:0 16px 0 12px; }
 .group-rows .row-item:last-child { border-bottom:none; }
 .row-item.gp-current { background:rgba(139,196,168,0.05); }
+/* C conversation: non-title rows without a speaker get subtle background */
+.row-item.no-speaker-body { background: rgba(255,255,255,0.03); }
+body.light .row-item.no-speaker-body { background: rgba(0,0,0,0.04); }
 
 /* ── EMPTY ── */
 .empty { text-align:center; padding:70px 20px; color:var(--muted); }
@@ -874,10 +877,10 @@ function buildLangSidebar(){
             <span>第${cat2}課</span>
           </div>`;
         }
-        subHtml+=`<div class="sb-l2-item ${ceSelCount>0?'sel':''}">
-          <div class="sb-chk ${ceAllSel?'sel':ceSelCount>0?'partial':''}" style="flex-shrink:0;pointer-events:none;">${ceAllSel?'✓':ceSelCount>0?'–':''}</div>
-          <span style="flex:1;cursor:pointer;" data-sks="${ceSksJson}" onclick="tCeClick(this,'${ceId}','T-ce-${cat1}')">第${cat1}冊</span>
-          <button class="sb-l1-expand" onclick="sbSecToggleExpand('T-ce-${cat1}','${ceId}')">${ceOpen?'▾':'▸'}</button>
+        subHtml+=`<div class="sb-l2-item ${ceSelCount>0?'sel':''}" data-sks="${ceSksJson}" onclick="tCeClick(this,'${ceId}','T-ce-${cat1}')">
+          <div class="sb-chk ${ceAllSel?'sel':ceSelCount>0?'partial':''}">${ceAllSel?'✓':ceSelCount>0?'–':''}</div>
+          <span style="flex:1;">第${cat1}冊</span>
+          <button class="sb-l1-expand" onclick="event.stopPropagation();sbSecToggleExpand('T-ce-${cat1}','${ceId}')">${ceOpen?'▾':'▸'}</button>
         </div>
         <div class="sb-children ${ceOpen?'open':''}" id="${ceId}">${ceSubHtml}</div>`;
       }
@@ -1690,16 +1693,18 @@ function groupSortKey(r){
 }
 
 // ── Render one row (no col-tags — info in card header) ─────────────
-function renderRow(r){
+function renderRow(r, ri=0){
   const hasAudio=!!audioFilename(r);
   const isC=r['分類']==='C';
   const hasSpeaker=isC&&r['分類2'];
   const speakerHtml=hasSpeaker?`<div class="row-speaker">${r['分類2']}</div>`:'';
+  // C rows without speaker (except the first row which is the lesson title)
+  const isNoSpeakerBody = isC && !hasSpeaker && ri > 0;
   const note=(r['備註']||'').trim();
   const af=audioPath(r).replace(/'/g,"’");
   const eid=r['編號'];
   const isStarred=_starredIds.has(String(eid));
-  return `<div class="row-item" id="row-${eid}">
+  return `<div class="row-item${isNoSpeakerBody?' no-speaker-body':''}" id="row-${eid}">
     <div class="col-play">
       <button class="play-btn" id="btn-${eid}"
         data-af="${af}"
@@ -1778,7 +1783,7 @@ function renderPage(){
           <span class="card-ctrl-t">翻譯</span>
         </div>
       </div>
-      <div class="group-rows">${g.rows.map(renderRow).join('')}</div>
+      <div class="group-rows">${g.rows.map((r,ri)=>renderRow(r,ri)).join('')}</div>
     </div>`;
   }).join('');
 
