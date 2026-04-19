@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>個人詞彙表 — Indigenous SOS</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+@font-face {
+  font-family: 'jf-openhuninn';
+  src: url('https://cdn.jsdelivr.net/gh/justfont/open-huninn-font@v2.1/font/jf-openhuninn-2.1.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/justfont/open-huninn-font@v2.1/font/jf-openhuninn-2.1.ttf') format('truetype');
+  font-weight: 100 900; font-style: normal; font-display: swap;
+}
+:root {
+  --bg:#0e0e0e; --surface:#1a1a1a; --surface2:#242424; --border:#2e2e2e;
+  --accent:#d4a843; --accent2:#8bc4a8; --text:#e8e4dc; --muted:#777; --playing:#8bc4a8;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:'jf-openhuninn','Noto Serif TC',serif; min-height:100vh; }
+
+/* HEADER */
+header {
+  padding:16px 28px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  background:rgba(14,14,14,0.96); backdrop-filter:blur(12px);
+  position:sticky; top:0; z-index:100;
+}
+.logo-main { font-size:1.1rem; font-weight:900; color:var(--accent); font-family:'Noto Serif TC',serif; }
+.logo-sub  { font-family:'Space Mono',monospace; font-size:0.58rem; color:var(--muted); letter-spacing:0.12em; }
+.header-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+.back-btn {
+  font-family:'Space Mono',monospace; font-size:0.68rem; color:var(--muted);
+  background:transparent; border:1px solid var(--border); padding:5px 13px;
+  border-radius:20px; cursor:pointer; text-decoration:none; transition:all 0.15s;
+}
+.back-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+.auth-badge {
+  display:flex; align-items:center; gap:7px;
+  font-family:'Space Mono',monospace; font-size:0.65rem; color:var(--muted);
+  cursor:pointer; background:var(--surface2); border:1px solid var(--border);
+  padding:4px 10px; border-radius:20px; transition:all 0.15s;
+}
+.auth-badge:hover { border-color:var(--accent2); color:var(--text); }
+.auth-avatar { width:18px; height:18px; border-radius:50%; object-fit:cover; }
+
+/* TOOLBAR */
+.toolbar {
+  padding:12px 28px; border-bottom:1px solid var(--border);
+  background:var(--surface); display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+}
+.sort-label {
+  font-family:'Space Mono',monospace; font-size:0.62rem; color:var(--muted);
+  letter-spacing:0.1em; text-transform:uppercase; flex-shrink:0;
+}
+.sort-btn {
+  font-family:'Space Mono',monospace; font-size:0.68rem; color:var(--muted);
+  background:var(--surface2); border:1px solid var(--border);
+  padding:5px 12px; border-radius:20px; cursor:pointer; transition:all 0.15s;
+  display:flex; align-items:center; gap:5px;
+}
+.sort-btn:hover { border-color:var(--accent); color:var(--text); }
+.sort-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(212,168,67,0.08); }
+.sort-arrow { font-size:0.6rem; opacity:0.7; }
+
+.search-wrap { position:relative; flex:1; min-width:160px; max-width:320px; }
+.search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
+.search-wrap input {
+  width:100%; background:var(--surface2); border:1px solid var(--border); color:var(--text);
+  padding:7px 12px 7px 34px; border-radius:7px;
+  font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:0.85rem;
+  outline:none; transition:border-color 0.2s;
+}
+.search-wrap input:focus { border-color:var(--accent); }
+.search-wrap input::placeholder { color:var(--muted); }
+
+.export-btn {
+  font-family:'Space Mono',monospace; font-size:0.68rem;
+  background:transparent; border:1px solid var(--border); color:var(--muted);
+  padding:5px 13px; border-radius:20px; cursor:pointer; transition:all 0.15s; margin-left:auto;
+}
+.export-btn:hover { border-color:var(--accent2); color:var(--accent2); }
+
+/* STATS */
+.stats-bar {
+  padding:8px 28px; font-family:'Space Mono',monospace; font-size:0.65rem;
+  color:var(--muted); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:12px;
+}
+.stats-bar span { color:var(--accent); }
+
+/* TABLE */
+.table-wrap { overflow-x:auto; padding:0 0 40px; }
+table {
+  width:100%; border-collapse:collapse; min-width:700px;
+}
+thead th {
+  padding:10px 16px; text-align:left;
+  font-family:'Space Mono',monospace; font-size:0.6rem; font-weight:700;
+  color:var(--muted); letter-spacing:0.1em; text-transform:uppercase;
+  border-bottom:2px solid var(--border);
+  background:var(--surface); position:sticky; top:0; z-index:5;
+  white-space:nowrap; cursor:pointer; user-select:none; transition:color 0.13s;
+}
+thead th:hover { color:var(--text); }
+thead th.active { color:var(--accent); }
+thead th .th-arrow { opacity:0.6; margin-left:4px; }
+
+tbody tr {
+  border-bottom:1px solid var(--border); transition:background 0.12s;
+  animation:fadeIn 0.2s ease;
+}
+tbody tr:hover { background:var(--surface); }
+@keyframes fadeIn { from{opacity:0;transform:translateY(2px)} to{opacity:1;transform:translateY(0)} }
+
+td {
+  padding:11px 16px; vertical-align:top;
+  font-size:0.92rem; color:var(--text);
+}
+td.mono { font-family:'Space Mono',monospace; font-size:0.68rem; color:var(--muted); }
+td.sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1rem; }
+td.translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1rem; color:var(--text); }
+
+.level-badge {
+  font-family:'Space Mono',monospace; font-size:0.62rem;
+  padding:2px 8px; border-radius:8px;
+  background:rgba(139,196,168,0.13); color:var(--accent2);
+}
+.lang-badge {
+  font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:0.82rem;
+  color:var(--accent2);
+}
+.source-badge {
+  font-family:'Space Mono',monospace; font-size:0.6rem;
+  color:var(--accent); letter-spacing:0.04em;
+}
+
+.play-cell { width:36px; padding:8px 0 8px 16px; }
+.play-btn {
+  width:28px; height:28px; border-radius:50%;
+  border:1.5px solid var(--border); background:transparent; color:var(--muted);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:0.72rem; transition:all 0.15s; flex-shrink:0;
+}
+.play-btn:hover { border-color:var(--accent); color:var(--accent); }
+.play-btn.active { border-color:var(--playing); color:var(--playing); }
+.play-btn:disabled { opacity:0.2; cursor:not-allowed; }
+
+.remove-btn {
+  background:none; border:none; color:#666; cursor:pointer; font-size:0.85rem;
+  padding:3px; border-radius:4px; transition:all 0.13s; opacity:0.5;
+}
+.remove-btn:hover { color:#e57373; opacity:1; }
+
+/* EMPTY / LOADING */
+.empty-state {
+  text-align:center; padding:80px 20px; color:var(--muted);
+}
+.empty-icon { font-size:3rem; margin-bottom:16px; opacity:0.3; }
+.empty-text { font-size:0.9rem; line-height:1.7; }
+.loading { text-align:center; padding:60px 20px; color:var(--muted); font-family:'Space Mono',monospace; font-size:0.75rem; }
+
+/* TOAST */
+.toast {
+  position:fixed; bottom:20px; right:20px; background:var(--surface2);
+  border:1px solid var(--border); color:var(--text); padding:10px 17px;
+  border-radius:9px; font-family:'Space Mono',monospace; font-size:0.7rem;
+  z-index:999; animation:slideUp 0.22s ease; box-shadow:0 8px 28px rgba(0,0,0,0.45);
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo-main">Indigenous SOS</div>
+    <div class="logo-sub">個人詞彙表</div>
+  </div>
+  <div class="header-right">
+    <div style="display:flex;gap:8px;">
+      <a class="back-btn" href="index.html">← 返回主頁</a>
+      <a class="back-btn" href="about.html">關於</a>
+    </div>
+    <div class="auth-badge" id="authBadge" onclick="handleAuthClick()">
+      <span id="authLabel">登入</span>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <span class="sort-label">排序：</span>
+  <button class="sort-btn active" id="sort-time" onclick="setSort('time')">
+    收藏時間 <span class="sort-arrow" id="arr-time">↓</span>
+  </button>
+  <button class="sort-btn" id="sort-sentence" onclick="setSort('sentence')">
+    語句 <span class="sort-arrow" id="arr-sentence"></span>
+  </button>
+  <button class="sort-btn" id="sort-translation" onclick="setSort('translation')">
+    翻譯 <span class="sort-arrow" id="arr-translation"></span>
+  </button>
+  <button class="sort-btn" id="sort-lang" onclick="setSort('lang')">
+    語別 <span class="sort-arrow" id="arr-lang"></span>
+  </button>
+  <button class="sort-btn" id="sort-source" onclick="setSort('source')">
+    教材 <span class="sort-arrow" id="arr-source"></span>
+  </button>
+  <button class="sort-btn" id="sort-level" onclick="setSort('level')">
+    等級 <span class="sort-arrow" id="arr-level"></span>
+  </button>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="搜尋語句或翻譯…" oninput="renderTable()">
+  </div>
+  <button class="export-btn" onclick="exportCSV()">⬇ 匯出 CSV</button>
+</div>
+
+<div class="stats-bar" id="statsBar">載入中…</div>
+
+<div class="table-wrap">
+  <div id="tableContainer" class="loading">
+    <div class="empty-icon">⟳</div>
+    <div>請先登入以載入詞彙表</div>
+  </div>
+</div>
+
+<script>
+const CLIENT_ID = '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com';
+const GAPI_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+const SPREADSHEET_TITLE = 'Indigenous SOS 詞彙表';
+// Column indices: 語句=0,翻譯=1,語別=2,教材=3,等級=4,音檔路徑=5,編號=6,收藏時間=7
+
+let _gToken = null;
+let _gUser = null;
+let _spreadsheetId = null;
+let _vocabRows = []; // raw rows from sheet (arrays)
+let _sortKey = 'time';
+let _sortDir = -1; // -1=desc, 1=asc
+let _currentAudio = null;
+let _currentPlayBtn = null;
+
+// ── Token persistence ──────────────────────────────────────────
+function _saveToken(token, user) {
+  _gToken=token; _gUser=user;
+  try { sessionStorage.setItem('gsis_token', JSON.stringify({token,user,exp:Date.now()+3500000})); } catch(e) {}
+}
+function _loadToken() {
+  try {
+    const raw=sessionStorage.getItem('gsis_token');
+    if(!raw) return false;
+    const {token,user,exp}=JSON.parse(raw);
+    if(Date.now()>exp) { sessionStorage.removeItem('gsis_token'); return false; }
+    _gToken=token; _gUser=user; return true;
+  } catch(e) { return false; }
+}
+
+// ── Auth ───────────────────────────────────────────────────────
+function updateAuthUI() {
+  const badge=document.getElementById('authBadge');
+  const label=document.getElementById('authLabel');
+  if(!badge||!label) return;
+  if(_gUser) {
+    label.innerHTML = _gUser.picture
+      ? `<img class="auth-avatar" src="${_gUser.picture}" alt=""> ${_gUser.name.split(' ')[0]}`
+      : _gUser.name.split(' ')[0];
+    badge.title='點擊登出';
+  } else {
+    label.textContent='登入'; badge.title='登入以載入詞彙表';
+  }
+}
+
+function handleAuthClick() {
+  if(_gToken) signOut(); else signIn();
+}
+
+function signIn() {
+  if(typeof google==='undefined') { showToast('Google 登入載入中，請稍後'); return; }
+  google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: GAPI_SCOPES,
+    callback: async (resp) => {
+      if(resp.error) { showToast('❌ 登入失敗：'+resp.error); return; }
+      const uinfo=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{
+        headers:{Authorization:'Bearer '+resp.access_token}
+      }).then(r=>r.json()).catch(()=>({}));
+      const user={name:uinfo.name||'使用者',email:uinfo.email||'',picture:uinfo.picture||''};
+      _saveToken(resp.access_token, user);
+      updateAuthUI();
+      showToast('✓ 已登入：'+user.name);
+      await loadVocab();
+    }
+  }).requestAccessToken();
+}
+
+function signOut() {
+  if(_gToken && typeof google!=='undefined') google.accounts.oauth2.revoke(_gToken,()=>{});
+  _gToken=null; _gUser=null; _spreadsheetId=null; _vocabRows=[];
+  try { sessionStorage.removeItem('gsis_token'); } catch(e) {}
+  updateAuthUI();
+  document.getElementById('tableContainer').innerHTML='<div class="empty-state"><div class="empty-icon">🔑</div><div class="empty-text">請登入以載入您的詞彙表</div></div>';
+  document.getElementById('statsBar').textContent='未登入';
+}
+
+// ── Sheets API ─────────────────────────────────────────────────
+async function sheetsReq(method, path, body) {
+  const url='https://sheets.googleapis.com/v4/spreadsheets'+path;
+  const opts={method, headers:{Authorization:'Bearer '+_gToken,'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(url,opts);
+  if(!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||r.status); }
+  return r.json();
+}
+async function driveReq(method, path) {
+  const r=await fetch('https://www.googleapis.com/drive/v3'+path,{
+    headers:{Authorization:'Bearer '+_gToken}
+  });
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+async function findSpreadsheet() {
+  const q=encodeURIComponent(`name='${SPREADSHEET_TITLE}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`);
+  const res=await driveReq('GET',`/files?q=${q}&fields=files(id,name)`);
+  return res.files&&res.files.length>0 ? res.files[0].id : null;
+}
+
+// ── Load vocab ─────────────────────────────────────────────────
+async function loadVocab() {
+  document.getElementById('tableContainer').innerHTML='<div class="loading"><div>載入中…</div></div>';
+  try {
+    _spreadsheetId = await findSpreadsheet();
+    if(!_spreadsheetId) {
+      _vocabRows=[];
+      renderTable();
+      return;
+    }
+    const res=await sheetsReq('GET',`/${_spreadsheetId}/values/詞彙表!A:H`);
+    const rows=res.values||[];
+    _vocabRows=rows.slice(1).filter(r=>r.some(c=>c)); // skip header, skip empty rows
+    renderTable();
+  } catch(e) {
+    showToast('❌ 載入失敗：'+e.message);
+    document.getElementById('tableContainer').innerHTML=`<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-text">載入失敗：${e.message}</div></div>`;
+  }
+}
+
+// ── Sort ───────────────────────────────────────────────────────
+const SORT_COL = {sentence:0, translation:1, lang:2, source:3, level:4, time:7};
+
+function setSort(key) {
+  if(_sortKey===key) { _sortDir*=-1; }
+  else { _sortKey=key; _sortDir=key==='time'?-1:1; }
+  // Update buttons
+  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sort-'+key).classList.add('active');
+  // Update arrows
+  ['time','sentence','translation','lang','source','level'].forEach(k=>{
+    const el=document.getElementById('arr-'+k);
+    if(el) el.textContent = k===_sortKey ? (_sortDir===1?'↑':'↓') : '';
+  });
+  renderTable();
+}
+
+function sortedRows(rows) {
+  const col=SORT_COL[_sortKey]??7;
+  return [...rows].sort((a,b)=>{
+    const av=(a[col]||'').toLowerCase();
+    const bv=(b[col]||'').toLowerCase();
+    if(av<bv) return -_sortDir;
+    if(av>bv) return _sortDir;
+    return 0;
+  });
+}
+
+// ── Render table ───────────────────────────────────────────────
+const LEVEL_MAP={B:'初',I:'中',S:'中高',U:'高'};
+function fmtLevel(raw){ return (raw||'').split('/').map(p=>LEVEL_MAP[p.trim()]||p.trim()).join('/'); }
+
+function renderTable() {
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  let rows=_vocabRows;
+  if(q) rows=rows.filter(r=>(r[0]||'').toLowerCase().includes(q)||(r[1]||'').includes(q));
+  rows=sortedRows(rows);
+
+  const stats=document.getElementById('statsBar');
+  stats.innerHTML=`共 <span>${_vocabRows.length}</span> 筆收藏${q?`，篩選顯示 <span>${rows.length}</span> 筆`:''}`;
+
+  if(!_gToken) {
+    document.getElementById('tableContainer').innerHTML='<div class="empty-state"><div class="empty-icon">🔑</div><div class="empty-text">請登入以載入您的詞彙表</div></div>';
+    return;
+  }
+  if(rows.length===0) {
+    document.getElementById('tableContainer').innerHTML=`<div class="empty-state">
+      <div class="empty-icon">${q?'🔭':'⭐'}</div>
+      <div class="empty-text">${q?'找不到符合的項目':'詞彙表是空的<br>在主頁面按 ⭐ 收藏語句'}</div>
+    </div>`;
+    return;
+  }
+
+  const rowsHtml=rows.map((r,i)=>{
+    const [sentence,translation,lang,source,level,af,eid,savedAt]=r;
+    const hasAudio=!!af;
+    const timeStr=savedAt?new Date(savedAt).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    // Find original row index for deletion
+    const origIdx=_vocabRows.indexOf(r);
+    return `<tr>
+      <td class="play-cell">
+        <button class="play-btn" id="vbtn-${i}"
+          data-af="${(af||'').replace(/"/g,'&quot;')}"
+          onclick="playVocab(this,'${i}')"
+          ${hasAudio?'':'disabled'} title="${hasAudio?'播放':'無音檔'}">${hasAudio?'▶':'—'}</button>
+      </td>
+      <td class="sentence">${sentence||''}</td>
+      <td class="translation">${translation||''}</td>
+      <td><span class="lang-badge">${lang||''}</span></td>
+      <td><span class="source-badge">${source||''}</span></td>
+      <td><span class="level-badge">${fmtLevel(level)}</span></td>
+      <td class="mono">${timeStr}</td>
+      <td style="width:36px;padding:8px;">
+        <button class="remove-btn" onclick="removeRow(${origIdx})" title="從詞彙表移除">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tableContainer').innerHTML=`<table>
+    <thead><tr>
+      <th></th>
+      <th onclick="setSort('sentence')">語句<span class="th-arrow" id="arr-sentence"></span></th>
+      <th onclick="setSort('translation')">翻譯<span class="th-arrow" id="arr-translation"></span></th>
+      <th onclick="setSort('lang')">語別<span class="th-arrow" id="arr-lang"></span></th>
+      <th onclick="setSort('source')">教材<span class="th-arrow" id="arr-source"></span></th>
+      <th onclick="setSort('level')">等級<span class="th-arrow" id="arr-level"></span></th>
+      <th onclick="setSort('time')">收藏時間<span class="th-arrow" id="arr-time"></span></th>
+      <th></th>
+    </tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>`;
+
+  // Re-apply sort arrows
+  ['time','sentence','translation','lang','source','level'].forEach(k=>{
+    const el=document.getElementById('arr-'+k);
+    if(el) el.textContent=k===_sortKey?(_sortDir===1?'↑':'↓'):'';
+  });
+}
+
+// ── Audio ──────────────────────────────────────────────────────
+const AUDIO_BASE='https://pub-44bec38ae2824f519a8519301efe3bd7.r2.dev/';
+
+function playVocab(btn, idx) {
+  if(_currentAudio&&!_currentAudio.paused) {
+    _currentAudio.pause();
+    if(_currentPlayBtn){_currentPlayBtn.textContent='▶';_currentPlayBtn.classList.remove('active');}
+    if(_currentPlayBtn===btn){_currentAudio=null;_currentPlayBtn=null;return;}
+  }
+  const af=btn.dataset.af;
+  _currentAudio=new Audio(AUDIO_BASE+af);
+  _currentPlayBtn=btn;
+  btn.textContent='⏸'; btn.classList.add('active');
+  _currentAudio.play().catch(()=>{
+    showToast('⚠ 音檔無法播放');
+    btn.textContent='▶'; btn.classList.remove('active');
+  });
+  _currentAudio.onended=()=>{
+    btn.textContent='▶'; btn.classList.remove('active');
+    _currentAudio=null; _currentPlayBtn=null;
+  };
+}
+
+// ── Remove row ─────────────────────────────────────────────────
+async function removeRow(origIdx) {
+  if(origIdx<0||origIdx>=_vocabRows.length) return;
+  const sheetRow=origIdx+2; // +1 header +1 1-indexed
+  try {
+    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A${sheetRow}:H${sheetRow}:clear`,null);
+    _vocabRows.splice(origIdx,1);
+    renderTable();
+    showToast('✓ 已移除');
+  } catch(e) { showToast('❌ 移除失敗：'+e.message); }
+}
+
+// ── Export CSV ─────────────────────────────────────────────────
+function exportCSV() {
+  if(!_vocabRows.length){ showToast('詞彙表是空的'); return; }
+  const header=['語句','翻譯','語別','教材','等級','音檔路徑','編號','收藏時間'];
+  const rows=[header,..._vocabRows];
+  const csv=rows.map(r=>r.map(c=>`"${(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='Indigenous_SOS_詞彙表.csv';
+  a.click();
+  showToast('✓ CSV 已下載');
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function showToast(msg) {
+  const old=document.querySelector('.toast'); if(old) old.remove();
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
+}
+
+// ── Boot ───────────────────────────────────────────────────────
+if(_loadToken()) {
+  updateAuthUI();
+  loadVocab();
+} else {
+  document.getElementById('statsBar').textContent='未登入';
+}
+</script>
+</body>
+</html>
