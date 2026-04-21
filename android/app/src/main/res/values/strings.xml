@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name"> Payrang族語自救會</string>
-    <string name="title_activity_main"> Payrang族語自救會</string>
+    <string name="app_name">Payrang族語自救會</string>
+    <string name="title_activity_main">Payrang族語自救會</string>
     <string name="package_name">tw.github.haiangdict.indigenoussos</string>
     <string name="custom_url_scheme">tw.github.haiangdict.indigenoussos</string>
 </resources>

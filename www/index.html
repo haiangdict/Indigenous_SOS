@@ -1473,7 +1473,6 @@ function pCat1Click(el, lid, expandKey){
   const allSel = sks.every(sk=>sel.subkeys.has(sk));
   if(allSel) sks.forEach(sk=>sel.subkeys.delete(sk));
   else sks.forEach(sk=>sel.subkeys.add(sk));
-  if(!_langExpanded.has(expandKey)) _langExpanded.add(expandKey);
   buildLangSidebar(); applyFilters();
 }
 
@@ -1485,11 +1484,10 @@ function pParentClick(el, lid, expandKey){
   const allSel = sks.every(sk=>sel.subkeys.has(sk));
   if(allSel) sks.forEach(sk=>sel.subkeys.delete(sk));
   else sks.forEach(sk=>sel.subkeys.add(sk));
-  if(!_langExpanded.has(expandKey)) _langExpanded.add(expandKey);
   buildLangSidebar(); applyFilters();
 }
 
-// T 冊 click: toggle select all courses in this 冊 + expand
+// T 冊 click: toggle select all courses in this 冊 (no auto-expand)
 function tCeClick(el, lid, expandKey){
   const sksStr = el.dataset.sks;
   if(!sksStr) return;
@@ -1497,7 +1495,6 @@ function tCeClick(el, lid, expandKey){
   const allSel = sks.every(sk=>sel.subkeys.has(sk));
   if(allSel) sks.forEach(sk=>sel.subkeys.delete(sk));
   else sks.forEach(sk=>sel.subkeys.add(sk));
-  if(!_langExpanded.has(expandKey)) _langExpanded.add(expandKey);
   buildLangSidebar(); applyFilters();
 }
 

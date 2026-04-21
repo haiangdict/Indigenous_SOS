@@ -1719,11 +1719,14 @@ function renderRow(r, ri=0){
   const isNoSpeakerBody = isC && !hasSpeaker && ri > 0;
   // First row of each group is the lesson title (C and T)
   const isTitle = ri === 0 && (isC || r['分類']==='T');
+  // Disable special backgrounds when search is active
+  const hasSearch = !!document.getElementById('searchInput')?.value?.trim();
+  const rowExtraCls = hasSearch ? '' : (isTitle ? ' row-title' : isNoSpeakerBody ? ' no-speaker-body' : '');
   const note=(r['備註']||'').trim();
   const af=audioPath(r).replace(/'/g,"’");
   const eid=r['編號'];
   const isStarred=_starredIds.has(String(eid));
-  return `<div class="row-item${isTitle?' row-title':isNoSpeakerBody?' no-speaker-body':''}" id="row-${eid}">
+  return `<div class="row-item${rowExtraCls}" id="row-${eid}">
     <div class="col-play">
       <button class="play-btn" id="btn-${eid}"
         data-af="${af}"
