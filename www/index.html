@@ -1341,76 +1341,97 @@ async function idbPut(key, val){
 }
 
 async function loadBuiltInCSV(){
-  // 1. Show loading indicator
   document.getElementById('totalBadge').innerHTML='載入中…';
 
-  // 2. Try to get ETag/Last-Modified of CSV to detect changes
+  const REMOTE_JSON = 'https://haiangdict.github.io/Indigenous_SOS/data/data.json';
+  const LOCAL_JSON  = './data/data.json';
+  let loaded = false;
   let remoteEtag = null;
-  let csvName = null;
-  for(const name of ['27.csv','data.csv']){
+
+  // STEP 1: Try remote data.json
+  try {
+    showToast('🔄 嘗試連線 GitHub…');
+    const head = await fetch(REMOTE_JSON, {method:'HEAD', cache:'no-cache'});
+    showToast(`📡 HEAD：${head.status} ${head.ok?'OK':'FAIL'}`);
+    if(head.ok){
+      remoteEtag = head.headers.get('etag') || head.headers.get('last-modified') || '';
+      showToast(`🏷 ETag：${(remoteEtag||'無').slice(0,20)}`);
+      try {
+        const meta = await idbGet(IDB_META_KEY);
+        if(meta && meta.etag && meta.etag === remoteEtag){
+          const cached = await idbGet(IDB_KEY);
+          if(cached && cached.length){
+            allData = cached; loaded = true;
+            showToast(`⚡ IDB快取（${cached.length}筆）`);
+          }
+        } else {
+          showToast('🔃 ETag不符，重新下載');
+        }
+      } catch(e){ showToast('⚠ IDB讀取：'+e.message.slice(0,30)); }
+
+      if(!loaded){
+        showToast('⬇ 下載 data.json…');
+        const res = await fetch(REMOTE_JSON, {cache:'no-cache'});
+        showToast(`📥 下載：${res.status}`);
+        if(res.ok){
+          allData = await res.json();
+          allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
+          loaded = true;
+          showToast(`✓ 最新資料（${allData.length}筆）`);
+          try {
+            await idbPut(IDB_KEY, allData);
+            await idbPut(IDB_META_KEY, { etag: remoteEtag, ts: Date.now() });
+          } catch(e){ showToast('⚠ IDB寫入失敗'); }
+        }
+      }
+    }
+  } catch(e){
+    showToast('❌ 遠端失敗：'+e.message.slice(0,40));
+  }
+
+  // STEP 2: IDB fallback
+  if(!loaded){
+    showToast('📦 嘗試 IDB 快取…');
     try {
-      const head = await fetch('./data/'+name, {method:'HEAD'});
-      if(head.ok){
-        csvName = name;
-        remoteEtag = head.headers.get('etag') || head.headers.get('last-modified') || '';
-        break;
+      const cached = await idbGet(IDB_KEY);
+      if(cached && cached.length){ allData=cached; loaded=true;
+        showToast(`📦 離線快取（${cached.length}筆）`); }
+    } catch(e){ showToast('⚠ IDB快取失敗'); }
+  }
+
+  // STEP 3: Local JSON
+  if(!loaded){
+    try {
+      const res = await fetch(LOCAL_JSON);
+      if(res.ok){
+        allData = await res.json();
+        allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
+        loaded = true;
+        showToast(`📁 本地JSON（${allData.length}筆）`);
       }
     } catch{}
   }
 
-  // 3. Check IndexedDB cache
-  let useCache = false;
-  if(csvName){
-    try {
-      const meta = await idbGet(IDB_META_KEY);
-      if(meta && meta.etag && meta.etag === remoteEtag && meta.csvName === csvName){
-        const cached = await idbGet(IDB_KEY);
-        if(cached && cached.length){
-          allData = cached;
-          useCache = true;
-          showToast('⚡ 已從快取載入');
-        }
-      }
-    } catch(e){ console.warn('IDB read error:', e); }
+  // STEP 4: Local CSV
+  if(!loaded){
+    for(const name of ['27.csv','data.csv']){
+      try{
+        const res = await fetch('./data/'+name);
+        if(res.ok){ allData=parseCSV(await res.text()); loaded=true;
+          showToast(`📄 CSV ${name}（${allData.length}筆）`); break; }
+      } catch{}
+    }
   }
 
-  // 4. Fetch fresh data if cache miss
-  if(!useCache){
-    let loaded = false;
-    if(csvName){
-      try{
-        const res = await fetch('./data/'+csvName);
-        if(res.ok){ allData=parseCSV(await res.text()); loaded=true; }
-      } catch{}
-    }
-    if(!loaded){
-      try{
-        const res = await fetch('./data/data.json');
-        if(res.ok){
-          allData = await res.json();
-          allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
-          loaded=true;
-        }
-      } catch{}
-    }
-    if(!loaded){
-      document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料，請點擊右上角「更新資料」上傳 CSV</div></div>`;
-      document.getElementById('totalBadge').innerHTML='<span>0</span> 筆資料';
-      toggleUpload();
-      return;
-    }
-    // 5. Save to IndexedDB
-    if(csvName && remoteEtag !== null){
-      try {
-        await idbPut(IDB_KEY, allData);
-        await idbPut(IDB_META_KEY, { etag: remoteEtag, csvName, ts: Date.now() });
-      } catch(e){ console.warn('IDB write error:', e); }
-    }
+  if(!loaded){
+    document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料，請點擊右上角「更新資料」上傳 CSV</div></div>`;
+    document.getElementById('totalBadge').innerHTML='<span>0</span> 筆資料';
+    toggleUpload();
+    return;
   }
 
   buildRowIndex(); _filterCache=null; initUI();
 }
-
 function handleCSV(input){
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();
@@ -1719,11 +1740,14 @@ function renderRow(r, ri=0){
   const isNoSpeakerBody = isC && !hasSpeaker && ri > 0;
   // First row of each group is the lesson title (C and T)
   const isTitle = ri === 0 && (isC || r['分類']==='T');
+  // Disable special backgrounds when search is active
+  const hasSearch = !!document.getElementById('searchInput')?.value?.trim();
+  const rowExtraCls = hasSearch ? '' : (isTitle ? ' row-title' : isNoSpeakerBody ? ' no-speaker-body' : '');
   const note=(r['備註']||'').trim();
   const af=audioPath(r).replace(/'/g,"’");
   const eid=r['編號'];
   const isStarred=_starredIds.has(String(eid));
-  return `<div class="row-item${isTitle?' row-title':isNoSpeakerBody?' no-speaker-body':''}" id="row-${eid}">
+  return `<div class="row-item${rowExtraCls}" id="row-${eid}">
     <div class="col-play">
       <button class="play-btn" id="btn-${eid}"
         data-af="${af}"
