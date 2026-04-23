@@ -1341,71 +1341,96 @@ async function idbPut(key, val){
 }
 
 async function loadBuiltInCSV(){
-  // 1. Show loading indicator
   document.getElementById('totalBadge').innerHTML='載入中…';
 
-  // 2. Try to get ETag/Last-Modified of CSV to detect changes
+  // ── URLs ──────────────────────────────────────────────────────
+  // Primary: always-fresh data from GitHub Pages (updated by GitHub Actions daily)
+  const REMOTE_JSON = 'https://haiangdict.github.io/Indigenous_SOS/data/data.json';
+  // Fallback: local copy bundled in app / served by GitHub Pages
+  const LOCAL_JSON  = './data/data.json';
+
+  // ── STEP 1: Try remote data.json (GitHub Pages) ────────────────
+  let loaded = false;
   let remoteEtag = null;
-  let csvName = null;
-  for(const name of ['27.csv','data.csv']){
+
+  try {
+    // HEAD first to check ETag (avoids re-downloading if unchanged)
+    const head = await fetch(REMOTE_JSON, {method:'HEAD', cache:'no-cache'});
+    if(head.ok){
+      remoteEtag = head.headers.get('etag') || head.headers.get('last-modified') || '';
+
+      // Check IDB cache — if ETag matches, use cache
+      try {
+        const meta = await idbGet(IDB_META_KEY);
+        if(meta && meta.etag && meta.etag === remoteEtag){
+          const cached = await idbGet(IDB_KEY);
+          if(cached && cached.length){
+            allData = cached;
+            loaded = true;
+            showToast('⚡ 已從快取載入');
+          }
+        }
+      } catch(e){ console.warn('IDB read:', e); }
+
+      // Cache miss — fetch full JSON
+      if(!loaded){
+        const res = await fetch(REMOTE_JSON, {cache:'no-cache'});
+        if(res.ok){
+          allData = await res.json();
+          allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
+          loaded = true;
+          showToast('✓ 已載入最新資料');
+          // Save to IDB
+          try {
+            await idbPut(IDB_KEY, allData);
+            await idbPut(IDB_META_KEY, { etag: remoteEtag, ts: Date.now() });
+          } catch(e){ console.warn('IDB write:', e); }
+        }
+      }
+    }
+  } catch(e){
+    console.warn('Remote fetch failed, trying cache/local:', e);
+  }
+
+  // ── STEP 2: Offline fallback — try IDB cache (any version) ────
+  if(!loaded){
     try {
-      const head = await fetch('./data/'+name, {method:'HEAD'});
-      if(head.ok){
-        csvName = name;
-        remoteEtag = head.headers.get('etag') || head.headers.get('last-modified') || '';
-        break;
+      const cached = await idbGet(IDB_KEY);
+      if(cached && cached.length){
+        allData = cached;
+        loaded = true;
+        showToast('📦 離線模式：使用快取資料');
+      }
+    } catch(e){ console.warn('IDB fallback:', e); }
+  }
+
+  // ── STEP 3: Last resort — local bundled JSON ───────────────────
+  if(!loaded){
+    try {
+      const res = await fetch(LOCAL_JSON);
+      if(res.ok){
+        allData = await res.json();
+        allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
+        loaded = true;
       }
     } catch{}
   }
 
-  // 3. Check IndexedDB cache
-  let useCache = false;
-  if(csvName){
-    try {
-      const meta = await idbGet(IDB_META_KEY);
-      if(meta && meta.etag && meta.etag === remoteEtag && meta.csvName === csvName){
-        const cached = await idbGet(IDB_KEY);
-        if(cached && cached.length){
-          allData = cached;
-          useCache = true;
-          showToast('⚡ 已從快取載入');
-        }
-      }
-    } catch(e){ console.warn('IDB read error:', e); }
+  // ── STEP 4: Also try local CSV as last resort ──────────────────
+  if(!loaded){
+    for(const name of ['27.csv','data.csv']){
+      try{
+        const res = await fetch('./data/'+name);
+        if(res.ok){ allData=parseCSV(await res.text()); loaded=true; break; }
+      } catch{}
+    }
   }
 
-  // 4. Fetch fresh data if cache miss
-  if(!useCache){
-    let loaded = false;
-    if(csvName){
-      try{
-        const res = await fetch('./data/'+csvName);
-        if(res.ok){ allData=parseCSV(await res.text()); loaded=true; }
-      } catch{}
-    }
-    if(!loaded){
-      try{
-        const res = await fetch('./data/data.json');
-        if(res.ok){
-          allData = await res.json();
-          allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
-          loaded=true;
-        }
-      } catch{}
-    }
-    if(!loaded){
-      document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料，請點擊右上角「更新資料」上傳 CSV</div></div>`;
-      document.getElementById('totalBadge').innerHTML='<span>0</span> 筆資料';
-      toggleUpload();
-      return;
-    }
-    // 5. Save to IndexedDB
-    if(csvName && remoteEtag !== null){
-      try {
-        await idbPut(IDB_KEY, allData);
-        await idbPut(IDB_META_KEY, { etag: remoteEtag, csvName, ts: Date.now() });
-      } catch(e){ console.warn('IDB write error:', e); }
-    }
+  if(!loaded){
+    document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料，請點擊右上角「更新資料」上傳 CSV</div></div>`;
+    document.getElementById('totalBadge').innerHTML='<span>0</span> 筆資料';
+    toggleUpload();
+    return;
   }
 
   buildRowIndex(); _filterCache=null; initUI();
