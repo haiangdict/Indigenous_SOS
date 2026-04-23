@@ -1,5 +1,10 @@
 {
   "appId": "tw.github.haiangdict.indigenoussos",
   "appName": "Payrang族語自救會",
-  "webDir": "www"
+  "webDir": "www",
+  "server": {
+    "allowNavigation": [
+      "haiangdict.github.io"
+    ]
+  }
 }
