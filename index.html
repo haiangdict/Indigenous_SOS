@@ -2273,18 +2273,29 @@ function updateAuthUI() {
   }
 }
 
+// Detect if running inside Capacitor native app
+const isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
 function handleAuthClick() {
   if(_gToken) { signOut(); } else { signIn(); }
 }
 
 function signIn() {
+  if(isNativeApp) {
+    signInNative();
+  } else {
+    signInWeb();
+  }
+}
+
+// ── Web sign-in (browser, uses Google JS SDK popup) ───────────
+function signInWeb() {
   if(typeof google==='undefined') { showToast('⚠ Google 登入載入中，請稍後再試'); return; }
   google.accounts.oauth2.initTokenClient({
     client_id: GAPI_CLIENT_ID,
     scope: GAPI_SCOPES,
     callback: async (resp) => {
       if(resp.error) { showToast('❌ 登入失敗：'+resp.error); return; }
-      // Get user info
       const uinfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers:{Authorization:'Bearer '+resp.access_token}
       }).then(r=>r.json()).catch(()=>({}));
@@ -2294,10 +2305,71 @@ function signIn() {
       showToast('✓ 已登入：'+user.name);
       await initSpreadsheet();
       await loadStarredIds();
-      renderPage(); // re-render to show star states
+      renderPage();
     }
   }).requestAccessToken();
 }
+
+// ── Native sign-in (Capacitor app, uses system browser) ────────
+// Uses OAuth 2.0 implicit flow via system browser + deep link callback
+async function signInNative() {
+  const redirectUri = 'https://haiangdict.github.io/Indigenous_SOS/oauth-callback.html';
+  const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
+    + '?client_id=' + encodeURIComponent(GAPI_CLIENT_ID)
+    + '&redirect_uri=' + encodeURIComponent(redirectUri)
+    + '&response_type=token'
+    + '&scope=' + encodeURIComponent(GAPI_SCOPES)
+    + '&prompt=select_account';
+
+  showToast('🔐 開啟 Google 登入…');
+
+  // Store flag so oauth-callback page knows to pass token back
+  try { sessionStorage.setItem('awaiting_oauth', '1'); } catch(e){}
+
+  // Open system browser
+  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+    await window.Capacitor.Plugins.Browser.open({ url: authUrl });
+  } else {
+    window.open(authUrl, '_blank');
+  }
+}
+
+// Called by oauth-callback.html via postMessage or URL fragment
+async function handleNativeOAuthCallback(accessToken) {
+  if(!accessToken) return;
+  try { sessionStorage.removeItem('awaiting_oauth'); } catch(e){}
+  const uinfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers:{Authorization:'Bearer '+accessToken}
+  }).then(r=>r.json()).catch(()=>({}));
+  const user = {name:uinfo.name||'使用者', email:uinfo.email||'', picture:uinfo.picture||''};
+  _saveToken(accessToken, user);
+  updateAuthUI();
+  showToast('✓ 已登入：'+user.name);
+  await initSpreadsheet();
+  await loadStarredIds();
+  renderPage();
+  // Close browser tab if still open
+  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+    window.Capacitor.Plugins.Browser.close().catch(()=>{});
+  }
+}
+
+// Listen for postMessage from oauth-callback page
+window.addEventListener('message', (e) => {
+  if(e.data && e.data.type === 'oauth_token') {
+    handleNativeOAuthCallback(e.data.token);
+  }
+});
+
+// Also check URL hash on page load (in case redirected back to app)
+(function checkOAuthHash(){
+  const hash = window.location.hash;
+  if(hash && hash.includes('access_token')){
+    const params = new URLSearchParams(hash.slice(1));
+    const token = params.get('access_token');
+    if(token) handleNativeOAuthCallback(token);
+  }
+})();
 
 function signOut() {
   if(_gToken && typeof google!=='undefined') {
