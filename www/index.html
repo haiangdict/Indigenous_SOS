@@ -1348,55 +1348,49 @@ async function loadBuiltInCSV(){
   let loaded = false;
   let remoteEtag = null;
 
-  // STEP 1: Try remote data.json
+  // STEP 1: Try remote data.json (GitHub Pages)
   try {
-    showToast('🔄 嘗試連線 GitHub…');
     const head = await fetch(REMOTE_JSON, {method:'HEAD', cache:'no-cache'});
-    showToast(`📡 HEAD：${head.status} ${head.ok?'OK':'FAIL'}`);
     if(head.ok){
       remoteEtag = head.headers.get('etag') || head.headers.get('last-modified') || '';
-      showToast(`🏷 ETag：${(remoteEtag||'無').slice(0,20)}`);
       try {
         const meta = await idbGet(IDB_META_KEY);
         if(meta && meta.etag && meta.etag === remoteEtag){
           const cached = await idbGet(IDB_KEY);
           if(cached && cached.length){
             allData = cached; loaded = true;
-            showToast(`⚡ IDB快取（${cached.length}筆）`);
+            showToast('⚡ 已從快取載入');
           }
-        } else {
-          showToast('🔃 ETag不符，重新下載');
         }
-      } catch(e){ showToast('⚠ IDB讀取：'+e.message.slice(0,30)); }
+      } catch(e){ console.warn('IDB read:', e); }
 
       if(!loaded){
-        showToast('⬇ 下載 data.json…');
         const res = await fetch(REMOTE_JSON, {cache:'no-cache'});
-        showToast(`📥 下載：${res.status}`);
         if(res.ok){
           allData = await res.json();
           allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
           loaded = true;
-          showToast(`✓ 最新資料（${allData.length}筆）`);
+          showToast('✓ 已載入最新資料');
           try {
             await idbPut(IDB_KEY, allData);
             await idbPut(IDB_META_KEY, { etag: remoteEtag, ts: Date.now() });
-          } catch(e){ showToast('⚠ IDB寫入失敗'); }
+          } catch(e){ console.warn('IDB write:', e); }
         }
       }
     }
   } catch(e){
-    showToast('❌ 遠端失敗：'+e.message.slice(0,40));
+    console.warn('Remote fetch failed:', e);
   }
 
   // STEP 2: IDB fallback
   if(!loaded){
-    showToast('📦 嘗試 IDB 快取…');
     try {
       const cached = await idbGet(IDB_KEY);
-      if(cached && cached.length){ allData=cached; loaded=true;
-        showToast(`📦 離線快取（${cached.length}筆）`); }
-    } catch(e){ showToast('⚠ IDB快取失敗'); }
+      if(cached && cached.length){
+        allData = cached; loaded = true;
+        showToast('📦 離線模式：使用快取資料');
+      }
+    } catch(e){ console.warn('IDB fallback:', e); }
   }
 
   // STEP 3: Local JSON
@@ -1407,7 +1401,6 @@ async function loadBuiltInCSV(){
         allData = await res.json();
         allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
         loaded = true;
-        showToast(`📁 本地JSON（${allData.length}筆）`);
       }
     } catch{}
   }
@@ -1417,8 +1410,7 @@ async function loadBuiltInCSV(){
     for(const name of ['27.csv','data.csv']){
       try{
         const res = await fetch('./data/'+name);
-        if(res.ok){ allData=parseCSV(await res.text()); loaded=true;
-          showToast(`📄 CSV ${name}（${allData.length}筆）`); break; }
+        if(res.ok){ allData=parseCSV(await res.text()); loaded=true; break; }
       } catch{}
     }
   }
@@ -2281,18 +2273,29 @@ function updateAuthUI() {
   }
 }
 
+// Detect if running inside Capacitor native app
+const isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
 function handleAuthClick() {
   if(_gToken) { signOut(); } else { signIn(); }
 }
 
 function signIn() {
+  if(isNativeApp) {
+    signInNative();
+  } else {
+    signInWeb();
+  }
+}
+
+// ── Web sign-in (browser, uses Google JS SDK popup) ───────────
+function signInWeb() {
   if(typeof google==='undefined') { showToast('⚠ Google 登入載入中，請稍後再試'); return; }
   google.accounts.oauth2.initTokenClient({
     client_id: GAPI_CLIENT_ID,
     scope: GAPI_SCOPES,
     callback: async (resp) => {
       if(resp.error) { showToast('❌ 登入失敗：'+resp.error); return; }
-      // Get user info
       const uinfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers:{Authorization:'Bearer '+resp.access_token}
       }).then(r=>r.json()).catch(()=>({}));
@@ -2302,10 +2305,71 @@ function signIn() {
       showToast('✓ 已登入：'+user.name);
       await initSpreadsheet();
       await loadStarredIds();
-      renderPage(); // re-render to show star states
+      renderPage();
     }
   }).requestAccessToken();
 }
+
+// ── Native sign-in (Capacitor app, uses system browser) ────────
+// Uses OAuth 2.0 implicit flow via system browser + deep link callback
+async function signInNative() {
+  const redirectUri = 'https://haiangdict.github.io/Indigenous_SOS/oauth-callback.html';
+  const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
+    + '?client_id=' + encodeURIComponent(GAPI_CLIENT_ID)
+    + '&redirect_uri=' + encodeURIComponent(redirectUri)
+    + '&response_type=token'
+    + '&scope=' + encodeURIComponent(GAPI_SCOPES)
+    + '&prompt=select_account';
+
+  showToast('🔐 開啟 Google 登入…');
+
+  // Store flag so oauth-callback page knows to pass token back
+  try { sessionStorage.setItem('awaiting_oauth', '1'); } catch(e){}
+
+  // Open system browser
+  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+    await window.Capacitor.Plugins.Browser.open({ url: authUrl });
+  } else {
+    window.open(authUrl, '_blank');
+  }
+}
+
+// Called by oauth-callback.html via postMessage or URL fragment
+async function handleNativeOAuthCallback(accessToken) {
+  if(!accessToken) return;
+  try { sessionStorage.removeItem('awaiting_oauth'); } catch(e){}
+  const uinfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers:{Authorization:'Bearer '+accessToken}
+  }).then(r=>r.json()).catch(()=>({}));
+  const user = {name:uinfo.name||'使用者', email:uinfo.email||'', picture:uinfo.picture||''};
+  _saveToken(accessToken, user);
+  updateAuthUI();
+  showToast('✓ 已登入：'+user.name);
+  await initSpreadsheet();
+  await loadStarredIds();
+  renderPage();
+  // Close browser tab if still open
+  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+    window.Capacitor.Plugins.Browser.close().catch(()=>{});
+  }
+}
+
+// Listen for postMessage from oauth-callback page
+window.addEventListener('message', (e) => {
+  if(e.data && e.data.type === 'oauth_token') {
+    handleNativeOAuthCallback(e.data.token);
+  }
+});
+
+// Also check URL hash on page load (in case redirected back to app)
+(function checkOAuthHash(){
+  const hash = window.location.hash;
+  if(hash && hash.includes('access_token')){
+    const params = new URLSearchParams(hash.slice(1));
+    const token = params.get('access_token');
+    if(token) handleNativeOAuthCallback(token);
+  }
+})();
 
 function signOut() {
   if(_gToken && typeof google!=='undefined') {

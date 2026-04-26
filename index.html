@@ -1674,7 +1674,13 @@ function clearFilters(){
 function groupKey(r){
   if(r['分類']==='C') return r['分類1'];
   if(r['分類']==='T') return r['分類2'] ? r['分類1']+'|'+r['分類2'] : r['分類1']; // 冊|課
-  return r['分類2']||r['分類1'];
+  if(r['分類']==='P'){
+    // 分類3 is the basic display unit; fall back up the hierarchy if absent
+    if(r['分類3']) return r['分類1']+'|'+r['分類2']+'|'+r['分類3'];
+    if(r['分類2']) return r['分類1']+'|'+r['分類2'];
+    return r['分類1'];
+  }
+  return r['分類2']||r['分類1']; // V and others
 }
 
 function langLabel(r){
@@ -1698,10 +1704,14 @@ function groupTitle(r,key){
 }
 
 function sourceLabel(r){
-  // Display label for card header source line
   const typeLabel = TYPE_LABELS[r['分類']]||r['分類'];
   if(r['分類']==='T' && r['分類2']){
     return typeLabel+' · 第'+r['分類1']+'冊 · 第'+r['分類2']+'課';
+  }
+  if(r['分類']==='P'){
+    if(r['分類3']) return typeLabel+' · '+r['分類2']+' · '+r['分類3'];
+    if(r['分類2']) return typeLabel+' · '+r['分類2'];
+    if(r['分類1']) return typeLabel+' · '+r['分類1'];
   }
   if(r['分類1']){
     return typeLabel+' · '+r['分類1'];
