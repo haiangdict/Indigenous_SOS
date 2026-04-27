@@ -2241,7 +2241,7 @@ _loadPrefs();
 const GAPI_CLIENT_ID = '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com';
 const GAPI_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SPREADSHEET_TITLE = 'Indigenous SOS 詞彙表';
-const SHEET_HEADERS = ['語句','翻譯','語別','教材','等級','音檔路徑','編號','收藏時間'];
+const SHEET_HEADERS = ['語句','翻譯','語別','教材','等級','音檔路徑','編號','收藏時間','備註'];
 
 let _gToken = null;       // Google access token
 let _gUser = null;        // {name, email, picture}
@@ -2431,7 +2431,7 @@ async function initSpreadsheet() {
   });
   _spreadsheetId=create.spreadsheetId;
   // Write headers
-  await sheetsReq('PUT',`/${_spreadsheetId}/values/詞彙表!A1:H1?valueInputOption=RAW`,{
+  await sheetsReq('PUT',`/${_spreadsheetId}/values/詞彙表!A1:I1?valueInputOption=RAW`,{
     values:[SHEET_HEADERS]
   });
 }
@@ -2440,7 +2440,7 @@ async function initSpreadsheet() {
 async function loadStarredIds() {
   if(!_gToken||!_spreadsheetId) return;
   try {
-    const res=await sheetsReq('GET',`/${_spreadsheetId}/values/詞彙表!A:H`);
+    const res=await sheetsReq('GET',`/${_spreadsheetId}/values/詞彙表!A:I`);
     const rows=res.values||[];
     _vocabRows=rows.slice(1); // skip header
     _starredIds=new Set(_vocabRows.map(r=>r[6]||'').filter(Boolean)); // col G = 編號
@@ -2474,9 +2474,9 @@ async function addStar(r, btn) {
   const lvl=fmtLevel(r['等級']||'');
   const af=audioPath(r);
   const now=new Date().toISOString();
-  const row=[r['語句'],r['翻譯'],ll,sl,lvl,af,String(r['編號']),now];
+  const row=[r['語句'],r['翻譯'],ll,sl,lvl,af,String(r['編號']),now,''];
   try {
-    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A:H:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
+    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A:I:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
       values:[row]
     });
     _starredIds.add(String(r['編號']));
@@ -2494,7 +2494,7 @@ async function removeStar(eid, btn) {
   const sheetRow=rowIdx+2; // +1 header +1 1-indexed
   try {
     // Clear the row (Sheets API doesn't easily delete rows, so we clear then clean up)
-    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A${sheetRow}:H${sheetRow}:clear`,null);
+    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A${sheetRow}:I${sheetRow}:clear`,null);
     _starredIds.delete(String(eid));
     _vocabRows.splice(rowIdx,1);
     if(btn) { btn.classList.remove('starred'); btn.title='加入詞彙表'; }

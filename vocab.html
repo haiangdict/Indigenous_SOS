@@ -155,6 +155,25 @@ td.translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1r
 }
 .remove-btn:hover { color:#e57373; opacity:1; }
 
+/* ── 備註 inline editor ── */
+.note-cell { min-width:120px; max-width:220px; }
+.note-text {
+  font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:0.85rem;
+  color:var(--muted); cursor:pointer; padding:3px 6px; border-radius:5px;
+  border:1px solid transparent; transition:all 0.13s;
+  display:block; min-height:24px; line-height:1.5;
+  white-space:pre-wrap; word-break:break-all;
+}
+.note-text:hover { border-color:var(--border); background:var(--surface2); }
+.note-text.empty { color:#444; font-style:italic; }
+.note-input {
+  font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:0.85rem;
+  color:var(--text); background:var(--surface2);
+  border:1px solid var(--accent2); border-radius:5px;
+  padding:3px 6px; width:100%; resize:vertical; min-height:28px;
+  outline:none; display:block;
+}
+
 /* EMPTY / LOADING */
 .empty-state {
   text-align:center; padding:80px 20px; color:var(--muted);
@@ -337,7 +356,7 @@ async function loadVocab() {
       renderTable();
       return;
     }
-    const res=await sheetsReq('GET',`/${_spreadsheetId}/values/詞彙表!A:H`);
+    const res=await sheetsReq('GET',`/${_spreadsheetId}/values/詞彙表!A:I`);
     const rows=res.values||[];
     _vocabRows=rows.slice(1).filter(r=>r.some(c=>c)); // skip header, skip empty rows
     renderTable();
@@ -401,7 +420,7 @@ function renderTable() {
   }
 
   const rowsHtml=rows.map((r,i)=>{
-    const [sentence,translation,lang,source,level,af,eid,savedAt]=r;
+    const [sentence,translation,lang,source,level,af,eid,savedAt,note]=r;
     const hasAudio=!!af;
     const timeStr=savedAt?new Date(savedAt).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
     // Find original row index for deletion
@@ -419,6 +438,13 @@ function renderTable() {
       <td><span class="source-badge">${source||''}</span></td>
       <td><span class="level-badge">${fmtLevel(level)}</span></td>
       <td class="mono">${timeStr}</td>
+      <td class="note-cell">
+        <span class="note-text ${note?'':'empty'}"
+          id="note-${i}"
+          onclick="startEditNote(${origIdx}, ${i}, this)"
+          title="${note?'點擊編輯備註':'點擊新增備註'}"
+        >${note||'＋備註'}</span>
+      </td>
       <td style="width:36px;padding:8px;">
         <button class="remove-btn" onclick="removeRow(${origIdx})" title="從詞彙表移除">✕</button>
       </td>
@@ -434,6 +460,7 @@ function renderTable() {
       <th onclick="setSort('source')">教材<span class="th-arrow" id="arr-source"></span></th>
       <th onclick="setSort('level')">等級<span class="th-arrow" id="arr-level"></span></th>
       <th onclick="setSort('time')">收藏時間<span class="th-arrow" id="arr-time"></span></th>
+      <th>備註</th>
       <th></th>
     </tr></thead>
     <tbody>${rowsHtml}</tbody>
@@ -474,17 +501,46 @@ async function removeRow(origIdx) {
   if(origIdx<0||origIdx>=_vocabRows.length) return;
   const sheetRow=origIdx+2; // +1 header +1 1-indexed
   try {
-    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A${sheetRow}:H${sheetRow}:clear`,null);
+    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A${sheetRow}:I${sheetRow}:clear`,null);
     _vocabRows.splice(origIdx,1);
     renderTable();
     showToast('✓ 已移除');
   } catch(e) { showToast('❌ 移除失敗：'+e.message); }
 }
 
+// ── Note editing ─────────────────────────────────────────────────
+function startEditNote(origIdx, renderIdx, span){
+  const current = (_vocabRows[origIdx]||[])[8]||'';
+  const input = document.createElement('textarea');
+  input.className = 'note-input';
+  input.value = current;
+  input.rows = 2;
+  span.replaceWith(input);
+  input.focus();
+
+  async function saveNote(){
+    const newNote = input.value.trim();
+    const sheetRow = origIdx + 2;
+    try {
+      await sheetsReq('PUT',
+        `/${_spreadsheetId}/values/詞彙表!I${sheetRow}?valueInputOption=RAW`,
+        { values: [[newNote]] });
+      if(_vocabRows[origIdx]) _vocabRows[origIdx][8] = newNote;
+    } catch(e){ showToast('❌ 備註儲存失敗：'+e.message); }
+    renderTable();
+  }
+
+  input.addEventListener('blur', saveNote);
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); input.blur(); }
+    if(e.key==='Escape'){ input.removeEventListener('blur', saveNote); renderTable(); }
+  });
+}
+
 // ── Export CSV ─────────────────────────────────────────────────
 function exportCSV() {
   if(!_vocabRows.length){ showToast('詞彙表是空的'); return; }
-  const header=['語句','翻譯','語別','教材','等級','音檔路徑','編號','收藏時間'];
+  const header=['語句','翻譯','語別','教材','等級','音檔路徑','編號','收藏時間','備註'];
   const rows=[header,..._vocabRows];
   const csv=rows.map(r=>r.map(c=>`"${(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
