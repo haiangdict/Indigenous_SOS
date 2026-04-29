@@ -879,7 +879,7 @@ function buildLangSidebar(){
       const cat1s=[...new Set(td.map(r=>r['分類1']).filter(Boolean))].sort((a,b)=>+a-+b);
       for(const cat1 of cat1s){
         const c1d=td.filter(r=>r['分類1']===cat1);
-        const cat2s=[...new Set(c1d.map(r=>r['分類2']).filter(Boolean))].sort((a,b)=>+a-+b);
+        const cat2s=[...new Set(c1d.map(r=>r['分類2']).filter(Boolean))].sort(pCatCmp);
         const ceSks=cat2s.map(cat2=>type+'|'+cat1+'|'+cat2);
         ceSks.forEach(sk=>allSksForType.push(sk));
         const ceSelCount=ceSks.filter(sk=>sel.subkeys.has(sk)).length;
@@ -906,6 +906,19 @@ function buildLangSidebar(){
       }
     } else {
       // P: 分類1 > 分類2 > 分類3 > 分類4
+
+      // Sort key: numeric prefix first, no-letter before letter suffix
+      // e.g. 01 < 01a < 01b < 02 < 02a
+      function pCatSortKey(s){
+        const m = (s||'').trim().match(/^(\d+)([a-zA-Z]?)/);
+        if(m) return [parseInt(m[1],10), m[2].toLowerCase()];
+        return [9999, s];
+      }
+      function pCatCmp(a,b){
+        const [an,al]=pCatSortKey(a), [bn,bl]=pCatSortKey(b);
+        if(an!==bn) return an-bn;
+        if(al<bl) return -1; if(al>bl) return 1; return 0;
+      }
       // leaf   = no children → direct checkbox
       // parent = has children → click=selectAll, ▸=expand only
       // No separate 全選 row — the parent row itself IS the select-all
@@ -962,9 +975,7 @@ function buildLangSidebar(){
           const c2Id='p-c2-'+cat1.replace(/\W/g,'_')+'-'+cat2.replace(/\W/g,'_');
           const c2Open=_langExpanded.has('P-c2-'+cat1+'-'+cat2);
           const c2SksStr=c2Sks.map(s=>s.replace(/"/g,'&quot;')).join('||');
-          const cat3s=[...new Set(c2d.map(r=>r['分類3']).filter(Boolean))].sort((a,b)=>{
-            const at=a.trim(),bt=b.trim(); return at<bt?-1:at>bt?1:0;
-          });
+          const cat3s=[...new Set(c2d.map(r=>r['分類3']).filter(Boolean))].sort(pCatCmp);
 
           if(!cat3s.length){
             // 分類2 leaf → sb-l2-item checkbox
@@ -993,7 +1004,7 @@ function buildLangSidebar(){
             const c3Id='p-c3-'+cat1.replace(/\W/g,'_')+'-'+cat2.replace(/\W/g,'_')+'-'+cat3.replace(/\W/g,'_');
             const c3Open=_langExpanded.has('P-c3-'+cat1+'-'+cat2+'-'+cat3);
             const c3SksStr=c3Sks.map(s=>s.replace(/"/g,'&quot;')).join('||');
-            const cat4s=[...new Set(c3d.map(r=>r['分類4']).filter(Boolean))];
+            const cat4s=[...new Set(c3d.map(r=>r['分類4']).filter(Boolean))].sort(pCatCmp);
 
             if(!cat4s.length){
               // 分類3 leaf → sb-l3-item checkbox
