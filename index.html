@@ -152,6 +152,27 @@ header {
 .audio-config label { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--muted); white-space: nowrap; }
 
 /* ── CONTROLS ── */
+/* ── Special character input buttons ── */
+.char-btns {
+  display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+}
+.char-btn {
+  font-family: 'Space Mono', monospace; font-size: 0.85rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 4px 9px; border-radius: 6px;
+  cursor: pointer; transition: all 0.13s; line-height: 1;
+  min-width: 30px; text-align: center;
+}
+.char-btn:hover { border-color: var(--accent2); background: var(--surface); }
+.char-btn:active { transform: scale(0.93); }
+.case-btn {
+  font-family: 'Space Mono', monospace; font-size: 0.68rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); padding: 4px 8px; border-radius: 6px;
+  cursor: pointer; transition: all 0.13s; letter-spacing: 0.05em;
+}
+.case-btn:hover { border-color: var(--accent); color: var(--accent); }
+.case-btn.upper { border-color: var(--accent2); color: var(--accent2); background: rgba(139,196,168,0.08); }
 .controls {
   padding: 12px 28px; border-bottom: 1px solid var(--border);
   display: flex; flex-wrap: wrap; gap: 9px; align-items: center; background: var(--surface);
@@ -707,6 +728,13 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
     <span class="search-icon">🔍</span>
     <input type="text" id="searchInput" placeholder="搜尋…" oninput="applyFilters()">
   </div>
+  <!-- Special character buttons -->
+  <div class="char-btns">
+    <button class="char-btn" onclick="insertChar('é')"  title="é (U+00E9)">é</button>
+    <button class="char-btn" onclick="insertChar('ɨ')"  title="ɨ (U+0268)">ɨ</button>
+    <button class="char-btn" onclick="insertChar('ʉ')"  title="ʉ (U+0289)">ʉ</button>
+    <button class="case-btn" id="caseCycleBtn" onclick="cycleCase()" title="大小寫切換">abc</button>
+  </div>
   <div class="search-scope">
     <label class="scope-label" id="scope-s" onclick="toggleScope('sentence')" title="搜尋語句">
       <span class="scope-chk" id="schk-s">✓</span> 語句
@@ -1182,6 +1210,44 @@ function toggleScope(which){
   if(lbl){ lbl.classList.toggle('active', searchScope[which]); }
   if(chk){ chk.style.color = searchScope[which]?'':'transparent'; }
   applyFilters();
+}
+
+// ── Special character input ──────────────────────────────────────
+// Three chars each have lower + upper form
+const SPECIAL_CHARS = {
+  'é': 'É',   // U+00E9 / U+00C9
+  'ɨ': 'Ɨ',   // U+0268 / U+0197
+  'ʉ': 'Ʉ',   // U+0289 / U+0244
+};
+let _charCase = 'lower'; // 'lower' | 'upper'
+
+function insertChar(lowerChar){
+  const ch = _charCase === 'upper' ? SPECIAL_CHARS[lowerChar] : lowerChar;
+  const input = document.getElementById('searchInput');
+  const start = input.selectionStart;
+  const end   = input.selectionEnd;
+  const val   = input.value;
+  input.value = val.slice(0, start) + ch + val.slice(end);
+  // Restore cursor position after inserted char
+  const pos = start + ch.length;
+  input.setSelectionRange(pos, pos);
+  input.focus();
+  applyFilters();
+}
+
+function cycleCase(){
+  _charCase = _charCase === 'lower' ? 'upper' : 'lower';
+  const btn = document.getElementById('caseCycleBtn');
+  if(btn){
+    btn.textContent = _charCase === 'upper' ? 'ABC' : 'abc';
+    btn.classList.toggle('upper', _charCase === 'upper');
+    // Also update char button labels to show upper/lower
+    const labels = { 'é':'É', 'ɨ':'Ɨ', 'ʉ':'Ʉ' };
+    document.querySelectorAll('.char-btn').forEach(b => {
+      const lower = b.title.split(' ')[0];
+      b.textContent = _charCase === 'upper' ? (labels[lower]||lower) : lower;
+    });
+  }
 }
 
 function initSearchScope(){
