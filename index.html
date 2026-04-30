@@ -881,7 +881,7 @@ function buildLangSidebar(){
   </div>
   <div class="sb-sec-body ${catSecOpen?'':'closed'}" id="catSecBody">`;
 
-  const types=['C','T','P','V'];
+  const types=['C','P','T','V'];
   for(const type of types){
     const td=allData.filter(r=>r['分類']===type);
     if(!td.length) continue;
@@ -1269,7 +1269,7 @@ function msToggle(which, val){
 function msAll(which){
   const set = which==='type' ? sel.types : sel.levels;
   const opts = which==='type'
-    ? ['C','T','P','V']
+    ? ['C','P','T','V']
     : [...new Set(allData.map(r=>r['等級']).filter(Boolean))].sort();
   // Toggle: if all selected → deselect all; else → select all
   const allSelected = opts.length>0 && opts.every(v=>set.has(v));
