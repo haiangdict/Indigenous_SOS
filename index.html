@@ -1424,60 +1424,164 @@ async function idbPut(key, val){
 async function loadBuiltInCSV(){
   document.getElementById('totalBadge').innerHTML='載入中…';
 
-  const REMOTE_JSON = 'https://haiangdict.github.io/Indigenous_SOS/data/data.json';
-  const LOCAL_JSON  = './data/data.json';
-  let loaded = false;
-  let remoteEtag = null;
+  const BASE = 'https://haiangdict.github.io/Indigenous_SOS/data/';
+  const INDEX_URL = BASE + 'index.json';
 
-  // STEP 1: Try remote data.json (GitHub Pages)
+  // ── STEP 1: Load index.json (dialect list) ────────────────
+  let dialectList = null;
   try {
-    const head = await fetch(REMOTE_JSON, {method:'HEAD', cache:'no-cache'});
-    if(head.ok){
-      remoteEtag = head.headers.get('etag') || head.headers.get('last-modified') || '';
-      try {
-        const meta = await idbGet(IDB_META_KEY);
-        if(meta && meta.etag && meta.etag === remoteEtag){
-          const cached = await idbGet(IDB_KEY);
-          if(cached && cached.length){
-            allData = cached; loaded = true;
-            showToast('⚡ 已從快取載入');
-          }
-        }
-      } catch(e){ console.warn('IDB read:', e); }
+    const res = await fetch(INDEX_URL, {cache:'no-cache'});
+    if(res.ok) dialectList = await res.json();
+  } catch(e){ console.warn('index.json fetch failed:', e); }
 
-      if(!loaded){
-        const res = await fetch(REMOTE_JSON, {cache:'no-cache'});
-        if(res.ok){
-          allData = await res.json();
-          allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
-          loaded = true;
-          showToast('✓ 已載入最新資料');
-          try {
-            await idbPut(IDB_KEY, allData);
-            await idbPut(IDB_META_KEY, { etag: remoteEtag, ts: Date.now() });
-          } catch(e){ console.warn('IDB write:', e); }
-        }
-      }
-    }
-  } catch(e){
-    console.warn('Remote fetch failed:', e);
+  // Fallback: try local index.json
+  if(!dialectList){
+    try {
+      const res = await fetch('./data/index.json');
+      if(res.ok) dialectList = await res.json();
+    } catch{}
   }
 
-  // STEP 2: IDB fallback
+  if(!dialectList){
+    // Last resort: load old monolithic data.json
+    showToast('⚠ 無法取得方言清單，嘗試備用載入…');
+    await _loadMonolithic();
+    return;
+  }
+
+  // Store dialect list globally for progress tracking
+  _dialectList = dialectList;
+  _dialectData = {}; // dialId → records[]
+  _dialectLoaded = new Set();
+  _dialectTotal = dialectList.length;
+
+  // Show loading progress UI
+  _showLoadProgress();
+
+  // ── STEP 2: Download all dialect files (background) ───────
+  // Check IDB for each dialect first
+  const toFetch = [];
+  for(const d of dialectList){
+    try {
+      const cached = await idbGet('dial_'+d.dialId);
+      const meta   = await idbGet('dial_meta_'+d.dialId);
+      if(cached && meta && cached.length === d.count){
+        _dialectData[d.dialId] = cached;
+        _dialectLoaded.add(d.dialId);
+        _updateLoadProgress();
+        continue;
+      }
+    } catch{}
+    toFetch.push(d);
+  }
+
+  // If all from cache, init immediately
+  if(toFetch.length === 0){
+    showToast(`⚡ 已從快取載入所有方言`);
+    _onAllDialectsLoaded();
+    return;
+  }
+
+  // Fetch remaining dialects
+  // Fetch in parallel batches of 4
+  const BATCH = 4;
+  for(let i=0; i<toFetch.length; i+=BATCH){
+    const batch = toFetch.slice(i, i+BATCH);
+    await Promise.all(batch.map(d => _fetchDialect(d)));
+  }
+
+  _onAllDialectsLoaded();
+}
+
+// ── Load one dialect file ─────────────────────────────────────
+async function _fetchDialect(d){
+  const BASE = 'https://haiangdict.github.io/Indigenous_SOS/data/';
+  const url = BASE + 'dial_' + d.dialId + '.json';
+  try {
+    const res = await fetch(url, {cache:'no-cache'});
+    if(res.ok){
+      const data = await res.json();
+      _dialectData[d.dialId] = data;
+      _dialectLoaded.add(d.dialId);
+      // Save to IDB
+      try {
+        await idbPut('dial_'+d.dialId, data);
+        await idbPut('dial_meta_'+d.dialId, {count:data.length, ts:Date.now()});
+      } catch{}
+      _updateLoadProgress();
+      return;
+    }
+  } catch(e){ console.warn('Failed to fetch dial_'+d.dialId, e); }
+  // Try local fallback
+  try {
+    const res = await fetch('./data/dial_'+d.dialId+'.json');
+    if(res.ok){
+      const data = await res.json();
+      _dialectData[d.dialId] = data;
+      _dialectLoaded.add(d.dialId);
+      _updateLoadProgress();
+    }
+  } catch{}
+}
+
+// ── Progress UI ───────────────────────────────────────────────
+let _dialectList   = [];
+let _dialectData   = {};
+let _dialectLoaded = new Set();
+let _dialectTotal  = 0;
+
+function _showLoadProgress(){
+  const content = document.getElementById('content');
+  content.innerHTML = `<div class="empty" id="loadProgress">
+    <div class="empty-icon">⬇</div>
+    <div class="empty-text" id="loadProgressText">下載方言資料中…</div>
+    <div style="width:260px;height:6px;background:var(--surface2);border-radius:3px;margin:12px auto 0;">
+      <div id="loadProgressBar" style="height:6px;background:var(--accent2);border-radius:3px;width:0%;transition:width 0.3s;"></div>
+    </div>
+  </div>`;
+}
+
+function _updateLoadProgress(){
+  const done = _dialectLoaded.size;
+  const total = _dialectTotal;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const bar = document.getElementById('loadProgressBar');
+  const txt = document.getElementById('loadProgressText');
+  if(bar) bar.style.width = pct+'%';
+  if(txt) txt.textContent = `已下載 ${done} / ${total} 個方言（${pct}%）`;
+  document.getElementById('totalBadge').innerHTML=
+    `下載中 <span>${done}/${total}</span>`;
+}
+
+function _onAllDialectsLoaded(){
+  // Merge all dialect data into allData
+  allData = Object.values(_dialectData).flat();
+  showToast(`✓ 已載入全部 ${allData.length.toLocaleString()} 筆資料`);
+  buildRowIndex(); _filterCache=null; initUI();
+}
+
+// ── Monolithic fallback (old data.json) ───────────────────────
+async function _loadMonolithic(){
+  const REMOTE = 'https://haiangdict.github.io/Indigenous_SOS/data/data.json';
+  let loaded = false;
+  try {
+    const res = await fetch(REMOTE, {cache:'no-cache'});
+    if(res.ok){
+      allData = await res.json();
+      allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
+      loaded = true;
+      showToast('✓ 已載入資料（備用模式）');
+    }
+  } catch{}
   if(!loaded){
     try {
       const cached = await idbGet(IDB_KEY);
-      if(cached && cached.length){
-        allData = cached; loaded = true;
-        showToast('📦 離線模式：使用快取資料');
-      }
-    } catch(e){ console.warn('IDB fallback:', e); }
+      if(cached && cached.length){ allData=cached; loaded=true; showToast('📦 離線快取'); }
+    } catch{}
   }
-
-  // STEP 3: Local JSON
   if(!loaded){
     try {
-      const res = await fetch(LOCAL_JSON);
+      const res = await fetch('./data/data.json');
       if(res.ok){
         allData = await res.json();
         allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
@@ -1485,26 +1589,15 @@ async function loadBuiltInCSV(){
       }
     } catch{}
   }
-
-  // STEP 4: Local CSV
-  if(!loaded){
-    for(const name of ['27.csv','data.csv']){
-      try{
-        const res = await fetch('./data/'+name);
-        if(res.ok){ allData=parseCSV(await res.text()); loaded=true; break; }
-      } catch{}
-    }
-  }
-
   if(!loaded){
     document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料，請點擊右上角「更新資料」上傳 CSV</div></div>`;
     document.getElementById('totalBadge').innerHTML='<span>0</span> 筆資料';
     toggleUpload();
     return;
   }
-
   buildRowIndex(); _filterCache=null; initUI();
 }
+
 function handleCSV(input){
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();

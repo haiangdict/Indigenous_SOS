@@ -1,10 +1,10 @@
 """
 sync_sheets.py
 GitHub Actions 執行此腳本，從 Google Sheets 拉取語料，
-輸出 data/27.csv 和 data/data.json。
+輸出 data/index.json 和 data/dial_XX.json（每個方言別一個檔案）。
 """
 
-import os, json, csv, io
+import os, json, csv
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -28,9 +28,18 @@ if len(rows) < 2:
 headers = rows[0]
 data_rows = [r for r in rows[1:] if any(c.strip() for c in r)]
 print(f"共 {len(data_rows)} 列資料，{len(headers)} 個欄位")
-print(f"欄位：{headers}")
 
-# ── Write CSV ─────────────────────────────────────────────────
+# ── Helper: pad dial ID ───────────────────────────────────────
+def pad_dial(raw):
+    raw = str(raw).strip().replace('.0','')
+    if not raw or raw == '0': return ''
+    try:
+        n = int(float(raw))
+        return f'{n:02d}' if n < 10 else str(n)
+    except:
+        return raw
+
+# ── Write full CSV (for backward compat) ─────────────────────
 os.makedirs('data', exist_ok=True)
 
 with open('data/27.csv', 'w', newline='', encoding='utf-8-sig') as f:
@@ -39,8 +48,7 @@ with open('data/27.csv', 'w', newline='', encoding='utf-8-sig') as f:
     writer.writerows(data_rows)
 print("✅ data/27.csv 寫入完成")
 
-# ── Write JSON ────────────────────────────────────────────────
-# 只保留有值的欄位，縮小檔案體積
+# ── Build records list ────────────────────────────────────────
 records = []
 for row in data_rows:
     r = {}
@@ -51,6 +59,53 @@ for row in data_rows:
     if r.get('語句') or r.get('翻譯'):
         records.append(r)
 
+print(f"有效資料：{len(records)} 筆")
+
+# ── Group by 方言別 ────────────────────────────────────────────
+dial_groups = {}
+no_dial = []
+for r in records:
+    dial = pad_dial(r.get('方言別',''))
+    if dial:
+        if dial not in dial_groups:
+            dial_groups[dial] = []
+        dial_groups[dial].append(r)
+    else:
+        no_dial.append(r)
+
+if no_dial:
+    print(f"⚠ 無方言別資料：{len(no_dial)} 筆（略過）")
+
+# ── Write per-dialect JSON files ───────────────────────────────
+for dial_id, recs in sorted(dial_groups.items()):
+    fname = f'data/dial_{dial_id}.json'
+    with open(fname, 'w', encoding='utf-8') as f:
+        json.dump(recs, f, ensure_ascii=False, separators=(',',':'))
+    print(f"✅ {fname}（{len(recs)} 筆）")
+
+# ── Write index.json ──────────────────────────────────────────
+lang_map = {}
+for r in records:
+    dial = pad_dial(r.get('方言別',''))
+    if dial and dial not in lang_map:
+        lang_map[dial] = r.get('語別','')
+
+index_data = [
+    {
+        'dialId': dial,
+        'lang': lang_map.get(dial,''),
+        'count': len(recs)
+    }
+    for dial, recs in sorted(dial_groups.items())
+]
+
+with open('data/index.json', 'w', encoding='utf-8') as f:
+    json.dump(index_data, f, ensure_ascii=False, separators=(',',':'))
+print(f"✅ data/index.json（{len(index_data)} 個方言）")
+
+# ── Also write combined data.json for fallback ───────────────
 with open('data/data.json', 'w', encoding='utf-8') as f:
-    json.dump(records, f, ensure_ascii=False, separators=(',', ':'))
-print(f"✅ data/data.json 寫入完成（{len(records)} 筆有效資料）")
+    json.dump(records, f, ensure_ascii=False, separators=(',',':'))
+print(f"✅ data/data.json（{len(records)} 筆，備用）")
+
+print(f"\n🎉 同步完成：{len(records)} 筆資料，{len(dial_groups)} 個方言")
