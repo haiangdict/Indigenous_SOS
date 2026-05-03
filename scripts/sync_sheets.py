@@ -61,20 +61,21 @@ for row in data_rows:
 
 print(f"有效資料：{len(records)} 筆")
 
-# ── Group by 方言別 ────────────────────────────────────────────
+# ── Group by 方言別（無方言別者用語別代號）────────────────────
 dial_groups = {}
-no_dial = []
 for r in records:
     dial = pad_dial(r.get('方言別',''))
+    if not dial:
+        # No 方言別 — use 語別 code as dial ID
+        lang_id = str(r.get('語別','')).strip()
+        if lang_id:
+            dial = pad_dial(lang_id)
     if dial:
         if dial not in dial_groups:
             dial_groups[dial] = []
         dial_groups[dial].append(r)
     else:
-        no_dial.append(r)
-
-if no_dial:
-    print(f"⚠ 無方言別資料：{len(no_dial)} 筆（略過）")
+        print(f"⚠ 無法識別方言/語別，略過：{r.get('語句','')[:20]}")
 
 # ── Write per-dialect JSON files ───────────────────────────────
 for dial_id, recs in sorted(dial_groups.items()):
