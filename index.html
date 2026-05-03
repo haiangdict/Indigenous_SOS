@@ -1384,13 +1384,14 @@ function audioPath(r){
 
 // ── IndexedDB cache ──────────────────────────────────────────────
 const IDB_NAME = 'sos-data';
+const IDB_VER  = 2; // bump to clear old 33-dialect cache
 const IDB_STORE = 'csv';
 const IDB_KEY = 'allData';
 const IDB_META_KEY = 'meta';
 
 function idbOpen(){
   return new Promise((res,rej)=>{
-    const req = indexedDB.open(IDB_NAME, 1);
+    const req = indexedDB.open(IDB_NAME, IDB_VER);
     req.onupgradeneeded = e => {
       const db = e.target.result;
       if(!db.objectStoreNames.contains(IDB_STORE))
@@ -1462,17 +1463,21 @@ async function loadBuiltInCSV(){
   // Check IDB for each dialect first
   const toFetch = [];
   for(const d of dialectList){
+    let useCache = false;
     try {
       const cached = await idbGet('dial_'+d.dialId);
       const meta   = await idbGet('dial_meta_'+d.dialId);
-      if(cached && meta && cached.length === d.count){
+      if(cached && Array.isArray(cached) && cached.length === d.count && meta){
         _dialectData[d.dialId] = cached;
         _dialectLoaded.add(d.dialId);
         _updateLoadProgress();
-        continue;
+        useCache = true;
       }
-    } catch{}
-    toFetch.push(d);
+    } catch(e){
+      // IDB error or key not found — must fetch
+      useCache = false;
+    }
+    if(!useCache) toFetch.push(d);
   }
 
   // If all from cache, init immediately
