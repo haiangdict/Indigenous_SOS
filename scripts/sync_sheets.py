@@ -42,11 +42,11 @@ def pad_dial(raw):
 # ── Write full CSV (for backward compat) ─────────────────────
 os.makedirs('data', exist_ok=True)
 
-with open('data/27.csv', 'w', newline='', encoding='utf-8-sig') as f:
+with open('data/data.csv', 'w', newline='', encoding='utf-8-sig') as f:
     writer = csv.writer(f)
     writer.writerow(headers)
     writer.writerows(data_rows)
-print("✅ data/27.csv 寫入完成")
+print("✅ data/data.csv 寫入完成")
 
 # ── Build records list ────────────────────────────────────────
 records = []
