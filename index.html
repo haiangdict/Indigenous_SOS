@@ -1465,18 +1465,19 @@ async function loadBuiltInCSV(){
   for(const d of dialectList){
     let useCache = false;
     try {
-      const cached = await idbGet('dial_'+d.dialId);
-      const meta   = await idbGet('dial_meta_'+d.dialId);
-      if(cached && Array.isArray(cached) && cached.length === d.count && meta){
-        _dialectData[d.dialId] = cached;
-        _dialectLoaded.add(d.dialId);
-        _updateLoadProgress();
-        useCache = true;
+      const meta = await idbGet('dial_meta_'+d.dialId);
+      // Use server-provided updatedAt timestamp to detect stale cache
+      const serverTs = d.updatedAt || '';
+      if(meta && meta.updatedAt && serverTs && meta.updatedAt === serverTs){
+        const cached = await idbGet('dial_'+d.dialId);
+        if(cached && Array.isArray(cached) && cached.length > 0){
+          _dialectData[d.dialId] = cached;
+          _dialectLoaded.add(d.dialId);
+          _updateLoadProgress();
+          useCache = true;
+        }
       }
-    } catch(e){
-      // IDB error or key not found — must fetch
-      useCache = false;
-    }
+    } catch(e){ useCache = false; }
     if(!useCache) toFetch.push(d);
   }
 
@@ -1511,7 +1512,7 @@ async function _fetchDialect(d){
       // Save to IDB
       try {
         await idbPut('dial_'+d.dialId, data);
-        await idbPut('dial_meta_'+d.dialId, {count:data.length, ts:Date.now()});
+        await idbPut('dial_meta_'+d.dialId, {updatedAt: d.updatedAt||'', count:data.length, ts:Date.now()});
       } catch{}
       _updateLoadProgress();
       return;

@@ -5,6 +5,7 @@ GitHub Actions 執行此腳本，從 Google Sheets 拉取語料，
 """
 
 import os, json, csv
+from datetime import datetime, timezone
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -91,11 +92,14 @@ for r in records:
     if dial and dial not in lang_map:
         lang_map[dial] = r.get('語別','')
 
+sync_ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
 index_data = [
     {
         'dialId': dial,
         'lang': lang_map.get(dial,''),
-        'count': len(recs)
+        'count': len(recs),
+        'updatedAt': sync_ts
     }
     for dial, recs in sorted(dial_groups.items())
 ]
