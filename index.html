@@ -732,6 +732,7 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
   <div class="char-btns">
     <button class="char-btn" onclick="insertChar('é')"  title="é (U+00E9)">é</button>
     <button class="char-btn" onclick="insertChar('ɨ')"  title="ɨ (U+0268)">ɨ</button>
+    <button class="char-btn" onclick="insertChar('ṟ')"  title="ṟ (U+1E5F)">ṟ</button>
     <button class="char-btn" onclick="insertChar('ʉ')"  title="ʉ (U+0289)">ʉ</button>
     <button class="case-btn" id="caseCycleBtn" onclick="cycleCase()" title="大小寫切換">abc</button>
   </div>
@@ -1217,6 +1218,7 @@ function toggleScope(which){
 const SPECIAL_CHARS = {
   'é': 'É',   // U+00E9 / U+00C9
   'ɨ': 'Ɨ',   // U+0268 / U+0197
+  'ṟ': 'Ṟ',   // U+1E5F / U+1E5E
   'ʉ': 'Ʉ',   // U+0289 / U+0244
 };
 let _charCase = 'lower'; // 'lower' | 'upper'
@@ -1242,7 +1244,7 @@ function cycleCase(){
     btn.textContent = _charCase === 'upper' ? 'ABC' : 'abc';
     btn.classList.toggle('upper', _charCase === 'upper');
     // Also update char button labels to show upper/lower
-    const labels = { 'é':'É', 'ɨ':'Ɨ', 'ʉ':'Ʉ' };
+    const labels = { 'é':'É', 'ɨ':'Ɨ', 'ṟ':'Ṟ', 'ʉ':'Ʉ' };
     document.querySelectorAll('.char-btn').forEach(b => {
       const lower = b.title.split(' ')[0];
       b.textContent = _charCase === 'upper' ? (labels[lower]||lower) : lower;
