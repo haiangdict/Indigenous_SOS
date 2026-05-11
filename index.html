@@ -743,6 +743,9 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
     <label class="scope-label" id="scope-t" onclick="toggleScope('translation')" title="搜尋翻譯">
       <span class="scope-chk" id="schk-t">✓</span> 翻譯
     </label>
+    <label class="scope-label" id="scope-exact" onclick="toggleExact()" title="僅顯示完全相符的結果">
+      <span class="scope-chk" id="schk-exact" style="color:transparent;">✓</span> 精確
+    </label>
   </div>
   <button class="btn btn-ghost" onclick="clearFilters()">清除全部</button>
 </div>
@@ -769,6 +772,7 @@ let currentPlayBtn = null;
 // empty = show all (single-lang CSV) or require selection (multi-lang)
 let sel = { types:new Set(), levels:new Set(), subkeys:new Set(), langkeys:new Set() };
 let searchScope = { sentence: true, translation: true }; // both on by default
+let exactSearch = false; // exact match mode (default: fuzzy)
 
 const LANG_LIST = [
   {key:'阿美語',  name:'阿美語',   dialects:[['1','南勢'],['2','秀姑巒'],['3','海岸'],['4','馬蘭'],['5','恆春']]},
@@ -1199,6 +1203,15 @@ function fmtLevel(raw){ return (raw||'').split('/').map(p=>LEVEL_MAP[p.trim()]||
 // ── Multiselect ────────────────────────────────────────────────────
 // toggleMs: dropdowns moved to sidebar, no longer needed as popup
 function toggleMs(which){}
+
+function toggleExact(){
+  exactSearch = !exactSearch;
+  const lbl = document.getElementById('scope-exact');
+  const chk = document.getElementById('schk-exact');
+  if(lbl) lbl.classList.toggle('active', exactSearch);
+  if(chk) chk.style.color = exactSearch ? '' : 'transparent';
+  applyFilters();
+}
 
 function toggleScope(which){
   // Must keep at least one active
@@ -1763,7 +1776,8 @@ let _multiLang = false;
 
 function applyFilters(){
   if(!_filterCache) _buildFilterCache();
-  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const rawQ = document.getElementById('searchInput').value;
+  const q = rawQ.trim().toLowerCase();
 
   // Fast path: collect candidate index sets and intersect
   let candidates = null; // null = all
@@ -1832,8 +1846,13 @@ function applyFilters(){
   // Text search — apply last on filtered set, respecting scope
   if(q){
     rows=rows.filter(r=>{
-      if(searchScope.sentence && (r['語句']||'').toLowerCase().includes(q)) return true;
-      if(searchScope.translation && (r['翻譯']||'').includes(q)) return true;
+      if(exactSearch){
+        if(searchScope.sentence && (r['語句']||'') === rawQ) return true;
+        if(searchScope.translation && (r['翻譯']||'') === rawQ) return true;
+      } else {
+        if(searchScope.sentence && (r['語句']||'').toLowerCase().includes(q)) return true;
+        if(searchScope.translation && (r['翻譯']||'').includes(q)) return true;
+      }
       return false;
     });
   }
