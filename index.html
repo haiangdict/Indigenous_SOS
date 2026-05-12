@@ -737,14 +737,14 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
     <button class="case-btn" id="caseCycleBtn" onclick="cycleCase()" title="大小寫切換">abc</button>
   </div>
   <div class="search-scope">
+    <label class="scope-label" id="scope-exact" onclick="toggleExact()" title="僅顯示完全相符的結果">
+      <span class="scope-chk" id="schk-exact" style="color:transparent;">✓</span> 精確
+    </label>
     <label class="scope-label" id="scope-s" onclick="toggleScope('sentence')" title="搜尋語句">
       <span class="scope-chk" id="schk-s">✓</span> 語句
     </label>
     <label class="scope-label" id="scope-t" onclick="toggleScope('translation')" title="搜尋翻譯">
       <span class="scope-chk" id="schk-t">✓</span> 翻譯
-    </label>
-    <label class="scope-label" id="scope-exact" onclick="toggleExact()" title="僅顯示完全相符的結果">
-      <span class="scope-chk" id="schk-exact" style="color:transparent;">✓</span> 精確
     </label>
   </div>
   <button class="btn btn-ghost" onclick="clearFilters()">清除全部</button>
