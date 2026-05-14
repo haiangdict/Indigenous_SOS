@@ -379,7 +379,7 @@ input[type="text"]::placeholder { color: var(--muted); }
 /* When speaker exists, push translation down by exact same height as speaker label */
 /* speaker height = font-size(0.6rem) * line-height(1.4) + margin-bottom(2px) */
 .col-translation.has-speaker { padding-top: calc(0.72rem * 1.4 + 3px); }
-.row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em; font-weight:normal; line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:anywhere; position:relative; }
+.row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em; font-weight:normal; line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:break-word; position:relative; }
 
 /* ── NOTE TOOLTIP ── */
 .note-dot {
@@ -1876,7 +1876,8 @@ function groupKey(r){
   if(r['分類']==='C') return r['分類1'];
   if(r['分類']==='T') return r['分類2'] ? r['分類1']+'|'+r['分類2'] : r['分類1']; // 冊|課
   if(r['分類']==='P'){
-    // 分類3 is the basic display unit; fall back up the hierarchy if absent
+    // Use deepest available category as block unit
+    if(r['分類4']) return r['分類1']+'|'+r['分類2']+'|'+r['分類3']+'|'+r['分類4'];
     if(r['分類3']) return r['分類1']+'|'+r['分類2']+'|'+r['分類3'];
     if(r['分類2']) return r['分類1']+'|'+r['分類2'];
     return r['分類1'];
@@ -1910,6 +1911,7 @@ function sourceLabel(r){
     return typeLabel+' · 第'+r['分類1']+'冊 · 第'+r['分類2']+'課';
   }
   if(r['分類']==='P'){
+    if(r['分類4']) return typeLabel+' · '+r['分類2']+' · '+r['分類3']+' · '+r['分類4'];
     if(r['分類3']) return typeLabel+' · '+r['分類2']+' · '+r['分類3'];
     if(r['分類2']) return typeLabel+' · '+r['分類2'];
     if(r['分類1']) return typeLabel+' · '+r['分類1'];
