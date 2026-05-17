@@ -1471,8 +1471,12 @@ async function loadBuiltInCSV(){
   _dialectLoaded = new Set();
   _dialectTotal = dialectList.length;
 
-  // Show loading progress UI
-  _showLoadProgress();
+  // Build sidebar immediately from index.json (before data loads)
+  _buildSidebarFromIndex(dialectList);
+
+  // Show progress in badge only (not replacing content)
+  document.getElementById('totalBadge').innerHTML=
+    `下載中 <span>0/${dialectList.length}</span>`;
 
   // ── STEP 2: Download all dialect files (background) ───────
   // Check IDB for each dialect first
@@ -1551,6 +1555,22 @@ let _dialectData   = {};
 let _dialectLoaded = new Set();
 let _dialectTotal  = 0;
 
+// Build sidebar from index.json dialect list immediately (before data loads)
+function _buildSidebarFromIndex(dialectList){
+  // Group dialects by language for sidebar
+  // Use LANG_LIST to get proper names and ordering
+  // This allows user to select dialects before data loads
+  allData = []; // empty for now
+  _multiLang = true;
+  buildLangSidebar();
+  // Show empty state in content
+  document.getElementById('content').innerHTML =
+    `<div class="empty">
+      <div class="empty-icon">⬇</div>
+      <div class="empty-text">正在下載語料資料，請選取方言後即可優先載入</div>
+    </div>`;
+}
+
 function _showLoadProgress(){
   const content = document.getElementById('content');
   content.innerHTML = `<div class="empty" id="loadProgress">
@@ -1565,20 +1585,31 @@ function _showLoadProgress(){
 function _updateLoadProgress(){
   const done = _dialectLoaded.size;
   const total = _dialectTotal;
-  const pct = total ? Math.round(done/total*100) : 0;
-  const bar = document.getElementById('loadProgressBar');
-  const txt = document.getElementById('loadProgressText');
-  if(bar) bar.style.width = pct+'%';
-  if(txt) txt.textContent = `已下載 ${done} / ${total} 個方言（${pct}%）`;
   document.getElementById('totalBadge').innerHTML=
     `下載中 <span>${done}/${total}</span>`;
 }
 
+function _onDialectLoaded(){
+  // Merge dialect data sorted by dialId for consistent ordering
+  allData = Object.entries(_dialectData)
+    .sort(([a],[b]) => a.localeCompare(b, undefined, {numeric:true}))
+    .flatMap(([,recs]) => recs);
+  buildRowIndex(); _filterCache=null;
+  const hasSelection = sel.langkeys.size > 0 || sel.types.size > 0 || sel.subkeys.size > 0;
+  if(hasSelection || _dialectLoaded.size === _dialectTotal){
+    // Refresh display if user has made selections or all done
+    renderPage();
+  }
+  if(_dialectLoaded.size === _dialectTotal){
+    document.getElementById('totalBadge').innerHTML=
+      `共 <span>${allData.length.toLocaleString()}</span> 筆資料`;
+    showToast(`✓ 已載入全部 ${allData.length.toLocaleString()} 筆資料`);
+    buildLangSidebar(); // refresh sidebar with full data
+  }
+}
+
 function _onAllDialectsLoaded(){
-  // Merge all dialect data into allData
-  allData = Object.values(_dialectData).flat();
-  showToast(`✓ 已載入全部 ${allData.length.toLocaleString()} 筆資料`);
-  buildRowIndex(); _filterCache=null; initUI();
+  _onDialectLoaded();
 }
 
 // ── Monolithic fallback (old data.json) ───────────────────────

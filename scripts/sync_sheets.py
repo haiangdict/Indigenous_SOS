@@ -51,10 +51,13 @@ print("✅ data/data.csv 寫入完成")
 
 # ── Build records list ────────────────────────────────────────
 records = []
+n_cols = len(headers)
 for row in data_rows:
+    # Pad row to header length to prevent column shift when trailing cells are empty
+    padded = row + [''] * (n_cols - len(row))
     r = {}
     for i, h in enumerate(headers):
-        v = row[i].strip() if i < len(row) else ''
+        v = padded[i].strip() if i < len(padded) else ''
         if v:
             r[h] = v
     if r.get('語句') or r.get('翻譯'):
