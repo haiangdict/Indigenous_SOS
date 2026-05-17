@@ -1677,6 +1677,7 @@ function initUI(){
   _multiLang = new Set(allData.map(r=>r['語別'])).size > 1;
   document.getElementById('totalBadge').innerHTML=`共 <span>${allData.length.toLocaleString()}</span> 筆資料`;
   initSearchScope();
+  _loadPrefsLocal(); // restore selections from localStorage
   buildLangSidebar();
   applyFilters();
   // If already logged in from session restore, load starred
@@ -2555,6 +2556,7 @@ function signInWeb() {
       showToast('✓ 已登入：'+user.name);
       await initSpreadsheet();
       await loadStarredIds();
+      await loadPrefsFromSheets(); // load saved prefs from Sheets
       renderPage();
     }
   }).requestAccessToken();
@@ -2597,6 +2599,7 @@ async function handleNativeOAuthCallback(accessToken) {
   showToast('✓ 已登入：'+user.name);
   await initSpreadsheet();
   await loadStarredIds();
+  await loadPrefsFromSheets(); // load saved prefs from Sheets
   renderPage();
   // Close browser tab if still open
   if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
@@ -2634,6 +2637,96 @@ function signOut() {
 }
 
 // ── Sheets API helpers ─────────────────────────────────────────
+// ── User preferences (dialect + subkey selections + theme) ────
+const PREFS_RANGE = '設定!A1';
+
+async function loadPrefsFromSheets(){
+  if(!_gToken || !_spreadsheetId) return;
+  try {
+    const res = await sheetsReq('GET', `/${_spreadsheetId}/values/${encodeURIComponent(PREFS_RANGE)}`);
+    const raw = (res.values||[])[0]?.[0];
+    if(!raw) return;
+    const prefs = JSON.parse(raw);
+    // Apply dialect selections
+    if(prefs.langkeys && Array.isArray(prefs.langkeys)){
+      sel.langkeys = new Set(prefs.langkeys);
+    }
+    // Apply subkey (C/P/T/V) selections
+    if(prefs.subkeys && Array.isArray(prefs.subkeys)){
+      sel.subkeys = new Set(prefs.subkeys);
+    }
+    // Apply types
+    if(prefs.types && Array.isArray(prefs.types)){
+      sel.types = new Set(prefs.types);
+    }
+    // Apply theme
+    if(prefs.theme){
+      try { localStorage.setItem('sos_theme', prefs.theme); } catch(e){}
+      applyTheme(prefs.theme);
+    }
+    // Apply font size
+    if(prefs.fontSize){
+      try { localStorage.setItem('sos_fs', prefs.fontSize); } catch(e){}
+      applyFontSize(prefs.fontSize);
+    }
+    buildLangSidebar();
+    applyFilters();
+    showToast('✓ 已載入您的偏好設定');
+  } catch(e){ console.warn('loadPrefsFromSheets:', e); }
+}
+
+async function savePrefsToSheets(){
+  if(!_gToken || !_spreadsheetId) return;
+  try {
+    const prefs = {
+      langkeys: [...sel.langkeys],
+      subkeys:  [...sel.subkeys],
+      types:    [...sel.types],
+      theme:    localStorage.getItem('sos_theme') || 'dark',
+      fontSize: localStorage.getItem('sos_fs') || 'md',
+      savedAt:  new Date().toISOString()
+    };
+    await sheetsReq('PUT',
+      `/${_spreadsheetId}/values/${encodeURIComponent(PREFS_RANGE)}?valueInputOption=RAW`,
+      { values: [[JSON.stringify(prefs)]] }
+    );
+  } catch(e){ console.warn('savePrefsToSheets:', e); }
+}
+
+// Save prefs when user leaves the page
+window.addEventListener('beforeunload', ()=>{
+  if(_gToken && _spreadsheetId) savePrefsToSheets();
+});
+// Also save on visibility change (mobile: switching apps)
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'hidden' && _gToken && _spreadsheetId){
+    savePrefsToSheets();
+  }
+});
+
+// Also save prefs to localStorage on every selection change
+function _savePrefsLocal(){
+  try {
+    const prefs = {
+      langkeys: [...sel.langkeys],
+      subkeys:  [...sel.subkeys],
+      types:    [...sel.types],
+    };
+    localStorage.setItem('sos_prefs', JSON.stringify(prefs));
+  } catch(e){}
+}
+
+function _loadPrefsLocal(){
+  try {
+    const raw = localStorage.getItem('sos_prefs');
+    if(!raw) return;
+    const prefs = JSON.parse(raw);
+    if(prefs.langkeys) sel.langkeys = new Set(prefs.langkeys);
+    if(prefs.subkeys)  sel.subkeys  = new Set(prefs.subkeys);
+    if(prefs.types)    sel.types    = new Set(prefs.types);
+  } catch(e){}
+}
+
 async function sheetsReq(method, path, body) {
   const url='https://sheets.googleapis.com/v4/spreadsheets'+path;
   const opts={method, headers:{'Authorization':'Bearer '+_gToken,'Content-Type':'application/json'}};
@@ -2674,6 +2767,10 @@ async function initSpreadsheet() {
   await sheetsReq('PUT',`/${_spreadsheetId}/values/詞彙表!A1:I1?valueInputOption=RAW`,{
     values:[SHEET_HEADERS]
   });
+  // Create 設定 sheet
+  await sheetsReq('POST',`/${_spreadsheetId}:batchUpdate`,{
+    requests:[{addSheet:{properties:{title:'設定'}}}]
+  }).catch(()=>{}); // ignore if already exists
 }
 
 // ── Load starred IDs from sheet ────────────────────────────────
