@@ -1922,17 +1922,23 @@ function sourceLabel(r){
   return typeLabel;
 }
 
-// Group sort key: primary=分類+分類1(課次), secondary=語別+方言別
-// This gives: C-1魯凱語, C-1阿美語南勢, C-2魯凱語, C-2阿美語南勢...
+// Group sort key: data point first (分類→分類1→2→3→4), then lang/dialect
+// Result: all dialects of the same data point are adjacent
 function groupSortKey(r){
   const cat = r['分類']||'';
-  function pad(s){ return (s||'').replace(/[^\d]/g,'').padStart(4,'0')||(s||''); }
-  const cat1Num = pad(r['分類1']);
-  // For T: sort by 冊(分類1) then 課(分類2) then lang
-  const cat2Num = r['分類']==='T' ? pad(r['分類2']) : '0000';
+  function pad(s){
+    const n = (s||'').trim();
+    // Extract numeric prefix for proper numeric sorting
+    const m = n.match(/^(\d+)/);
+    return m ? m[1].padStart(4,'0') + n.slice(m[1].length) : n;
+  }
+  const cat1 = pad(r['分類1']);
+  const cat2 = pad(r['分類2']);
+  const cat3 = pad(r['分類3']);
+  const cat4 = pad(r['分類4']);
   const langOrd = _langIdxMap[r['語別']]!==undefined ? String(_langIdxMap[r['語別']]).padStart(3,'0') : '999';
   const dialOrd = (r['方言別']||'').padStart(3,'0');
-  return cat+'|'+cat1Num+'|'+cat2Num+'|'+langOrd+'|'+dialOrd;
+  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+langOrd+'|'+dialOrd;
 }
 
 // ── Render one row (no col-tags — info in card header) ─────────────
