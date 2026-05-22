@@ -264,14 +264,14 @@ let _currentPlayBtn = null;
 // ── Token persistence ──────────────────────────────────────────
 function _saveToken(token, user) {
   _gToken=token; _gUser=user;
-  try { sessionStorage.setItem('gsis_token', JSON.stringify({token,user,exp:Date.now()+3500000})); } catch(e) {}
+  try { localStorage.setItem('gsis_token', JSON.stringify({token,user,exp:Date.now()+3500000})); } catch(e) {}
 }
 function _loadToken() {
   try {
-    const raw=sessionStorage.getItem('gsis_token');
+    const raw=localStorage.getItem('gsis_token');
     if(!raw) return false;
     const {token,user,exp}=JSON.parse(raw);
-    if(Date.now()>exp) { sessionStorage.removeItem('gsis_token'); return false; }
+    if(Date.now()>exp) { localStorage.removeItem('gsis_token'); return false; }
     _gToken=token; _gUser=user; return true;
   } catch(e) { return false; }
 }
@@ -317,7 +317,7 @@ function signIn() {
 function signOut() {
   if(_gToken && typeof google!=='undefined') google.accounts.oauth2.revoke(_gToken,()=>{});
   _gToken=null; _gUser=null; _spreadsheetId=null; _vocabRows=[];
-  try { sessionStorage.removeItem('gsis_token'); } catch(e) {}
+  try { localStorage.removeItem('gsis_token'); } catch(e) {}
   updateAuthUI();
   document.getElementById('tableContainer').innerHTML='<div class="empty-state"><div class="empty-icon">🔑</div><div class="empty-text">請登入以載入您的詞彙表</div></div>';
   document.getElementById('statsBar').textContent='未登入';
