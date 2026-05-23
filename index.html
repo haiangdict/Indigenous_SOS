@@ -922,17 +922,18 @@ function buildLangSidebar(){
   </div>
   <div class="sb-sec-body ${catSecOpen?'':'closed'}" id="catSecBody">`;
 
-  const types=['C','P','R','T','V'];
+  const types=['C','P','R','T','V','W'];
   for(const type of types){
     const td=allData.filter(r=>r['分類']===type);
     if(!td.length) continue;
     const isC=type==='C';
     const isR=type==='R';
+    const isW=type==='W';
     const tid='t-'+type;
     const allSksForType=[];
     let subHtml='';
 
-    if(isC||isR||type==='V'){
+    if(isC||isR||isW||type==='V'){
       const cat1s=[...new Set(td.map(r=>r['分類1']).filter(Boolean))];
       for(const cat1 of cat1s){
         const sk=type+'|'+cat1;
@@ -1264,7 +1265,7 @@ function langClearAll(){
 function langNameClick(el){ /* legacy stub */ }
 
 
-const TYPE_LABELS = { C:'會話', P:'句型', R:'閱讀', T:'十二階', V:'詞彙' };
+const TYPE_LABELS = { C:'會話', P:'句型', R:'閱讀', T:'十二階', V:'詞彙', W:'文化' };
 const LEVEL_MAP = {B:'初',I:'中',S:'中高',U:'高'};
 function fmtLevel(raw){ return (raw||'').split('/').map(p=>LEVEL_MAP[p.trim()]||p.trim()).join('/'); }
 
@@ -1353,7 +1354,7 @@ function msToggle(which, val){
 function msAll(which){
   const set = which==='type' ? sel.types : sel.levels;
   const opts = which==='type'
-    ? ['C','P','R','T','V']
+    ? ['C','P','R','T','V','W']
     : [...new Set(allData.map(r=>r['等級']).filter(Boolean))].sort();
   // Toggle: if all selected → deselect all; else → select all
   const allSelected = opts.length>0 && opts.every(v=>set.has(v));
@@ -1371,8 +1372,8 @@ function msClear(which){
 }
 
 function updateMsPills(which){ buildLangSidebar(); }
-const TYPE_BG  = { C:'rgba(212,168,67,0.18)', P:'rgba(168,196,212,0.18)', R:'rgba(212,149,106,0.18)', T:'rgba(139,196,168,0.18)', V:'rgba(212,168,212,0.18)' };
-const TYPE_CLR = { C:'#d4a843', P:'#a8c4d4', R:'#d4956a', T:'#8bc4a8', V:'#d4a8c4' };
+const TYPE_BG  = { C:'rgba(212,168,67,0.18)', P:'rgba(168,196,212,0.18)', R:'rgba(212,149,106,0.18)', W:'rgba(180,140,200,0.18)', T:'rgba(139,196,168,0.18)', V:'rgba(212,168,212,0.18)' };
+const TYPE_CLR = { C:'#d4a843', P:'#a8c4d4', R:'#d4956a', W:'#b48cc8', T:'#8bc4a8', V:'#d4a8c4' };
 
 // ── CSV ────────────────────────────────────────────────────────────
 function parseCSV(text) {
@@ -1925,6 +1926,7 @@ function rowSubkey(r){
   const t=r['分類'];
   if(t==='C') return t+'|'+r['分類1'];
   if(t==='R') return t+'|'+r['分類1'];
+  if(t==='W') return t+'|'+r['分類1'];
   if(t==='V') return t+'|'+r['分類1'];
   if(t==='T') return r['分類2'] ? t+'|'+r['分類1']+'|'+r['分類2'] : t+'|'+r['分類1'];
   // P: up to 分類4
@@ -2037,6 +2039,7 @@ function clearFilters(){
 function groupKey(r){
   if(r['分類']==='C') return r['分類1'];
   if(r['分類']==='R') return r['分類1']; // 篇號
+  if(r['分類']==='W') return r['分類1']; // 文化篇號
   if(r['分類']==='T') return r['分類2'] ? r['分類1']+'|'+r['分類2'] : r['分類1']; // 冊|課
   if(r['分類']==='P'){
     // Use deepest available category as block unit
@@ -2109,12 +2112,13 @@ function renderRow(r, ri=0){
   const hasAudio=!!audioFilename(r);
   const isC=r['分類']==='C';
   const isR=r['分類']==='R';
+  const isW=r['分類']==='W';
   const hasSpeaker=isC&&r['分類2'];
   const speakerHtml=hasSpeaker?`<div class="row-speaker">${r['分類2']}</div>`:'';
   // C/R rows without speaker (except first row = lesson title)
-  const isNoSpeakerBody = (isC || isR) && !hasSpeaker && ri > 0;
+  const isNoSpeakerBody = (isC || isR || isW) && !hasSpeaker && ri > 0;
   // First row of each group is the lesson title (C and T)
-  const isTitle = ri === 0 && (isC || r['分類']==='R' || r['分類']==='T');
+  const isTitle = ri === 0 && (isC || r['分類']==='R' || r['分類']==='W' || r['分類']==='T');
   // Disable special backgrounds when search is active
   const hasSearch = !!document.getElementById('searchInput')?.value?.trim();
   const rowExtraCls = hasSearch ? '' : (isTitle ? ' row-title' : isNoSpeakerBody ? ' no-speaker-body' : '');
