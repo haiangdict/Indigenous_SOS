@@ -28,7 +28,14 @@ jobs:
       - name: Sync Sheets → CSV + JSON
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          SPREADSHEET_ID_AMIS:   ${{ secrets.SPREADSHEET_ID_AMIS }}
+          SPREADSHEET_ID_ATAYAL: ${{ secrets.SPREADSHEET_ID_ATAYAL }}
+          SPREADSHEET_ID_SEEDIQ: ${{ secrets.SPREADSHEET_ID_SEEDIQ }}
+          SPREADSHEET_ID_BUNUN:  ${{ secrets.SPREADSHEET_ID_BUNUN }}
+          SPREADSHEET_ID_PAIWAN: ${{ secrets.SPREADSHEET_ID_PAIWAN }}
+          SPREADSHEET_ID_RUKAI:  ${{ secrets.SPREADSHEET_ID_RUKAI }}
+          SPREADSHEET_ID_PUYUMA: ${{ secrets.SPREADSHEET_ID_PUYUMA }}
+          SPREADSHEET_ID_TSOU:   ${{ secrets.SPREADSHEET_ID_TSOU }}
         run: python scripts/sync_sheets.py
 
       - name: Commit and push if data changed
