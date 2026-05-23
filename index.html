@@ -837,17 +837,22 @@ function buildLangSidebar(){
   const langKeysInData = new Set(allData.map(r=>r['語別']));
   const isMultiLang = langKeysInData.size > 1;
 
-  // Build stable numeric id map
-  _langIdxMap = {};
-  let idx = 0;
-  for(const lang of LANG_LIST){ if(langKeysInData.has(lang.key)) _langIdxMap[lang.key]=idx++; }
+  // If allData is empty but _langIdxMap was pre-built from index.json, use it
+  const usePrebuilt = allData.length === 0 && Object.keys(_langIdxMap).length > 0;
 
-  // Pre-compute langkeys per language
-  for(const lang of LANG_LIST){
-    if(!langKeysInData.has(lang.key)) continue;
-    const dialsInData=new Set(allData.filter(r=>r['語別']===lang.key).map(r=>r['方言別']).filter(Boolean));
-    const avail=lang.dialects.filter(([dk])=>dialsInData.has(dk));
-    _sbLangAllKeys[lang.key]=avail.length===0?[lang.key]:avail.map(([dk])=>lang.key+'|'+dk);
+  if(!usePrebuilt){
+    // Build stable numeric id map
+    _langIdxMap = {};
+    let idx = 0;
+    for(const lang of LANG_LIST){ if(langKeysInData.has(lang.key)) _langIdxMap[lang.key]=idx++; }
+
+    // Pre-compute langkeys per language
+    for(const lang of LANG_LIST){
+      if(!langKeysInData.has(lang.key)) continue;
+      const dialsInData=new Set(allData.filter(r=>r['語別']===lang.key).map(r=>r['方言別']).filter(Boolean));
+      const avail=lang.dialects.filter(([dk])=>dialsInData.has(dk));
+      _sbLangAllKeys[lang.key]=avail.length===0?[lang.key]:avail.map(([dk])=>lang.key+'|'+dk);
+    }
   }
 
   const langSecOpen = _langExpanded.has('__lang_section__');
