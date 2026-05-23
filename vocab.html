@@ -157,6 +157,23 @@ td.translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1r
 
 /* ── 備註 inline editor ── */
 .note-cell { min-width:120px; max-width:220px; }
+
+/* ── Column visibility toggle ── */
+.col-toggle-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 0 10px; flex-wrap: wrap;
+}
+.col-toggle-bar span { font-size: 0.78rem; color: var(--muted); }
+.col-toggle-btn {
+  font-size: 0.75rem; padding: 2px 10px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--muted); cursor: pointer; transition: all 0.15s;
+}
+.col-toggle-btn.active {
+  border-color: var(--accent2); color: var(--accent2);
+  background: rgba(139,196,168,0.1);
+}
+table .hide-col { display: none; }
 .note-text {
   font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:0.85rem;
   color:var(--muted); cursor:pointer; padding:3px 6px; border-radius:5px;
@@ -239,6 +256,14 @@ td.translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1r
 
 <div class="stats-bar" id="statsBar">載入中…</div>
 
+<div class="col-toggle-bar">
+  <span>顯示欄位：</span>
+  <button class="col-toggle-btn active" onclick="toggleCol('lang')" id="tog-lang">語別</button>
+  <button class="col-toggle-btn active" onclick="toggleCol('source')" id="tog-source">教材</button>
+  <button class="col-toggle-btn active" onclick="toggleCol('level')" id="tog-level">等級</button>
+  <button class="col-toggle-btn active" onclick="toggleCol('time')" id="tog-time">收藏時間</button>
+  <button class="col-toggle-btn active" onclick="toggleCol('note')" id="tog-note">備註</button>
+</div>
 <div class="table-wrap">
   <div id="tableContainer" class="loading">
     <div class="empty-icon">⟳</div>
@@ -434,11 +459,11 @@ function renderTable() {
       </td>
       <td class="sentence">${sentence||''}</td>
       <td class="translation">${translation||''}</td>
-      <td><span class="lang-badge">${lang||''}</span></td>
-      <td><span class="source-badge">${source||''}</span></td>
-      <td><span class="level-badge">${fmtLevel(level)}</span></td>
-      <td class="mono">${timeStr}</td>
-      <td class="note-cell">
+      <td class="col-lang"><span class="lang-badge">${lang||''}</span></td>
+      <td class="col-source"><span class="source-badge">${source||''}</span></td>
+      <td class="col-level"><span class="level-badge">${fmtLevel(level)}</span></td>
+      <td class="mono col-time">${timeStr}</td>
+      <td class="note-cell col-note">
         <span class="note-text ${note?'':'empty'}"
           id="note-${i}"
           onclick="startEditNote(${origIdx}, ${i}, this)"
@@ -456,16 +481,18 @@ function renderTable() {
       <th></th>
       <th onclick="setSort('sentence')">語句<span class="th-arrow" id="arr-sentence"></span></th>
       <th onclick="setSort('translation')">翻譯<span class="th-arrow" id="arr-translation"></span></th>
-      <th onclick="setSort('lang')">語別<span class="th-arrow" id="arr-lang"></span></th>
-      <th onclick="setSort('source')">教材<span class="th-arrow" id="arr-source"></span></th>
-      <th onclick="setSort('level')">等級<span class="th-arrow" id="arr-level"></span></th>
-      <th onclick="setSort('time')">收藏時間<span class="th-arrow" id="arr-time"></span></th>
-      <th>備註</th>
+      <th class="col-lang" onclick="setSort('lang')">語別<span class="th-arrow" id="arr-lang"></span></th>
+      <th class="col-source" onclick="setSort('source')">教材<span class="th-arrow" id="arr-source"></span></th>
+      <th class="col-level" onclick="setSort('level')">等級<span class="th-arrow" id="arr-level"></span></th>
+      <th class="col-time" onclick="setSort('time')">收藏時間<span class="th-arrow" id="arr-time"></span></th>
+      <th class="col-note">備註</th>
       <th></th>
     </tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table>`;
 
+  // Re-apply column visibility
+  _applyColVisibility();
   // Re-apply sort arrows
   ['time','sentence','translation','lang','source','level'].forEach(k=>{
     const el=document.getElementById('arr-'+k);
@@ -506,6 +533,40 @@ async function removeRow(origIdx) {
     renderTable();
     showToast('✓ 已移除');
   } catch(e) { showToast('❌ 移除失敗：'+e.message); }
+}
+
+// ── Column visibility toggle ──────────────────────────────────────
+const _hiddenCols = new Set();
+
+function toggleCol(col){
+  const btn = document.getElementById('tog-'+col);
+  if(_hiddenCols.has(col)){
+    _hiddenCols.delete(col);
+    btn && btn.classList.add('active');
+  } else {
+    _hiddenCols.add(col);
+    btn && btn.classList.remove('active');
+  }
+  _applyColVisibility();
+  try { localStorage.setItem('vocab_hidden_cols', JSON.stringify([..._hiddenCols])); } catch{}
+}
+
+function _applyColVisibility(){
+  ['lang','source','level','time','note'].forEach(col => {
+    document.querySelectorAll('.col-'+col).forEach(el => {
+      el.classList.toggle('hide-col', _hiddenCols.has(col));
+    });
+    const btn = document.getElementById('tog-'+col);
+    if(btn) btn.classList.toggle('active', !_hiddenCols.has(col));
+  });
+}
+
+function _loadColVisibility(){
+  try {
+    const saved = JSON.parse(localStorage.getItem('vocab_hidden_cols') || '[]');
+    saved.forEach(col => _hiddenCols.add(col));
+  } catch{}
+  _applyColVisibility();
 }
 
 // ── Note editing ─────────────────────────────────────────────────
