@@ -1158,6 +1158,37 @@ function langExpandToggle(btn){
   else _langExpanded.delete(langKey);
 }
 
+function langToggleLang(langKey){
+  const keys = _sbLangAllKeys[langKey] || [];
+  if(!keys.length){ sel.langkeys.add(langKey); }
+  else {
+    const allSel = keys.every(k => sel.langkeys.has(k));
+    if(allSel) keys.forEach(k => sel.langkeys.delete(k));
+    else keys.forEach(k => sel.langkeys.add(k));
+  }
+  _savePrefsLocal();
+  // Priority fetch: if data not yet fully loaded, fetch selected dialects first
+  if(_dialectLoaded.size < _dialectTotal){
+    _priorityFetchSelected();
+  }
+  if(_dialectLoaded.size > 0){
+    _onDialectLoaded();
+  } else {
+    _buildSidebarFromIndex(_dialectList);
+  }
+}
+
+// Fetch selected-but-not-yet-loaded dialects immediately
+async function _priorityFetchSelected(){
+  const selectedDialIds = [...sel.langkeys]
+    .filter(k => k.includes('|'))
+    .map(k => k.split('|')[1]);
+  const priority = _dialectList.filter(d =>
+    selectedDialIds.includes(d.dialId) && !_dialectLoaded.has(d.dialId)
+  );
+  await Promise.all(priority.map(d => _fetchDialect(d)));
+}
+
 function langToggleByEl(el){
   // Walk up to find the element with data-lk (handles clicks on child elements)
   const target = el.dataset && el.dataset.lk ? el : el.closest('[data-lk]');
@@ -1560,17 +1591,154 @@ let _dialectTotal  = 0;
 
 // Build sidebar from index.json dialect list immediately (before data loads)
 function _buildSidebarFromIndex(dialectList){
-  // Group dialects by language for sidebar
-  // Use LANG_LIST to get proper names and ordering
-  // This allows user to select dialects before data loads
-  allData = []; // empty for now
-  _multiLang = true;
-  buildLangSidebar();
-  // Show empty state in content
+  // Build lang sidebar directly from index.json dialect list
+  // so user can select dialects BEFORE data is downloaded
+
+  // Build _sbLangAllKeys and _langIdxMap from dialectList
+  _langIdxMap = {};
+  let idx = 0;
+  const dialectsByLang = {}; // lang.key → [dialId, ...]
+
+  for(const d of dialectList){
+    // Find which LANG_LIST entry this dialId belongs to
+    for(const lang of LANG_LIST){
+      const found = lang.dialects.find(([dk]) => dk === d.dialId);
+      if(found){
+        if(!dialectsByLang[lang.key]) dialectsByLang[lang.key] = [];
+        dialectsByLang[lang.key].push(d.dialId);
+        break;
+      }
+      // No-dialect languages: dialId matches lang code directly
+      if(!lang.dialects.length && d.dialId === String(lang.key)){
+        if(!dialectsByLang[lang.key]) dialectsByLang[lang.key] = [];
+        dialectsByLang[lang.key].push(d.dialId);
+        break;
+      }
+    }
+  }
+
+  // Also handle languages whose dialId == lang numeric code (no-dialect langs)
+  // These are stored with dialId = padded lang code e.g. '13','14','33'...
+  for(const d of dialectList){
+    let assigned = false;
+    for(const lang of LANG_LIST){
+      if(lang.dialects.some(([dk]) => dk === d.dialId)){ assigned = true; break; }
+    }
+    if(!assigned){
+      // Match by lang name in data — find lang whose key matches dialId numerically
+      for(const lang of LANG_LIST){
+        if(!lang.dialects.length){ // no-dialect language
+          // Check if any record in this dialect has this lang key
+          // We can't check allData yet, so use lang.key padded comparison
+          try {
+            const n = parseInt(d.dialId, 10);
+            if(!isNaN(n) && d.lang && d.lang === lang.key){
+              if(!dialectsByLang[lang.key]) dialectsByLang[lang.key] = [];
+              dialectsByLang[lang.key].push(d.dialId);
+              break;
+            }
+          } catch{}
+        }
+      }
+    }
+  }
+
+  // Set up _langIdxMap and _sbLangAllKeys
+  for(const lang of LANG_LIST){
+    if(!dialectsByLang[lang.key]) continue;
+    _langIdxMap[lang.key] = idx++;
+    const dials = dialectsByLang[lang.key];
+    _sbLangAllKeys[lang.key] = dials.length === 0
+      ? [lang.key]
+      : dials.map(dk => lang.key+'|'+dk);
+  }
+
+  _multiLang = Object.keys(dialectsByLang).length > 1;
+
+  // Build sidebar HTML directly (language section only)
+  const langSecOpen = _langExpanded.has('__lang_section__') || true; // open by default
+  _langExpanded.add('__lang_section__');
+
+  let html = '';
+  html += `<div class="sb-sec-hdr" onclick="sbSecToggle('__lang_section__')">
+    語言 / 方言
+    <span class="sb-arrow">${langSecOpen?'▾':'▸'}</span>
+  </div>
+  <div class="sb-sec-body ${langSecOpen?'':'closed'}">`;
+
+  if(_multiLang){
+    const allKeys = Object.values(_sbLangAllKeys).flat();
+    const allSel = allKeys.length > 0 && allKeys.every(k => sel.langkeys.has(k));
+    html += `<div class="sb-all-row ${allSel?'sel':''}" onclick="langSelectAllLangs()">
+      <div class="sb-chk ${allSel?'sel':''}">${allSel?'✓':''}</div>
+      <span>全部語言</span>
+    </div>`;
+  }
+
+  for(const lang of LANG_LIST){
+    if(!dialectsByLang[lang.key]) continue;
+    const langAllKeys = _sbLangAllKeys[lang.key] || [];
+    const selCount = langAllKeys.filter(k => sel.langkeys.has(k)).length;
+    const allChk = selCount === langAllKeys.length && langAllKeys.length > 0;
+    const lid = 'ld-'+_langIdxMap[lang.key];
+    const isOpen = _langExpanded.has(lang.key);
+    const dials = dialectsByLang[lang.key];
+
+    let chkCls = selCount > 0 ? (allChk ? 'sel' : 'partial') : '';
+    let chkTxt = allChk ? '✓' : (selCount > 0 ? '–' : '');
+
+    let dialHtml = '';
+    if(dials.length > 0 && lang.dialects.length > 0){
+      for(const dk of dials){
+        const dialEntry = lang.dialects.find(([d]) => d === dk);
+        if(!dialEntry) continue;
+        const dn = dialEntry[1];
+        const lk = lang.key+'|'+dk;
+        const chk = sel.langkeys.has(lk);
+        dialHtml += `<div class="sb-l2-item ${chk?'sel':''}" data-lk="${lk.replace(/"/g,'&quot;')}" onclick="langToggleByEl(this)">
+          <div class="sb-chk ${chk?'sel':''}">${chk?'✓':''}</div>
+          <span>${dn}</span>
+        </div>`;
+      }
+    }
+
+    const hasExpand = dialHtml.length > 0;
+    html += `<div class="sb-lang-row ${chkCls?'sel':''}" data-lk="${lang.key}">
+      <div class="sb-chk ${chkCls}" onclick="langToggleLang('${lang.key}')">${chkTxt}</div>
+      <span class="sb-lang-name" onclick="langToggleLang('${lang.key}')">${lang.name}</span>
+      ${hasExpand?`<span class="sb-expand-btn" onclick="sbLangExpand('${lang.key}',event)">${isOpen?'▾':'▸'}</span>`:''}
+    </div>`;
+    if(hasExpand && isOpen){
+      html += `<div id="${lid}" class="sb-lang-dials">${dialHtml}</div>`;
+    } else if(hasExpand){
+      html += `<div id="${lid}" class="sb-lang-dials closed"></div>`;
+    }
+  }
+
+  html += `</div>`;
+
+  // 分類 and 等級 sections — empty until data loads
+  html += `<div class="sb-sec-hdr" onclick="sbSecToggle('__cat_section__')">
+    分類 <span class="sb-arrow">▸</span>
+  </div>
+  <div class="sb-sec-body closed"></div>
+  <div class="sb-sec-hdr" onclick="sbSecToggle('__lvl_section__')">
+    等級 <span class="sb-arrow">▸</span>
+  </div>
+  <div class="sb-sec-body closed"></div>`;
+
+  document.getElementById('sidebar').innerHTML = html;
+
+  // Show download status in content area
+  document.getElementById('totalBadge').innerHTML =
+    `下載中 <span>0/${dialectList.length}</span>`;
   document.getElementById('content').innerHTML =
     `<div class="empty">
       <div class="empty-icon">⬇</div>
-      <div class="empty-text">正在下載語料資料，請選取方言後即可優先載入</div>
+      <div class="empty-text">正在下載語料資料…<br><span style="font-size:0.85rem;opacity:0.6;">可先選取語別，優先載入該語別資料</span></div>
+      <div style="width:260px;height:6px;background:var(--surface2);border-radius:3px;margin:12px auto 0;">
+        <div id="loadProgressBar" style="height:6px;background:var(--accent2);border-radius:3px;width:0%;transition:width 0.4s;"></div>
+      </div>
     </div>`;
 }
 
@@ -1588,8 +1756,11 @@ function _showLoadProgress(){
 function _updateLoadProgress(){
   const done = _dialectLoaded.size;
   const total = _dialectTotal;
+  const pct = total ? Math.round(done/total*100) : 0;
   document.getElementById('totalBadge').innerHTML=
     `下載中 <span>${done}/${total}</span>`;
+  const bar = document.getElementById('loadProgressBar');
+  if(bar) bar.style.width = pct+'%';
 }
 
 function _onDialectLoaded(){
