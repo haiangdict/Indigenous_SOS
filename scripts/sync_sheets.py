@@ -73,7 +73,7 @@ for env_key, desc in SPREADSHEET_IDS.items():
                 count += 1
         print(f'✅ {desc}：{count} 筆')
     except Exception as e:
-        print(f'❌ {desc} 讀取失敗：{e}')
+        print(f'❌ {desc} 讀取失敗：{type(e).__name__}: {e}')
 
 print(f'\n合計：{len(all_records)} 筆資料')
 
