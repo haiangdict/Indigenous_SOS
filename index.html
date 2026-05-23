@@ -876,10 +876,14 @@ function buildLangSidebar(){
   }
 
   for(const lang of LANG_LIST){
-    if(!langKeysInData.has(lang.key)) continue;
+    if(!langKeysInData.has(lang.key) && !_langIdxMap.hasOwnProperty(lang.key)) continue;
     const langAllKeys=_sbLangAllKeys[lang.key]||[];
-    const dialsInData=new Set(allData.filter(r=>r['語別']===lang.key).map(r=>r['方言別']).filter(Boolean));
-    const avail=lang.dialects.filter(([dk])=>dialsInData.has(dk));
+    const dialsInData= allData.length > 0
+      ? new Set(allData.filter(r=>r['語別']===lang.key).map(r=>r['方言別']).filter(Boolean))
+      : new Set(langAllKeys.filter(k=>k.includes('|')).map(k=>k.split('|')[1]));
+    const avail= allData.length > 0
+      ? lang.dialects.filter(([dk])=>dialsInData.has(dk))
+      : lang.dialects.filter(([dk])=>dialsInData.has(dk));
     const selCount=langAllKeys.filter(k=>sel.langkeys.has(k)).length;
     const allChk=selCount===langAllKeys.length&&langAllKeys.length>0;
     const lid='ld-'+_langIdxMap[lang.key];
