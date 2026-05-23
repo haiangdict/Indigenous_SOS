@@ -834,19 +834,17 @@ let _langIdxMap = {};
 const _sbLangAllKeys = {};
 
 function buildLangSidebar(){
-  const langKeysInData = new Set(allData.map(r=>r['語別']));
-  const isMultiLang = langKeysInData.size > 1;
+  const langKeysInData = allData.length > 0
+    ? new Set(allData.map(r=>r['語別']))
+    : new Set(Object.keys(_langIdxMap));  // use prebuilt when allData empty
+  const isMultiLang = Object.keys(_langIdxMap).length > 1 || langKeysInData.size > 1;
 
-  // If allData is empty but _langIdxMap was pre-built from index.json, use it
-  const usePrebuilt = allData.length === 0 && Object.keys(_langIdxMap).length > 0;
-
-  if(!usePrebuilt){
-    // Build stable numeric id map
+  // Only rebuild _langIdxMap and _sbLangAllKeys when allData is available
+  if(allData.length > 0){
     _langIdxMap = {};
     let idx = 0;
     for(const lang of LANG_LIST){ if(langKeysInData.has(lang.key)) _langIdxMap[lang.key]=idx++; }
 
-    // Pre-compute langkeys per language
     for(const lang of LANG_LIST){
       if(!langKeysInData.has(lang.key)) continue;
       const dialsInData=new Set(allData.filter(r=>r['語別']===lang.key).map(r=>r['方言別']).filter(Boolean));
