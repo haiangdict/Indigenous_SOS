@@ -4,7 +4,7 @@ GitHub Actions 執行此腳本，從多個 Google Sheets 拉取語料（依語�
 輸出 data/index.json 和 data/dial_XX.json（每個方言別一個檔案）。
 """
 
-import os, json, csv
+import os, json, csv, time
 from datetime import datetime, timezone
 import gspread
 from google.oauth2.service_account import Credentials
@@ -49,10 +49,21 @@ for env_key, desc in SPREADSHEET_IDS.items():
         print(f'⚠ {env_key} 未設定，略過（{desc}）')
         continue
     try:
-        sh = gc.open_by_key(sid)
-        ws = sh.sheet1
-        rows = ws.get_all_values()
-        if len(rows) < 2:
+        # Retry up to 3 times for transient errors (503, etc.)
+        rows = None
+        for attempt in range(3):
+            try:
+                sh = gc.open_by_key(sid)
+                ws = sh.sheet1
+                rows = ws.get_all_values()
+                break
+            except Exception as e:
+                if attempt < 2:
+                    print(f'  ⚠ 第{attempt+1}次嘗試失敗：{e}，5秒後重試…')
+                    time.sleep(5)
+                else:
+                    raise
+        if rows is None or len(rows) < 2:
             print(f'⚠ {desc}：無資料')
             continue
         headers = rows[0]
