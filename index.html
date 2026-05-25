@@ -754,7 +754,7 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
 <div class="controls">
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
-    <input type="text" id="searchInput" placeholder="搜尋…" oninput="applyFilters()">
+    <input type="text" id="searchInput" placeholder="搜尋…" oninput="onSearchInput()">
   </div>
   <!-- Special character buttons -->
   <div class="char-btns">
@@ -1203,6 +1203,7 @@ function langToggleLang(langKey){
     else keys.forEach(k => sel.langkeys.add(k));
   }
   _savePrefsLocal();
+  _checkTsouSubstitutionOnLangChange();
   // Priority fetch: if data not yet fully loaded, fetch selected dialects first
   if(_dialectLoaded.size < _dialectTotal){
     _priorityFetchSelected();
@@ -1211,6 +1212,20 @@ function langToggleLang(langKey){
     _onDialectLoaded();
   } else {
     _buildSidebarFromIndex(_dialectList);
+  }
+}
+
+// When lang selection changes, re-convert or restore x/ʉ in search box
+function _checkTsouSubstitutionOnLangChange(){
+  const el = document.getElementById('searchInput');
+  if(!el || !el.value) return;
+  if(_isTsouOnly()){
+    _applyTsouSubstitution();
+  } else {
+    // Restore ʉ→x if user switches away from Tsou-only
+    const val = el.value;
+    const newVal = val.replace(/Ʉ/g, 'X').replace(/ʉ/g, 'x');
+    if(newVal !== val) el.value = newVal;
   }
 }
 
@@ -1937,6 +1952,37 @@ function rowSubkey(r){
 }
 
 let _multiLang = false;
+
+// ── x → ʉ auto-substitution for Tsou group ───────────────────
+const TSOU_GROUP_KEYS = new Set(['35','36','37']); // 鄒語、卡那卡那富語、拉阿魯哇語
+
+function _isTsouOnly(){
+  // True only when selected langs are exclusively within TSOU_GROUP_KEYS
+  if(sel.langkeys.size === 0) return false;
+  // Extract lang keys from sel.langkeys (format: 'langKey' or 'langKey|dialId')
+  const selectedLangs = new Set([...sel.langkeys].map(k => k.split('|')[0]));
+  if(selectedLangs.size === 0) return false;
+  return [...selectedLangs].every(k => TSOU_GROUP_KEYS.has(k));
+}
+
+function _applyTsouSubstitution(input){
+  // Replace x→ʉ (U+0289) and X→Ʉ (U+0244) in search input
+  const el = document.getElementById('searchInput');
+  if(!el) return;
+  const val = el.value;
+  const newVal = val.replace(/X/g, 'Ʉ').replace(/x/g, 'ʉ');
+  if(newVal !== val){
+    const pos = el.selectionStart + (newVal.length - val.length);
+    el.value = newVal;
+    el.setSelectionRange(pos, pos);
+  }
+}
+
+// Hook into searchInput oninput to apply substitution before filtering
+function onSearchInput(){
+  if(_isTsouOnly()) _applyTsouSubstitution();
+  applyFilters();
+}
 
 function applyFilters(){
   if(!_filterCache) _buildFilterCache();
