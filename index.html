@@ -133,22 +133,7 @@ header {
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 
 /* ── UPLOAD PANEL ── */
-.upload-panel {
-  display: none; padding: 16px 28px; border-bottom: 1px solid var(--border);
-  background: var(--surface2);
-}
-.upload-panel.open { display: block; animation: slideDown 0.2s ease; }
 @keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
-.upload-area {
-  border: 2px dashed var(--border); border-radius: 10px; padding: 24px;
-  text-align: center; cursor: pointer; position: relative; font-size: 0.88rem;
-  transition: all 0.2s;
-}
-.upload-area:hover, .upload-area.drag-over { border-color: var(--accent); background: rgba(212,168,67,0.04); }
-.upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.upload-icon { font-size: 1.6rem; margin-bottom: 8px; }
-.upload-hint { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--muted); margin-top: 5px; }
-.audio-config { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
 .audio-config label { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--muted); white-space: nowrap; }
 
 /* ── CONTROLS ── */
@@ -728,7 +713,6 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
     </div>
     <!-- Dark/light toggle -->
     <button class="ui-ctrl-btn" id="themeBtn" onclick="toggleTheme()" title="切換深色/淺色模式">🌙</button>
-    <button class="btn btn-ghost" onclick="toggleUpload()">⇧ 更新資料</button>
     <a class="vocab-link-btn" href="vocab.html" target="_blank">⭐ 詞彙表</a>
     <a class="vocab-link-btn" href="about.html" target="_blank" style="border-color:var(--border);color:var(--muted);">關於</a>
     <div class="auth-badge" id="authBadge" onclick="handleAuthClick()">
@@ -737,19 +721,7 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
   </div>
 </header>
 
-<div class="upload-panel" id="uploadPanel">
-  <div class="upload-area" id="dropZone">
-    <input type="file" accept=".csv" id="csvInput" onchange="handleCSV(this)">
-    <div class="upload-icon">📂</div>
-    <div>拖曳或點擊上傳新的 CSV 檔案</div>
-    <div class="upload-hint">欄位需包含：語句、翻譯、音檔路徑</div>
-  </div>
-  <div class="audio-config">
-    <label>音檔基底路徑：</label>
-    <input type="text" id="audioBase" placeholder="./audio/ 或 https://你的網域/audio/" value="./audio/" style="padding-left:12px;">
-    <button class="btn btn-primary" onclick="applyAudioBase()">套用</button>
-  </div>
-</div>
+
 
 <div class="controls">
   <div class="search-wrap">
@@ -868,7 +840,8 @@ function buildLangSidebar(){
 
   if(isMultiLang){
     const allKeys=Object.values(_sbLangAllKeys).flat();
-    const allSel=allKeys.length>0&&allKeys.every(k=>sel.langkeys.has(k));
+    const noSel = sel.langkeys.size === 0;
+    const allSel = noSel || (allKeys.length>0&&allKeys.every(k=>sel.langkeys.has(k)));
     html+=`<div class="sb-all-row ${allSel?'sel':''}" onclick="langSelectAllLangs()">
       <div class="sb-chk ${allSel?'sel':''}">${allSel?'✓':''}</div>
       <span>全部語言</span>
@@ -1265,10 +1238,9 @@ function langSelectAll(langKey){
 }
 
 function langSelectAllLangs(){
-  const allKeys=Object.values(_sbLangAllKeys).flat();
-  const allSel=allKeys.every(k=>sel.langkeys.has(k));
-  if(allSel) sel.langkeys.clear();
-  else allKeys.forEach(k=>sel.langkeys.add(k));
+  // Always clear selections → show all languages
+  sel.langkeys.clear();
+  _savePrefsLocal();
   buildLangSidebar(); applyFilters();
 }
 
@@ -1765,35 +1737,11 @@ async function _loadMonolithic(){
     } catch{}
   }
   if(!loaded){
-    document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料，請點擊右上角「更新資料」上傳 CSV</div></div>`;
+    document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料</div></div>`;
     document.getElementById('totalBadge').innerHTML='<span>0</span> 筆資料';
-    toggleUpload();
     return;
   }
   buildRowIndex(); _filterCache=null; initUI();
-}
-
-function handleCSV(input){
-  const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      allData=parseCSV(e.target.result);
-      if(!allData.length){showToast('❌ CSV 格式錯誤或無資料');return;}
-      buildRowIndex();
-      // Clear IDB cache so next load picks up this new data
-      idbPut(IDB_META_KEY,{etag:'',csvName:''}).catch(()=>{});
-      showToast(`✓ 已載入 ${allData.length} 筆資料`);
-      toggleUpload(); initUI();
-    } catch(err){showToast('❌ 解析失敗：'+err.message);}
-  };
-  reader.readAsText(file,'UTF-8');
-}
-
-function applyAudioBase(){
-  audioBase=document.getElementById('audioBase').value.trim();
-  if(!audioBase.endsWith('/')) audioBase+='/';
-  showToast('✓ 音檔路徑已更新');
 }
 
 // ── Scroll to top ────────────────────────────────────────────
@@ -2087,14 +2035,18 @@ function groupKey(r){
   if(r['分類']==='R') return r['分類1']; // 篇號
   if(r['分類']==='W') return r['分類1']; // 文化篇號
   if(r['分類']==='T') return r['分類2'] ? r['分類1']+'|'+r['分類2'] : r['分類1']; // 冊|課
+  // For P and V: append level to group key when ≥1 level is selected
+  const lvlSuffix = sel.levels.size >= 1 ? ''+(r['等級']||'') : '';
   if(r['分類']==='P'){
     // Use deepest available category as block unit
-    if(r['分類4']) return r['分類1']+'|'+r['分類2']+'|'+r['分類3']+'|'+r['分類4'];
-    if(r['分類3']) return r['分類1']+'|'+r['分類2']+'|'+r['分類3'];
-    if(r['分類2']) return r['分類1']+'|'+r['分類2'];
-    return r['分類1'];
+    let base;
+    if(r['分類4']) base = r['分類1']+'|'+r['分類2']+'|'+r['分類3']+'|'+r['分類4'];
+    else if(r['分類3']) base = r['分類1']+'|'+r['分類2']+'|'+r['分類3'];
+    else if(r['分類2']) base = r['分類1']+'|'+r['分類2'];
+    else base = r['分類1'];
+    return base + lvlSuffix;
   }
-  return r['分類2']||r['分類1']; // V and others
+  return (r['分類2']||r['分類1']) + lvlSuffix; // V and others
 }
 
 function langLabel(r){
@@ -2117,19 +2069,25 @@ function groupTitle(r,key){
   return r['分類']+'-'+key;
 }
 
+// Level display names
+const LEVEL_LABELS = { B:'初級', I:'中級', U:'高級', P:'專業' };
+
 function sourceLabel(r){
   const typeLabel = TYPE_LABELS[r['分類']]||r['分類'];
+  // Append level label when ≥1 level selected (P and V only)
+  const showLevel = sel.levels.size >= 1 && (r['分類']==='P' || r['分類']==='V');
+  const lvlLabel = showLevel ? (' · '+(LEVEL_LABELS[r['等級']]||r['等級']||'')) : '';
   if(r['分類']==='T' && r['分類2']){
     return typeLabel+' · 第'+r['分類1']+'冊 · 第'+r['分類2']+'課';
   }
   if(r['分類']==='P'){
-    if(r['分類4']) return typeLabel+' · '+r['分類2']+' · '+r['分類3']+' · '+r['分類4'];
-    if(r['分類3']) return typeLabel+' · '+r['分類2']+' · '+r['分類3'];
-    if(r['分類2']) return typeLabel+' · '+r['分類2'];
-    if(r['分類1']) return typeLabel+' · '+r['分類1'];
+    if(r['分類4']) return typeLabel+' · '+r['分類2']+' · '+r['分類3']+' · '+r['分類4']+lvlLabel;
+    if(r['分類3']) return typeLabel+' · '+r['分類2']+' · '+r['分類3']+lvlLabel;
+    if(r['分類2']) return typeLabel+' · '+r['分類2']+lvlLabel;
+    if(r['分類1']) return typeLabel+' · '+r['分類1']+lvlLabel;
   }
   if(r['分類1']){
-    return typeLabel+' · '+r['分類1'];
+    return typeLabel+' · '+r['分類1']+lvlLabel;
   }
   return typeLabel;
 }
@@ -2150,7 +2108,10 @@ function groupSortKey(r){
   const cat4 = pad(r['分類4']);
   const langOrd = _langIdxMap[r['語別']]!==undefined ? String(_langIdxMap[r['語別']]).padStart(3,'0') : '999';
   const dialOrd = (r['方言別']||'').padStart(3,'0');
-  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+langOrd+'|'+dialOrd;
+  // Append level to sort key for P/V when levels are selected
+  const lvlSort = (sel.levels.size >= 1 && (cat==='P'||cat==='V'))
+    ? '|'+(r['等級']||'zzz') : '';
+  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+langOrd+'|'+dialOrd+lvlSort;
 }
 
 // ── Render one row (no col-tags — info in card header) ─────────────
@@ -2572,8 +2533,6 @@ function groupNext(gid){
 }
 
 // ── Utils ──────────────────────────────────────────────────────────
-function toggleUpload(){ document.getElementById('uploadPanel').classList.toggle('open'); }
-
 function showToast(msg){
   const old=document.querySelector('.toast'); if(old) old.remove();
   const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
@@ -2589,7 +2548,6 @@ dz.addEventListener('drop',e=>{
   if(file&&file.name.endsWith('.csv')){
     const dt=new DataTransfer(); dt.items.add(file);
     document.getElementById('csvInput').files=dt.files;
-    handleCSV(document.getElementById('csvInput'));
   }
 });
 
