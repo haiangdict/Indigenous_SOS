@@ -2036,7 +2036,7 @@ function groupKey(r){
   if(r['分類']==='W') return r['分類1']; // 文化篇號
   if(r['分類']==='T') return r['分類2'] ? r['分類1']+'|'+r['分類2'] : r['分類1']; // 冊|課
   // For P and V: append level to group key when ≥1 level is selected
-  const lvlSuffix = sel.levels.size >= 1 ? ''+(r['等級']||'') : '';
+  const lvlSuffix = (typeof sel !== 'undefined' && sel.levels && sel.levels.size >= 1) ? '||'+(r['等級']||'') : '';
   if(r['分類']==='P'){
     // Use deepest available category as block unit
     let base;
@@ -2075,7 +2075,7 @@ const LEVEL_LABELS = { B:'初級', I:'中級', U:'高級', P:'專業' };
 function sourceLabel(r){
   const typeLabel = TYPE_LABELS[r['分類']]||r['分類'];
   // Append level label when ≥1 level selected (P and V only)
-  const showLevel = sel.levels.size >= 1 && (r['分類']==='P' || r['分類']==='V');
+  const showLevel = (typeof sel !== 'undefined' && sel.levels && sel.levels.size >= 1) && (r['分類']==='P' || r['分類']==='V');
   const lvlLabel = showLevel ? (' · '+(LEVEL_LABELS[r['等級']]||r['等級']||'')) : '';
   if(r['分類']==='T' && r['分類2']){
     return typeLabel+' · 第'+r['分類1']+'冊 · 第'+r['分類2']+'課';
@@ -2109,7 +2109,7 @@ function groupSortKey(r){
   const langOrd = _langIdxMap[r['語別']]!==undefined ? String(_langIdxMap[r['語別']]).padStart(3,'0') : '999';
   const dialOrd = (r['方言別']||'').padStart(3,'0');
   // Append level to sort key for P/V when levels are selected
-  const lvlSort = (sel.levels.size >= 1 && (cat==='P'||cat==='V'))
+  const lvlSort = (typeof sel !== 'undefined' && sel.levels && sel.levels.size >= 1 && (cat==='P'||cat==='V'))
     ? '|'+(r['等級']||'zzz') : '';
   return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+langOrd+'|'+dialOrd+lvlSort;
 }
