@@ -2035,18 +2035,13 @@ function groupKey(r){
   if(r['分類']==='R') return r['分類1']; // 篇號
   if(r['分類']==='W') return r['分類1']; // 文化篇號
   if(r['分類']==='T') return r['分類2'] ? r['分類1']+'|'+r['分類2'] : r['分類1']; // 冊|課
-  // For P and V: append level to group key when ≥1 level is selected
-  const lvlSuffix = (typeof sel !== 'undefined' && sel.levels && sel.levels.size >= 1) ? '||'+(r['等級']||'') : '';
   if(r['分類']==='P'){
-    // Use deepest available category as block unit
-    let base;
-    if(r['分類4']) base = r['分類1']+'|'+r['分類2']+'|'+r['分類3']+'|'+r['分類4'];
-    else if(r['分類3']) base = r['分類1']+'|'+r['分類2']+'|'+r['分類3'];
-    else if(r['分類2']) base = r['分類1']+'|'+r['分類2'];
-    else base = r['分類1'];
-    return base + lvlSuffix;
+    if(r['分類4']) return r['分類1']+'|'+r['分類2']+'|'+r['分類3']+'|'+r['分類4'];
+    if(r['分類3']) return r['分類1']+'|'+r['分類2']+'|'+r['分類3'];
+    if(r['分類2']) return r['分類1']+'|'+r['分類2'];
+    return r['分類1'];
   }
-  return (r['分類2']||r['分類1']) + lvlSuffix; // V and others
+  return r['分類2']||r['分類1']; // V and others
 }
 
 function langLabel(r){
@@ -2069,25 +2064,19 @@ function groupTitle(r,key){
   return r['分類']+'-'+key;
 }
 
-// Level display names
-const LEVEL_LABELS = { B:'初級', I:'中級', U:'高級', P:'專業' };
-
 function sourceLabel(r){
   const typeLabel = TYPE_LABELS[r['分類']]||r['分類'];
-  // Append level label when ≥1 level selected (P and V only)
-  const showLevel = (typeof sel !== 'undefined' && sel.levels && sel.levels.size >= 1) && (r['分類']==='P' || r['分類']==='V');
-  const lvlLabel = showLevel ? (' · '+(LEVEL_LABELS[r['等級']]||r['等級']||'')) : '';
   if(r['分類']==='T' && r['分類2']){
     return typeLabel+' · 第'+r['分類1']+'冊 · 第'+r['分類2']+'課';
   }
   if(r['分類']==='P'){
-    if(r['分類4']) return typeLabel+' · '+r['分類2']+' · '+r['分類3']+' · '+r['分類4']+lvlLabel;
-    if(r['分類3']) return typeLabel+' · '+r['分類2']+' · '+r['分類3']+lvlLabel;
-    if(r['分類2']) return typeLabel+' · '+r['分類2']+lvlLabel;
-    if(r['分類1']) return typeLabel+' · '+r['分類1']+lvlLabel;
+    if(r['分類4']) return typeLabel+' · '+r['分類2']+' · '+r['分類3']+' · '+r['分類4'];
+    if(r['分類3']) return typeLabel+' · '+r['分類2']+' · '+r['分類3'];
+    if(r['分類2']) return typeLabel+' · '+r['分類2'];
+    if(r['分類1']) return typeLabel+' · '+r['分類1'];
   }
   if(r['分類1']){
-    return typeLabel+' · '+r['分類1']+lvlLabel;
+    return typeLabel+' · '+r['分類1'];
   }
   return typeLabel;
 }
@@ -2109,9 +2098,7 @@ function groupSortKey(r){
   const langOrd = _langIdxMap[r['語別']]!==undefined ? String(_langIdxMap[r['語別']]).padStart(3,'0') : '999';
   const dialOrd = (r['方言別']||'').padStart(3,'0');
   // Append level to sort key for P/V when levels are selected
-  const lvlSort = (typeof sel !== 'undefined' && sel.levels && sel.levels.size >= 1 && (cat==='P'||cat==='V'))
-    ? '|'+(r['等級']||'zzz') : '';
-  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+langOrd+'|'+dialOrd+lvlSort;
+  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+langOrd+'|'+dialOrd;
 }
 
 // ── Render one row (no col-tags — info in card header) ─────────────
