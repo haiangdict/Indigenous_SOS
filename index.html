@@ -2081,8 +2081,9 @@ function sourceLabel(r){
   return typeLabel;
 }
 
-// Group sort key: data point first (分類→分類1→2→3→4), then lang/dialect
-// Result: all dialects of the same data point are adjacent
+const LEVEL_LABELS = { B:'初級', I:'中級', S:'中高級', U:'高級' };
+
+// Group sort key: data point first, then lang/dialect, then level
 function groupSortKey(r){
   const cat = r['分類']||'';
   function pad(s){
@@ -2098,7 +2099,9 @@ function groupSortKey(r){
   const langOrd = _langIdxMap[r['語別']]!==undefined ? String(_langIdxMap[r['語別']]).padStart(3,'0') : '999';
   const dialOrd = (r['方言別']||'').padStart(3,'0');
   // Append level to sort key for P/V when levels are selected
-  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+langOrd+'|'+dialOrd;
+  const lvlOrder = {'B':'1','I':'2','S':'3','U':'4'};
+  const lvl = (r['分類']==='P'||r['分類']==='V') ? (lvlOrder[r['等級']]||'9') : '';
+  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+langOrd+'|'+dialOrd+'|'+lvl;
 }
 
 // ── Render one row (no col-tags — info in card header) ─────────────
@@ -2151,13 +2154,18 @@ function renderPage(){
   }
 
   // Build ordered groups — keyed by type+groupKey+lang+dialect, sorted
+  // When ≥1 level selected for P/V, also split by level
+  const splitByLevel = sel.levels.size >= 1;
   const groupMap=new Map();
   filteredData.forEach(r=>{
-    const gk=r['分類']+'\x00'+groupKey(r)+'\x00'+(r['語別']||'')+'\x00'+(r['方言別']||'');
+    const cat = r['分類'];
+    const lvlKey = (splitByLevel && (cat==='P'||cat==='V')) ? '\x00'+(r['等級']||'') : '';
+    const gk=cat+'\x00'+groupKey(r)+'\x00'+(r['語別']||'')+'\x00'+(r['方言別']||'')+lvlKey;
     if(!groupMap.has(gk)){
       groupMap.set(gk,{
-        key:groupKey(r), type:r['分類'], rows:[],
+        key:groupKey(r), type:cat, rows:[],
         title:groupTitle(r,groupKey(r)),
+        level: (splitByLevel && (cat==='P'||cat==='V')) ? (r['等級']||'') : '',
         sortKey:groupSortKey(r)
       });
     }
@@ -2173,7 +2181,7 @@ function renderPage(){
     const hasAny=audioIds.length>0;
     const fr=g.rows[0];
     const ll=langLabel(fr);
-    const sl=sourceLabel(fr);
+    const sl=sourceLabel(fr) + (g.level ? ` · ${LEVEL_LABELS[g.level]||g.level}` : '');
     const grpKey=g.type+'|'+g.key;
     return `<div class="card-block" id="${gid}" data-grpkey="${grpKey.replace(/"/g,'&quot;')}">
       <div class="card-hdr">
