@@ -133,31 +133,25 @@ header {
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 
 /* ── UPLOAD PANEL ── */
+.upload-panel {
+  display: none; padding: 16px 28px; border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.upload-panel.open { display: block; animation: slideDown 0.2s ease; }
 @keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+.upload-area {
+  border: 2px dashed var(--border); border-radius: 10px; padding: 24px;
+  text-align: center; cursor: pointer; position: relative; font-size: 0.88rem;
+  transition: all 0.2s;
+}
+.upload-area:hover, .upload-area.drag-over { border-color: var(--accent); background: rgba(212,168,67,0.04); }
+.upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.upload-icon { font-size: 1.6rem; margin-bottom: 8px; }
+.upload-hint { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--muted); margin-top: 5px; }
+.audio-config { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
 .audio-config label { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--muted); white-space: nowrap; }
 
 /* ── CONTROLS ── */
-/* ── Special character input buttons ── */
-.char-btns {
-  display: flex; align-items: center; gap: 4px; flex-shrink: 0;
-}
-.char-btn {
-  font-family: 'Space Mono', monospace; font-size: 0.85rem;
-  background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); padding: 4px 9px; border-radius: 6px;
-  cursor: pointer; transition: all 0.13s; line-height: 1;
-  min-width: 30px; text-align: center;
-}
-.char-btn:hover { border-color: var(--accent2); background: var(--surface); }
-.char-btn:active { transform: scale(0.93); }
-.case-btn {
-  font-family: 'Space Mono', monospace; font-size: 0.68rem;
-  background: var(--surface2); border: 1px solid var(--border);
-  color: var(--muted); padding: 4px 8px; border-radius: 6px;
-  cursor: pointer; transition: all 0.13s; letter-spacing: 0.05em;
-}
-.case-btn:hover { border-color: var(--accent); color: var(--accent); }
-.case-btn.upper { border-color: var(--accent2); color: var(--accent2); background: rgba(139,196,168,0.08); }
 .controls {
   padding: 12px 28px; border-bottom: 1px solid var(--border);
   display: flex; flex-wrap: wrap; gap: 9px; align-items: center; background: var(--surface);
@@ -273,34 +267,6 @@ input[type="text"]::placeholder { color: var(--muted); }
 .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .content::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
-/* ── Scroll-to-top button ── */
-#scrollTopBtn {
-  position: fixed;
-  bottom: 28px;
-  right: 28px;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--bg);
-  border: none;
-  font-size: 1.1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s, transform 0.25s;
-  z-index: 200;
-}
-#scrollTopBtn.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-#scrollTopBtn:hover { transform: translateY(-3px); }
-
 .result-info {
   font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--muted);
   padding: 10px 16px; border-bottom: 1px solid var(--border);
@@ -385,14 +351,14 @@ input[type="text"]::placeholder { color: var(--muted); }
 @keyframes fadeIn { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
 
 .col-play { flex-shrink:0; width:32px; padding-top:2px; margin-right:10px; }
-.col-sentence { flex:3; min-width:0; padding-right:12px; }
-.col-translation { flex:2; min-width:0; }
+.col-sentence { flex:1; min-width:0; padding-right:12px; }
+.col-translation { flex:1; min-width:0; }
 
 .row-speaker { font-family:'Space Mono',monospace; font-size:0.72rem; line-height:1.4; color:var(--accent2); margin-bottom:3px; letter-spacing:0.06em; }
 /* When speaker exists, push translation down by exact same height as speaker label */
 /* speaker height = font-size(0.6rem) * line-height(1.4) + margin-bottom(2px) */
 .col-translation.has-speaker { padding-top: calc(0.72rem * 1.4 + 3px); }
-.row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em; font-weight:normal; line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:break-word; position:relative; }
+.row-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em; font-weight:normal; line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:anywhere; position:relative; }
 
 /* ── NOTE TOOLTIP ── */
 .note-dot {
@@ -490,7 +456,7 @@ input[type="text"]::placeholder { color: var(--muted); }
 .group-rows { padding:0 16px 0 12px; }
 .group-rows .row-item:last-child { border-bottom:none; }
 .row-item.gp-current { background:rgba(139,196,168,0.05); }
-/* C/R/T: no-speaker non-title body row — subtle tint */
+/* C/T: no-speaker non-title body row — subtle tint */
 .row-item.no-speaker-body { background: rgba(255,255,255,0.03); }
 body.light .row-item.no-speaker-body { background: rgba(0,0,0,0.04); }
 /* C/T: first row of each group (lesson title) — stronger tint */
@@ -713,6 +679,7 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
     </div>
     <!-- Dark/light toggle -->
     <button class="ui-ctrl-btn" id="themeBtn" onclick="toggleTheme()" title="切換深色/淺色模式">🌙</button>
+    <button class="btn btn-ghost" onclick="toggleUpload()">⇧ 更新資料</button>
     <a class="vocab-link-btn" href="vocab.html" target="_blank">⭐ 詞彙表</a>
     <a class="vocab-link-btn" href="download.html" id="dlBtn" style="display:none">⬇ 離線音檔</a>
     <a class="vocab-link-btn" href="about.html" target="_blank" style="border-color:var(--border);color:var(--muted);">關於</a>
@@ -722,26 +689,26 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
   </div>
 </header>
 
-
+<div class="upload-panel" id="uploadPanel">
+  <div class="upload-area" id="dropZone">
+    <input type="file" accept=".csv" id="csvInput" onchange="handleCSV(this)">
+    <div class="upload-icon">📂</div>
+    <div>拖曳或點擊上傳新的 CSV 檔案</div>
+    <div class="upload-hint">欄位需包含：語句、翻譯、音檔路徑</div>
+  </div>
+  <div class="audio-config">
+    <label>音檔基底路徑：</label>
+    <input type="text" id="audioBase" placeholder="./audio/ 或 https://你的網域/audio/" value="./audio/" style="padding-left:12px;">
+    <button class="btn btn-primary" onclick="applyAudioBase()">套用</button>
+  </div>
+</div>
 
 <div class="controls">
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
-    <input type="text" id="searchInput" placeholder="搜尋…" oninput="onSearchInput()">
-  </div>
-  <!-- Special character buttons -->
-  <div class="char-btns">
-    <button class="char-btn" onclick="insertChar('’')" title="’ (U+2019)">’</button>
-    <button class="char-btn" onclick="insertChar('é')"  title="é (U+00E9)">é</button>
-    <button class="char-btn" onclick="insertChar('ɨ')"  title="ɨ (U+0268)">ɨ</button>
-    <button class="char-btn" onclick="insertChar('ṟ')"  title="ṟ (U+1E5F)">ṟ</button>
-    <button class="char-btn" onclick="insertChar('ʉ')"  title="ʉ (U+0289)">ʉ</button>
-    <button class="case-btn" id="caseCycleBtn" onclick="cycleCase()" title="大小寫切換">abc</button>
+    <input type="text" id="searchInput" placeholder="搜尋…" oninput="applyFilters()">
   </div>
   <div class="search-scope">
-    <label class="scope-label" id="scope-exact" onclick="toggleExact()" title="僅顯示完全相符的結果">
-      <span class="scope-chk" id="schk-exact" style="color:transparent;">✓</span> 精確
-    </label>
     <label class="scope-label" id="scope-s" onclick="toggleScope('sentence')" title="搜尋語句">
       <span class="scope-chk" id="schk-s">✓</span> 語句
     </label>
@@ -774,7 +741,6 @@ let currentPlayBtn = null;
 // empty = show all (single-lang CSV) or require selection (multi-lang)
 let sel = { types:new Set(), levels:new Set(), subkeys:new Set(), langkeys:new Set() };
 let searchScope = { sentence: true, translation: true }; // both on by default
-let exactSearch = false; // exact match mode (default: fuzzy)
 
 const LANG_LIST = [
   {key:'阿美語',  name:'阿美語',   dialects:[['1','南勢'],['2','秀姑巒'],['3','海岸'],['4','馬蘭'],['5','恆春']]},
@@ -807,23 +773,20 @@ let _langIdxMap = {};
 const _sbLangAllKeys = {};
 
 function buildLangSidebar(){
-  const langKeysInData = allData.length > 0
-    ? new Set(allData.map(r=>r['語別']))
-    : new Set(Object.keys(_langIdxMap));  // use prebuilt when allData empty
-  const isMultiLang = Object.keys(_langIdxMap).length > 1 || langKeysInData.size > 1;
+  const langKeysInData = new Set(allData.map(r=>r['語別']));
+  const isMultiLang = langKeysInData.size > 1;
 
-  // Only rebuild _langIdxMap and _sbLangAllKeys when allData is available
-  if(allData.length > 0){
-    _langIdxMap = {};
-    let idx = 0;
-    for(const lang of LANG_LIST){ if(langKeysInData.has(lang.key)) _langIdxMap[lang.key]=idx++; }
+  // Build stable numeric id map
+  _langIdxMap = {};
+  let idx = 0;
+  for(const lang of LANG_LIST){ if(langKeysInData.has(lang.key)) _langIdxMap[lang.key]=idx++; }
 
-    for(const lang of LANG_LIST){
-      if(!langKeysInData.has(lang.key)) continue;
-      const dialsInData=new Set(allData.filter(r=>r['語別']===lang.key).map(r=>r['方言別']).filter(Boolean));
-      const avail=lang.dialects.filter(([dk])=>dialsInData.has(dk));
-      _sbLangAllKeys[lang.key]=avail.length===0?[lang.key]:avail.map(([dk])=>lang.key+'|'+dk);
-    }
+  // Pre-compute langkeys per language
+  for(const lang of LANG_LIST){
+    if(!langKeysInData.has(lang.key)) continue;
+    const dialsInData=new Set(allData.filter(r=>r['語別']===lang.key).map(r=>r['方言別']).filter(Boolean));
+    const avail=lang.dialects.filter(([dk])=>dialsInData.has(dk));
+    _sbLangAllKeys[lang.key]=avail.length===0?[lang.key]:avail.map(([dk])=>lang.key+'|'+dk);
   }
 
   const langSecOpen = _langExpanded.has('__lang_section__');
@@ -841,8 +804,7 @@ function buildLangSidebar(){
 
   if(isMultiLang){
     const allKeys=Object.values(_sbLangAllKeys).flat();
-    const noSel = sel.langkeys.size === 0;
-    const allSel = noSel || (allKeys.length>0&&allKeys.every(k=>sel.langkeys.has(k)));
+    const allSel=allKeys.length>0&&allKeys.every(k=>sel.langkeys.has(k));
     html+=`<div class="sb-all-row ${allSel?'sel':''}" onclick="langSelectAllLangs()">
       <div class="sb-chk ${allSel?'sel':''}">${allSel?'✓':''}</div>
       <span>全部語言</span>
@@ -850,14 +812,10 @@ function buildLangSidebar(){
   }
 
   for(const lang of LANG_LIST){
-    if(!langKeysInData.has(lang.key) && !_langIdxMap.hasOwnProperty(lang.key)) continue;
+    if(!langKeysInData.has(lang.key)) continue;
     const langAllKeys=_sbLangAllKeys[lang.key]||[];
-    const dialsInData= allData.length > 0
-      ? new Set(allData.filter(r=>r['語別']===lang.key).map(r=>r['方言別']).filter(Boolean))
-      : new Set(langAllKeys.filter(k=>k.includes('|')).map(k=>k.split('|')[1]));
-    const avail= allData.length > 0
-      ? lang.dialects.filter(([dk])=>dialsInData.has(dk))
-      : lang.dialects.filter(([dk])=>dialsInData.has(dk));
+    const dialsInData=new Set(allData.filter(r=>r['語別']===lang.key).map(r=>r['方言別']).filter(Boolean));
+    const avail=lang.dialects.filter(([dk])=>dialsInData.has(dk));
     const selCount=langAllKeys.filter(k=>sel.langkeys.has(k)).length;
     const allChk=selCount===langAllKeys.length&&langAllKeys.length>0;
     const lid='ld-'+_langIdxMap[lang.key];
@@ -896,18 +854,16 @@ function buildLangSidebar(){
   </div>
   <div class="sb-sec-body ${catSecOpen?'':'closed'}" id="catSecBody">`;
 
-  const types=['C','P','R','T','V','W'];
+  const types=['C','T','P','V'];
   for(const type of types){
     const td=allData.filter(r=>r['分類']===type);
     if(!td.length) continue;
     const isC=type==='C';
-    const isR=type==='R';
-    const isW=type==='W';
     const tid='t-'+type;
     const allSksForType=[];
     let subHtml='';
 
-    if(isC||isR||isW||type==='V'){
+    if(isC||type==='V'){
       const cat1s=[...new Set(td.map(r=>r['分類1']).filter(Boolean))];
       for(const cat1 of cat1s){
         const sk=type+'|'+cat1;
@@ -924,7 +880,7 @@ function buildLangSidebar(){
       const cat1s=[...new Set(td.map(r=>r['分類1']).filter(Boolean))].sort((a,b)=>+a-+b);
       for(const cat1 of cat1s){
         const c1d=td.filter(r=>r['分類1']===cat1);
-        const cat2s=[...new Set(c1d.map(r=>r['分類2']).filter(Boolean))].sort(pCatCmp);
+        const cat2s=[...new Set(c1d.map(r=>r['分類2']).filter(Boolean))].sort((a,b)=>+a-+b);
         const ceSks=cat2s.map(cat2=>type+'|'+cat1+'|'+cat2);
         ceSks.forEach(sk=>allSksForType.push(sk));
         const ceSelCount=ceSks.filter(sk=>sel.subkeys.has(sk)).length;
@@ -951,19 +907,6 @@ function buildLangSidebar(){
       }
     } else {
       // P: 分類1 > 分類2 > 分類3 > 分類4
-
-      // Sort key: numeric prefix first, no-letter before letter suffix
-      // e.g. 01 < 01a < 01b < 02 < 02a
-      function pCatSortKey(s){
-        const m = (s||'').trim().match(/^(\d+)([a-zA-Z]?)/);
-        if(m) return [parseInt(m[1],10), m[2].toLowerCase()];
-        return [9999, s];
-      }
-      function pCatCmp(a,b){
-        const [an,al]=pCatSortKey(a), [bn,bl]=pCatSortKey(b);
-        if(an!==bn) return an-bn;
-        if(al<bl) return -1; if(al>bl) return 1; return 0;
-      }
       // leaf   = no children → direct checkbox
       // parent = has children → click=selectAll, ▸=expand only
       // No separate 全選 row — the parent row itself IS the select-all
@@ -1020,7 +963,9 @@ function buildLangSidebar(){
           const c2Id='p-c2-'+cat1.replace(/\W/g,'_')+'-'+cat2.replace(/\W/g,'_');
           const c2Open=_langExpanded.has('P-c2-'+cat1+'-'+cat2);
           const c2SksStr=c2Sks.map(s=>s.replace(/"/g,'&quot;')).join('||');
-          const cat3s=[...new Set(c2d.map(r=>r['分類3']).filter(Boolean))].sort(pCatCmp);
+          const cat3s=[...new Set(c2d.map(r=>r['分類3']).filter(Boolean))].sort((a,b)=>{
+            const at=a.trim(),bt=b.trim(); return at<bt?-1:at>bt?1:0;
+          });
 
           if(!cat3s.length){
             // 分類2 leaf → sb-l2-item checkbox
@@ -1049,7 +994,7 @@ function buildLangSidebar(){
             const c3Id='p-c3-'+cat1.replace(/\W/g,'_')+'-'+cat2.replace(/\W/g,'_')+'-'+cat3.replace(/\W/g,'_');
             const c3Open=_langExpanded.has('P-c3-'+cat1+'-'+cat2+'-'+cat3);
             const c3SksStr=c3Sks.map(s=>s.replace(/"/g,'&quot;')).join('||');
-            const cat4s=[...new Set(c3d.map(r=>r['分類4']).filter(Boolean))].sort(pCatCmp);
+            const cat4s=[...new Set(c3d.map(r=>r['分類4']).filter(Boolean))];
 
             if(!cat4s.length){
               // 分類3 leaf → sb-l3-item checkbox
@@ -1168,52 +1113,6 @@ function langExpandToggle(btn){
   else _langExpanded.delete(langKey);
 }
 
-function langToggleLang(langKey){
-  const keys = _sbLangAllKeys[langKey] || [];
-  if(!keys.length){ sel.langkeys.add(langKey); }
-  else {
-    const allSel = keys.every(k => sel.langkeys.has(k));
-    if(allSel) keys.forEach(k => sel.langkeys.delete(k));
-    else keys.forEach(k => sel.langkeys.add(k));
-  }
-  _savePrefsLocal();
-  _checkTsouSubstitutionOnLangChange();
-  // Priority fetch: if data not yet fully loaded, fetch selected dialects first
-  if(_dialectLoaded.size < _dialectTotal){
-    _priorityFetchSelected();
-  }
-  if(_dialectLoaded.size > 0){
-    _onDialectLoaded();
-  } else {
-    _buildSidebarFromIndex(_dialectList);
-  }
-}
-
-// When lang selection changes, re-convert or restore x/ʉ in search box
-function _checkTsouSubstitutionOnLangChange(){
-  const el = document.getElementById('searchInput');
-  if(!el || !el.value) return;
-  if(_isTsouOnly()){
-    _applyTsouSubstitution();
-  } else {
-    // Restore ʉ→x if user switches away from Tsou-only
-    const val = el.value;
-    const newVal = val.replace(/Ʉ/g, 'X').replace(/ʉ/g, 'x');
-    if(newVal !== val) el.value = newVal;
-  }
-}
-
-// Fetch selected-but-not-yet-loaded dialects immediately
-async function _priorityFetchSelected(){
-  const selectedDialIds = [...sel.langkeys]
-    .filter(k => k.includes('|'))
-    .map(k => k.split('|')[1]);
-  const priority = _dialectList.filter(d =>
-    selectedDialIds.includes(d.dialId) && !_dialectLoaded.has(d.dialId)
-  );
-  await Promise.all(priority.map(d => _fetchDialect(d)));
-}
-
 function langToggleByEl(el){
   // Walk up to find the element with data-lk (handles clicks on child elements)
   const target = el.dataset && el.dataset.lk ? el : el.closest('[data-lk]');
@@ -1239,9 +1138,10 @@ function langSelectAll(langKey){
 }
 
 function langSelectAllLangs(){
-  // Always clear selections → show all languages
-  sel.langkeys.clear();
-  _savePrefsLocal();
+  const allKeys=Object.values(_sbLangAllKeys).flat();
+  const allSel=allKeys.every(k=>sel.langkeys.has(k));
+  if(allSel) sel.langkeys.clear();
+  else allKeys.forEach(k=>sel.langkeys.add(k));
   buildLangSidebar(); applyFilters();
 }
 
@@ -1253,22 +1153,13 @@ function langClearAll(){
 function langNameClick(el){ /* legacy stub */ }
 
 
-const TYPE_LABELS = { C:'會話', P:'句型', R:'閱讀', T:'十二階', V:'詞彙', W:'文化' };
+const TYPE_LABELS = { C:'會話', T:'十二階', P:'句型', V:'詞彙' };
 const LEVEL_MAP = {B:'初',I:'中',S:'中高',U:'高'};
 function fmtLevel(raw){ return (raw||'').split('/').map(p=>LEVEL_MAP[p.trim()]||p.trim()).join('/'); }
 
 // ── Multiselect ────────────────────────────────────────────────────
 // toggleMs: dropdowns moved to sidebar, no longer needed as popup
 function toggleMs(which){}
-
-function toggleExact(){
-  exactSearch = !exactSearch;
-  const lbl = document.getElementById('scope-exact');
-  const chk = document.getElementById('schk-exact');
-  if(lbl) lbl.classList.toggle('active', exactSearch);
-  if(chk) chk.style.color = exactSearch ? '' : 'transparent';
-  applyFilters();
-}
 
 function toggleScope(which){
   // Must keep at least one active
@@ -1281,46 +1172,6 @@ function toggleScope(which){
   if(lbl){ lbl.classList.toggle('active', searchScope[which]); }
   if(chk){ chk.style.color = searchScope[which]?'':'transparent'; }
   applyFilters();
-}
-
-// ── Special character input ──────────────────────────────────────
-// Three chars each have lower + upper form
-const SPECIAL_CHARS = {
-  '’': '’', // U+2019 right single quotation mark (no case distinction)
-  'é': 'É',   // U+00E9 / U+00C9
-  'ɨ': 'Ɨ',   // U+0268 / U+0197
-  'ṟ': 'Ṟ',   // U+1E5F / U+1E5E
-  'ʉ': 'Ʉ',   // U+0289 / U+0244
-};
-let _charCase = 'lower'; // 'lower' | 'upper'
-
-function insertChar(lowerChar){
-  const ch = _charCase === 'upper' ? SPECIAL_CHARS[lowerChar] : lowerChar;
-  const input = document.getElementById('searchInput');
-  const start = input.selectionStart;
-  const end   = input.selectionEnd;
-  const val   = input.value;
-  input.value = val.slice(0, start) + ch + val.slice(end);
-  // Restore cursor position after inserted char
-  const pos = start + ch.length;
-  input.setSelectionRange(pos, pos);
-  input.focus();
-  applyFilters();
-}
-
-function cycleCase(){
-  _charCase = _charCase === 'lower' ? 'upper' : 'lower';
-  const btn = document.getElementById('caseCycleBtn');
-  if(btn){
-    btn.textContent = _charCase === 'upper' ? 'ABC' : 'abc';
-    btn.classList.toggle('upper', _charCase === 'upper');
-    // Also update char button labels to show upper/lower
-    const labels = { '’':'’', 'é':'É', 'ɨ':'Ɨ', 'ṟ':'Ṟ', 'ʉ':'Ʉ' };
-    document.querySelectorAll('.char-btn').forEach(b => {
-      const lower = b.title.split(' ')[0];
-      b.textContent = _charCase === 'upper' ? (labels[lower]||lower) : lower;
-    });
-  }
 }
 
 function initSearchScope(){
@@ -1342,7 +1193,7 @@ function msToggle(which, val){
 function msAll(which){
   const set = which==='type' ? sel.types : sel.levels;
   const opts = which==='type'
-    ? ['C','P','R','T','V','W']
+    ? ['C','T','P','V']
     : [...new Set(allData.map(r=>r['等級']).filter(Boolean))].sort();
   // Toggle: if all selected → deselect all; else → select all
   const allSelected = opts.length>0 && opts.every(v=>set.has(v));
@@ -1360,8 +1211,8 @@ function msClear(which){
 }
 
 function updateMsPills(which){ buildLangSidebar(); }
-const TYPE_BG  = { C:'rgba(212,168,67,0.18)', P:'rgba(168,196,212,0.18)', R:'rgba(212,149,106,0.18)', W:'rgba(180,140,200,0.18)', T:'rgba(139,196,168,0.18)', V:'rgba(212,168,212,0.18)' };
-const TYPE_CLR = { C:'#d4a843', P:'#a8c4d4', R:'#d4956a', W:'#b48cc8', T:'#8bc4a8', V:'#d4a8c4' };
+const TYPE_BG  = { C:'rgba(212,168,67,0.18)', T:'rgba(139,196,168,0.18)', P:'rgba(168,196,212,0.18)', V:'rgba(212,168,212,0.18)' };
+const TYPE_CLR = { C:'#d4a843', T:'#8bc4a8', P:'#a8c4d4', V:'#d4a8c4' };
 
 // ── CSV ────────────────────────────────────────────────────────────
 function parseCSV(text) {
@@ -1448,23 +1299,18 @@ function audioPath(r){
   const filename = audioFilename(r);
   if(!filename) return '';
   const folder = audioFolder(r);
-  // Insert category subfolder: {dialect}/{C|P|T|V}/{filename}
-  const cat = (r['分類']||'').trim();
-  if(folder && cat) return folder+'/'+cat+'/'+filename;
-  if(folder)        return folder+'/'+filename;
-  return filename;
+  return folder ? folder+'/'+filename : filename;
 }
 
 // ── IndexedDB cache ──────────────────────────────────────────────
 const IDB_NAME = 'sos-data';
-const IDB_VER  = 2; // bump to clear old 33-dialect cache
 const IDB_STORE = 'csv';
 const IDB_KEY = 'allData';
 const IDB_META_KEY = 'meta';
 
 function idbOpen(){
   return new Promise((res,rej)=>{
-    const req = indexedDB.open(IDB_NAME, IDB_VER);
+    const req = indexedDB.open(IDB_NAME, 1);
     req.onupgradeneeded = e => {
       const db = e.target.result;
       if(!db.objectStoreNames.contains(IDB_STORE))
@@ -1498,238 +1344,60 @@ async function idbPut(key, val){
 async function loadBuiltInCSV(){
   document.getElementById('totalBadge').innerHTML='載入中…';
 
-  const BASE = 'https://haiangdict.github.io/Indigenous_SOS/data/';
-  const INDEX_URL = BASE + 'index.json';
+  const REMOTE_JSON = 'https://haiangdict.github.io/Indigenous_SOS/data/data.json';
+  const LOCAL_JSON  = './data/data.json';
+  let loaded = false;
+  let remoteEtag = null;
 
-  // ── STEP 1: Load index.json (dialect list) ────────────────
-  let dialectList = null;
+  // STEP 1: Try remote data.json (GitHub Pages)
   try {
-    const res = await fetch(INDEX_URL, {cache:'no-cache'});
-    if(res.ok) dialectList = await res.json();
-  } catch(e){ console.warn('index.json fetch failed:', e); }
+    const head = await fetch(REMOTE_JSON, {method:'HEAD', cache:'no-cache'});
+    if(head.ok){
+      remoteEtag = head.headers.get('etag') || head.headers.get('last-modified') || '';
+      try {
+        const meta = await idbGet(IDB_META_KEY);
+        if(meta && meta.etag && meta.etag === remoteEtag){
+          const cached = await idbGet(IDB_KEY);
+          if(cached && cached.length){
+            allData = cached; loaded = true;
+            showToast('⚡ 已從快取載入');
+          }
+        }
+      } catch(e){ console.warn('IDB read:', e); }
 
-  // Fallback: try local index.json
-  if(!dialectList){
-    try {
-      const res = await fetch('./data/index.json');
-      if(res.ok) dialectList = await res.json();
-    } catch{}
-  }
-
-  if(!dialectList){
-    // Last resort: load old monolithic data.json
-    showToast('⚠ 無法取得方言清單，嘗試備用載入…');
-    await _loadMonolithic();
-    return;
-  }
-
-  // Store dialect list globally for progress tracking
-  _dialectList = dialectList;
-  _dialectData = {}; // dialId → records[]
-  _dialectLoaded = new Set();
-  _dialectTotal = dialectList.length;
-
-  // Build sidebar immediately from index.json (before data loads)
-  _buildSidebarFromIndex(dialectList);
-
-  // Show progress in badge only (not replacing content)
-  document.getElementById('totalBadge').innerHTML=
-    `下載中 <span>0/${dialectList.length}</span>`;
-
-  // ── STEP 2: Download all dialect files (background) ───────
-  // Check IDB for each dialect first
-  const toFetch = [];
-  for(const d of dialectList){
-    let useCache = false;
-    try {
-      const meta = await idbGet('dial_meta_'+d.dialId);
-      // Use server-provided updatedAt timestamp to detect stale cache
-      const serverTs = d.updatedAt || '';
-      if(meta && meta.updatedAt && serverTs && meta.updatedAt === serverTs){
-        const cached = await idbGet('dial_'+d.dialId);
-        if(cached && Array.isArray(cached) && cached.length > 0){
-          _dialectData[d.dialId] = cached;
-          _dialectLoaded.add(d.dialId);
-          _updateLoadProgress();
-          useCache = true;
+      if(!loaded){
+        const res = await fetch(REMOTE_JSON, {cache:'no-cache'});
+        if(res.ok){
+          allData = await res.json();
+          allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
+          loaded = true;
+          showToast('✓ 已載入最新資料');
+          try {
+            await idbPut(IDB_KEY, allData);
+            await idbPut(IDB_META_KEY, { etag: remoteEtag, ts: Date.now() });
+          } catch(e){ console.warn('IDB write:', e); }
         }
       }
-    } catch(e){ useCache = false; }
-    if(!useCache) toFetch.push(d);
-  }
-
-  // If all from cache, init immediately
-  if(toFetch.length === 0){
-    showToast(`⚡ 已從快取載入所有方言`);
-    _onAllDialectsLoaded();
-    return;
-  }
-
-  // Fetch remaining dialects
-  // Fetch in parallel batches of 4
-  const BATCH = 4;
-  for(let i=0; i<toFetch.length; i+=BATCH){
-    const batch = toFetch.slice(i, i+BATCH);
-    await Promise.all(batch.map(d => _fetchDialect(d)));
-  }
-
-  _onAllDialectsLoaded();
-}
-
-// ── Load one dialect file ─────────────────────────────────────
-async function _fetchDialect(d){
-  const BASE = 'https://haiangdict.github.io/Indigenous_SOS/data/';
-  const url = BASE + 'dial_' + d.dialId + '.json';
-  try {
-    const res = await fetch(url, {cache:'no-cache'});
-    if(res.ok){
-      const data = await res.json();
-      _dialectData[d.dialId] = data;
-      _dialectLoaded.add(d.dialId);
-      // Save to IDB
-      try {
-        await idbPut('dial_'+d.dialId, data);
-        await idbPut('dial_meta_'+d.dialId, {updatedAt: d.updatedAt||'', count:data.length, ts:Date.now()});
-      } catch{}
-      _updateLoadProgress();
-      return;
     }
-  } catch(e){ console.warn('Failed to fetch dial_'+d.dialId, e); }
-  // Try local fallback
-  try {
-    const res = await fetch('./data/dial_'+d.dialId+'.json');
-    if(res.ok){
-      const data = await res.json();
-      _dialectData[d.dialId] = data;
-      _dialectLoaded.add(d.dialId);
-      _updateLoadProgress();
-    }
-  } catch{}
-}
-
-// ── Progress UI ───────────────────────────────────────────────
-let _dialectList   = [];
-let _dialectData   = {};
-let _dialectLoaded = new Set();
-let _dialectTotal  = 0;
-
-// Build sidebar from index.json dialect list immediately (before data loads)
-function _buildSidebarFromIndex(dialectList){
-  // Initialise lang index maps from dialectList so buildLangSidebar works
-  // without needing allData
-  _langIdxMap = {};
-  let idx = 0;
-
-  for(const lang of LANG_LIST){
-    // Check if any dialect in dialectList belongs to this language
-    const hasDialect = dialectList.some(d => {
-      // Match via LANG_LIST dialects array
-      if(lang.dialects.some(([dk]) => dk === d.dialId)) return true;
-      // Match no-dialect languages via lang name
-      if(!lang.dialects.length && d.lang === lang.key) return true;
-      return false;
-    });
-    if(!hasDialect) continue;
-    _langIdxMap[lang.key] = idx++;
-
-    // Build _sbLangAllKeys from dialectList
-    const dials = dialectList
-      .filter(d => lang.dialects.some(([dk]) => dk === d.dialId))
-      .map(d => d.dialId);
-    if(dials.length > 0){
-      _sbLangAllKeys[lang.key] = dials.map(dk => lang.key+'|'+dk);
-    } else {
-      // No-dialect language — use lang key directly
-      _sbLangAllKeys[lang.key] = [lang.key];
-    }
+  } catch(e){
+    console.warn('Remote fetch failed:', e);
   }
 
-  _multiLang = Object.keys(_langIdxMap).length > 1;
-
-  // Use original buildLangSidebar to render (preserves all CSS/layout)
-  buildLangSidebar();
-
-  // Show download progress in content area
-  document.getElementById('totalBadge').innerHTML =
-    `下載中 <span>0/${dialectList.length}</span>`;
-  document.getElementById('content').innerHTML =
-    `<div class="empty">
-      <div class="empty-icon">⬇</div>
-      <div class="empty-text">正在下載語料資料…<br>
-        <span style="font-size:0.85rem;opacity:0.6;">可先選取語別，優先載入該語別資料</span>
-      </div>
-      <div style="width:260px;height:6px;background:var(--surface2);border-radius:3px;margin:12px auto 0;">
-        <div id="loadProgressBar" style="height:6px;background:var(--accent2);border-radius:3px;width:0%;transition:width 0.4s;"></div>
-      </div>
-    </div>`;
-}
-
-function _showLoadProgress(){
-  const content = document.getElementById('content');
-  content.innerHTML = `<div class="empty" id="loadProgress">
-    <div class="empty-icon">⬇</div>
-    <div class="empty-text" id="loadProgressText">下載方言資料中…</div>
-    <div style="width:260px;height:6px;background:var(--surface2);border-radius:3px;margin:12px auto 0;">
-      <div id="loadProgressBar" style="height:6px;background:var(--accent2);border-radius:3px;width:0%;transition:width 0.3s;"></div>
-    </div>
-  </div>`;
-}
-
-function _updateLoadProgress(){
-  const done = _dialectLoaded.size;
-  const total = _dialectTotal;
-  const pct = total ? Math.round(done/total*100) : 0;
-  document.getElementById('totalBadge').innerHTML=
-    `下載中 <span>${done}/${total}</span>`;
-  const bar = document.getElementById('loadProgressBar');
-  if(bar) bar.style.width = pct+'%';
-}
-
-function _onDialectLoaded(){
-  // Merge dialect data sorted by dialId for consistent ordering
-  allData = Object.entries(_dialectData)
-    .sort(([a],[b]) => a.localeCompare(b, undefined, {numeric:true}))
-    .flatMap(([,recs]) => recs);
-  buildRowIndex(); _filterCache=null;
-  const hasSelection = sel.langkeys.size > 0 || sel.types.size > 0 || sel.subkeys.size > 0;
-  if(hasSelection || _dialectLoaded.size === _dialectTotal){
-    // Refresh display if user has made selections or all done
-    renderPage();
-  }
-  if(_dialectLoaded.size === _dialectTotal){
-    document.getElementById('totalBadge').innerHTML=
-      `共 <span>${allData.length.toLocaleString()}</span> 筆資料`;
-    showToast(`✓ 已載入全部 ${allData.length.toLocaleString()} 筆資料`);
-    buildLangSidebar(); // refresh sidebar with full data
-  }
-}
-
-function _onAllDialectsLoaded(){
-  _onDialectLoaded();
-}
-
-// ── Monolithic fallback (old data.json) ───────────────────────
-async function _loadMonolithic(){
-  const REMOTE = 'https://haiangdict.github.io/Indigenous_SOS/data/data.json';
-  let loaded = false;
-  try {
-    const res = await fetch(REMOTE, {cache:'no-cache'});
-    if(res.ok){
-      allData = await res.json();
-      allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
-      loaded = true;
-      showToast('✓ 已載入資料（備用模式）');
-    }
-  } catch{}
+  // STEP 2: IDB fallback
   if(!loaded){
     try {
       const cached = await idbGet(IDB_KEY);
-      if(cached && cached.length){ allData=cached; loaded=true; showToast('📦 離線快取'); }
-    } catch{}
+      if(cached && cached.length){
+        allData = cached; loaded = true;
+        showToast('📦 離線模式：使用快取資料');
+      }
+    } catch(e){ console.warn('IDB fallback:', e); }
   }
+
+  // STEP 3: Local JSON
   if(!loaded){
     try {
-      const res = await fetch('./data/data.json');
+      const res = await fetch(LOCAL_JSON);
       if(res.ok){
         allData = await res.json();
         allData.forEach(r=>{ if(r['方言別']) r['方言別']=String(r['方言別']).replace(/\.0$/,''); });
@@ -1737,14 +1405,44 @@ async function _loadMonolithic(){
       }
     } catch{}
   }
+
+  // STEP 4: Local CSV
   if(!loaded){
-    document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料</div></div>`;
+    for(const name of ['27.csv','data.csv']){
+      try{
+        const res = await fetch('./data/'+name);
+        if(res.ok){ allData=parseCSV(await res.text()); loaded=true; break; }
+      } catch{}
+    }
+  }
+
+  if(!loaded){
+    document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">尚未載入資料，請點擊右上角「更新資料」上傳 CSV</div></div>`;
     document.getElementById('totalBadge').innerHTML='<span>0</span> 筆資料';
+    toggleUpload();
     return;
   }
+
   buildRowIndex(); _filterCache=null; initUI();
 }
+function handleCSV(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      allData=parseCSV(e.target.result);
+      if(!allData.length){showToast('❌ CSV 格式錯誤或無資料');return;}
+      buildRowIndex();
+      // Clear IDB cache so next load picks up this new data
+      idbPut(IDB_META_KEY,{etag:'',csvName:''}).catch(()=>{});
+      showToast(`✓ 已載入 ${allData.length} 筆資料`);
+      toggleUpload(); initUI();
+    } catch(err){showToast('❌ 解析失敗：'+err.message);}
+  };
+  reader.readAsText(file,'UTF-8');
+}
 
+<<<<<<< HEAD
 // ── Offline audio support ─────────────────────────────────────
 if(isNativeApp){
   const dlBtn = document.getElementById('dlBtn');
@@ -1790,13 +1488,18 @@ async function resolveAudioURL(remoteURL){
 function scrollToTop(){
   const el = document.querySelector('.content') || document.getElementById('content');
   if(el) el.scrollTo({ top: 0, behavior: 'smooth' });
+=======
+function applyAudioBase(){
+  audioBase=document.getElementById('audioBase').value.trim();
+  if(!audioBase.endsWith('/')) audioBase+='/';
+  showToast('✓ 音檔路徑已更新');
+>>>>>>> parent of 8dd17e0d (Update 20260529)
 }
 
 function initUI(){
   _multiLang = new Set(allData.map(r=>r['語別'])).size > 1;
   document.getElementById('totalBadge').innerHTML=`共 <span>${allData.length.toLocaleString()}</span> 筆資料`;
   initSearchScope();
-  _loadPrefsLocal(); // restore selections from localStorage
   buildLangSidebar();
   applyFilters();
   // If already logged in from session restore, load starred
@@ -1914,8 +1617,6 @@ function toggleSec(id,event){
 function rowSubkey(r){
   const t=r['分類'];
   if(t==='C') return t+'|'+r['分類1'];
-  if(t==='R') return t+'|'+r['分類1'];
-  if(t==='W') return t+'|'+r['分類1'];
   if(t==='V') return t+'|'+r['分類1'];
   if(t==='T') return r['分類2'] ? t+'|'+r['分類1']+'|'+r['分類2'] : t+'|'+r['分類1'];
   // P: up to 分類4
@@ -1927,41 +1628,9 @@ function rowSubkey(r){
 
 let _multiLang = false;
 
-// ── x → ʉ auto-substitution for Tsou group ───────────────────
-const TSOU_GROUP_KEYS = new Set(['35','36','37']); // 鄒語、卡那卡那富語、拉阿魯哇語
-
-function _isTsouOnly(){
-  // True only when selected langs are exclusively within TSOU_GROUP_KEYS
-  if(sel.langkeys.size === 0) return false;
-  // Extract lang keys from sel.langkeys (format: 'langKey' or 'langKey|dialId')
-  const selectedLangs = new Set([...sel.langkeys].map(k => k.split('|')[0]));
-  if(selectedLangs.size === 0) return false;
-  return [...selectedLangs].every(k => TSOU_GROUP_KEYS.has(k));
-}
-
-function _applyTsouSubstitution(input){
-  // Replace x→ʉ (U+0289) and X→Ʉ (U+0244) in search input
-  const el = document.getElementById('searchInput');
-  if(!el) return;
-  const val = el.value;
-  const newVal = val.replace(/X/g, 'Ʉ').replace(/x/g, 'ʉ');
-  if(newVal !== val){
-    const pos = el.selectionStart + (newVal.length - val.length);
-    el.value = newVal;
-    el.setSelectionRange(pos, pos);
-  }
-}
-
-// Hook into searchInput oninput to apply substitution before filtering
-function onSearchInput(){
-  if(_isTsouOnly()) _applyTsouSubstitution();
-  applyFilters();
-}
-
 function applyFilters(){
   if(!_filterCache) _buildFilterCache();
-  const rawQ = document.getElementById('searchInput').value;
-  const q = rawQ.trim().toLowerCase();
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
 
   // Fast path: collect candidate index sets and intersect
   let candidates = null; // null = all
@@ -2030,13 +1699,8 @@ function applyFilters(){
   // Text search — apply last on filtered set, respecting scope
   if(q){
     rows=rows.filter(r=>{
-      if(exactSearch){
-        if(searchScope.sentence && (r['語句']||'') === rawQ) return true;
-        if(searchScope.translation && (r['翻譯']||'') === rawQ) return true;
-      } else {
-        if(searchScope.sentence && (r['語句']||'').toLowerCase().includes(q)) return true;
-        if(searchScope.translation && (r['翻譯']||'').includes(q)) return true;
-      }
+      if(searchScope.sentence && (r['語句']||'').toLowerCase().includes(q)) return true;
+      if(searchScope.translation && (r['翻譯']||'').includes(q)) return true;
       return false;
     });
   }
@@ -2058,16 +1722,8 @@ function clearFilters(){
 // ── Grouping helpers ──────────────────────────────────────────────
 function groupKey(r){
   if(r['分類']==='C') return r['分類1'];
-  if(r['分類']==='R') return r['分類1']; // 篇號
-  if(r['分類']==='W') return r['分類1']; // 文化篇號
   if(r['分類']==='T') return r['分類2'] ? r['分類1']+'|'+r['分類2'] : r['分類1']; // 冊|課
-  if(r['分類']==='P'){
-    if(r['分類4']) return r['分類1']+'|'+r['分類2']+'|'+r['分類3']+'|'+r['分類4'];
-    if(r['分類3']) return r['分類1']+'|'+r['分類2']+'|'+r['分類3'];
-    if(r['分類2']) return r['分類1']+'|'+r['分類2'];
-    return r['分類1'];
-  }
-  return r['分類2']||r['分類1']; // V and others
+  return r['分類2']||r['分類1'];
 }
 
 function langLabel(r){
@@ -2091,15 +1747,10 @@ function groupTitle(r,key){
 }
 
 function sourceLabel(r){
+  // Display label for card header source line
   const typeLabel = TYPE_LABELS[r['分類']]||r['分類'];
   if(r['分類']==='T' && r['分類2']){
     return typeLabel+' · 第'+r['分類1']+'冊 · 第'+r['分類2']+'課';
-  }
-  if(r['分類']==='P'){
-    if(r['分類4']) return typeLabel+' · '+r['分類2']+' · '+r['分類3']+' · '+r['分類4'];
-    if(r['分類3']) return typeLabel+' · '+r['分類2']+' · '+r['分類3'];
-    if(r['分類2']) return typeLabel+' · '+r['分類2'];
-    if(r['分類1']) return typeLabel+' · '+r['分類1'];
   }
   if(r['分類1']){
     return typeLabel+' · '+r['分類1'];
@@ -2107,41 +1758,29 @@ function sourceLabel(r){
   return typeLabel;
 }
 
-const LEVEL_LABELS = { B:'初級', I:'中級', S:'中高級', U:'高級' };
-
-// Group sort key: data point first, then lang/dialect, then level
+// Group sort key: primary=分類+分類1(課次), secondary=語別+方言別
+// This gives: C-1魯凱語, C-1阿美語南勢, C-2魯凱語, C-2阿美語南勢...
 function groupSortKey(r){
   const cat = r['分類']||'';
-  function pad(s){
-    const n = (s||'').trim();
-    // Extract numeric prefix for proper numeric sorting
-    const m = n.match(/^(\d+)/);
-    return m ? m[1].padStart(4,'0') + n.slice(m[1].length) : n;
-  }
-  const cat1 = pad(r['分類1']);
-  const cat2 = pad(r['分類2']);
-  const cat3 = pad(r['分類3']);
-  const cat4 = pad(r['分類4']);
+  function pad(s){ return (s||'').replace(/[^\d]/g,'').padStart(4,'0')||(s||''); }
+  const cat1Num = pad(r['分類1']);
+  // For T: sort by 冊(分類1) then 課(分類2) then lang
+  const cat2Num = r['分類']==='T' ? pad(r['分類2']) : '0000';
   const langOrd = _langIdxMap[r['語別']]!==undefined ? String(_langIdxMap[r['語別']]).padStart(3,'0') : '999';
   const dialOrd = (r['方言別']||'').padStart(3,'0');
-  // Append level to sort key for P/V when levels are selected
-  const lvlOrder = {'B':'1','I':'2','S':'3','U':'4'};
-  const lvl = (r['分類']==='P'||r['分類']==='V') ? (lvlOrder[r['等級']]||'9') : '';
-  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+langOrd+'|'+dialOrd+'|'+lvl;
+  return cat+'|'+cat1Num+'|'+cat2Num+'|'+langOrd+'|'+dialOrd;
 }
 
 // ── Render one row (no col-tags — info in card header) ─────────────
 function renderRow(r, ri=0){
   const hasAudio=!!audioFilename(r);
   const isC=r['分類']==='C';
-  const isR=r['分類']==='R';
-  const isW=r['分類']==='W';
   const hasSpeaker=isC&&r['分類2'];
   const speakerHtml=hasSpeaker?`<div class="row-speaker">${r['分類2']}</div>`:'';
-  // C/R rows without speaker (except first row = lesson title)
-  const isNoSpeakerBody = (isC || isR || isW) && !hasSpeaker && ri > 0;
+  // C rows without speaker (except first row = lesson title)
+  const isNoSpeakerBody = isC && !hasSpeaker && ri > 0;
   // First row of each group is the lesson title (C and T)
-  const isTitle = ri === 0 && (isC || r['分類']==='R' || r['分類']==='W' || r['分類']==='T');
+  const isTitle = ri === 0 && (isC || r['分類']==='T');
   // Disable special backgrounds when search is active
   const hasSearch = !!document.getElementById('searchInput')?.value?.trim();
   const rowExtraCls = hasSearch ? '' : (isTitle ? ' row-title' : isNoSpeakerBody ? ' no-speaker-body' : '');
@@ -2180,18 +1819,13 @@ function renderPage(){
   }
 
   // Build ordered groups — keyed by type+groupKey+lang+dialect, sorted
-  // When ≥1 level selected for P/V, also split by level
-  const splitByLevel = sel.levels.size >= 1;
   const groupMap=new Map();
   filteredData.forEach(r=>{
-    const cat = r['分類'];
-    const lvlKey = (splitByLevel && (cat==='P'||cat==='V')) ? '\x00'+(r['等級']||'') : '';
-    const gk=cat+'\x00'+groupKey(r)+'\x00'+(r['語別']||'')+'\x00'+(r['方言別']||'')+lvlKey;
+    const gk=r['分類']+'\x00'+groupKey(r)+'\x00'+(r['語別']||'')+'\x00'+(r['方言別']||'');
     if(!groupMap.has(gk)){
       groupMap.set(gk,{
-        key:groupKey(r), type:cat, rows:[],
+        key:groupKey(r), type:r['分類'], rows:[],
         title:groupTitle(r,groupKey(r)),
-        level: (splitByLevel && (cat==='P'||cat==='V')) ? (r['等級']||'') : '',
         sortKey:groupSortKey(r)
       });
     }
@@ -2207,7 +1841,7 @@ function renderPage(){
     const hasAny=audioIds.length>0;
     const fr=g.rows[0];
     const ll=langLabel(fr);
-    const sl=sourceLabel(fr) + (g.level ? ` · ${LEVEL_LABELS[g.level]||g.level}` : '');
+    const sl=sourceLabel(fr);
     const grpKey=g.type+'|'+g.key;
     return `<div class="card-block" id="${gid}" data-grpkey="${grpKey.replace(/"/g,'&quot;')}">
       <div class="card-hdr">
@@ -2557,13 +2191,26 @@ function groupNext(gid){
 }
 
 // ── Utils ──────────────────────────────────────────────────────────
+function toggleUpload(){ document.getElementById('uploadPanel').classList.toggle('open'); }
+
 function showToast(msg){
   const old=document.querySelector('.toast'); if(old) old.remove();
   const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
   document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
 }
 
-
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];
+  if(file&&file.name.endsWith('.csv')){
+    const dt=new DataTransfer(); dt.items.add(file);
+    document.getElementById('csvInput').files=dt.files;
+    handleCSV(document.getElementById('csvInput'));
+  }
+});
 
 
 // ── Sidebar toggle ───────────────────────────────────────────────
@@ -2636,7 +2283,7 @@ _loadPrefs();
 const GAPI_CLIENT_ID = '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com';
 const GAPI_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SPREADSHEET_TITLE = 'Indigenous SOS 詞彙表';
-const SHEET_HEADERS = ['語句','翻譯','語別','教材','等級','音檔路徑','編號','收藏時間','備註'];
+const SHEET_HEADERS = ['語句','翻譯','語別','教材','等級','音檔路徑','編號','收藏時間'];
 
 let _gToken = null;       // Google access token
 let _gUser = null;        // {name, email, picture}
@@ -2648,15 +2295,15 @@ let _vocabRows = [];      // local cache of vocab rows
 function _saveToken(token, user) {
   _gToken=token; _gUser=user;
   try {
-    localStorage.setItem('gsis_token', JSON.stringify({token,user,exp:Date.now()+3500000}));
+    sessionStorage.setItem('gsis_token', JSON.stringify({token,user,exp:Date.now()+3500000}));
   } catch(e) {}
 }
 function _loadToken() {
   try {
-    const raw=localStorage.getItem('gsis_token');
+    const raw=sessionStorage.getItem('gsis_token');
     if(!raw) return false;
     const {token,user,exp}=JSON.parse(raw);
-    if(Date.now()>exp) { localStorage.removeItem('gsis_token'); return false; }
+    if(Date.now()>exp) { sessionStorage.removeItem('gsis_token'); return false; }
     _gToken=token; _gUser=user;
     return true;
   } catch(e) { return false; }
@@ -2710,7 +2357,6 @@ function signInWeb() {
       showToast('✓ 已登入：'+user.name);
       await initSpreadsheet();
       await loadStarredIds();
-      await loadPrefsFromSheets(); // load saved prefs from Sheets
       renderPage();
     }
   }).requestAccessToken();
@@ -2753,7 +2399,6 @@ async function handleNativeOAuthCallback(accessToken) {
   showToast('✓ 已登入：'+user.name);
   await initSpreadsheet();
   await loadStarredIds();
-  await loadPrefsFromSheets(); // load saved prefs from Sheets
   renderPage();
   // Close browser tab if still open
   if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
@@ -2784,103 +2429,13 @@ function signOut() {
   }
   _gToken=null; _gUser=null; _spreadsheetId=null;
   _starredIds=new Set(); _vocabRows=[];
-  try { localStorage.removeItem('gsis_token'); } catch(e) {}
+  try { sessionStorage.removeItem('gsis_token'); } catch(e) {}
   updateAuthUI();
   renderPage();
   showToast('✓ 已登出');
 }
 
 // ── Sheets API helpers ─────────────────────────────────────────
-// ── User preferences (dialect + subkey selections + theme) ────
-const PREFS_RANGE = '設定!A1';
-
-async function loadPrefsFromSheets(){
-  if(!_gToken || !_spreadsheetId) return;
-  try {
-    const res = await sheetsReq('GET', `/${_spreadsheetId}/values/${encodeURIComponent(PREFS_RANGE)}`);
-    const raw = (res.values||[])[0]?.[0];
-    if(!raw) return;
-    const prefs = JSON.parse(raw);
-    // Apply dialect selections
-    if(prefs.langkeys && Array.isArray(prefs.langkeys)){
-      sel.langkeys = new Set(prefs.langkeys);
-    }
-    // Apply subkey (C/P/T/V) selections
-    if(prefs.subkeys && Array.isArray(prefs.subkeys)){
-      sel.subkeys = new Set(prefs.subkeys);
-    }
-    // Apply types
-    if(prefs.types && Array.isArray(prefs.types)){
-      sel.types = new Set(prefs.types);
-    }
-    // Apply theme
-    if(prefs.theme){
-      try { localStorage.setItem('sos_theme', prefs.theme); } catch(e){}
-      applyTheme(prefs.theme);
-    }
-    // Apply font size
-    if(prefs.fontSize){
-      try { localStorage.setItem('sos_fs', prefs.fontSize); } catch(e){}
-      applyFontSize(prefs.fontSize);
-    }
-    buildLangSidebar();
-    applyFilters();
-    showToast('✓ 已載入您的偏好設定');
-  } catch(e){ console.warn('loadPrefsFromSheets:', e); }
-}
-
-async function savePrefsToSheets(){
-  if(!_gToken || !_spreadsheetId) return;
-  try {
-    const prefs = {
-      langkeys: [...sel.langkeys],
-      subkeys:  [...sel.subkeys],
-      types:    [...sel.types],
-      theme:    localStorage.getItem('sos_theme') || 'dark',
-      fontSize: localStorage.getItem('sos_fs') || 'md',
-      savedAt:  new Date().toISOString()
-    };
-    await sheetsReq('PUT',
-      `/${_spreadsheetId}/values/${encodeURIComponent(PREFS_RANGE)}?valueInputOption=RAW`,
-      { values: [[JSON.stringify(prefs)]] }
-    );
-  } catch(e){ console.warn('savePrefsToSheets:', e); }
-}
-
-// Save prefs when user leaves the page
-window.addEventListener('beforeunload', ()=>{
-  if(_gToken && _spreadsheetId) savePrefsToSheets();
-});
-// Also save on visibility change (mobile: switching apps)
-document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState === 'hidden' && _gToken && _spreadsheetId){
-    savePrefsToSheets();
-  }
-});
-
-// Also save prefs to localStorage on every selection change
-function _savePrefsLocal(){
-  try {
-    const prefs = {
-      langkeys: [...sel.langkeys],
-      subkeys:  [...sel.subkeys],
-      types:    [...sel.types],
-    };
-    localStorage.setItem('sos_prefs', JSON.stringify(prefs));
-  } catch(e){}
-}
-
-function _loadPrefsLocal(){
-  try {
-    const raw = localStorage.getItem('sos_prefs');
-    if(!raw) return;
-    const prefs = JSON.parse(raw);
-    if(prefs.langkeys) sel.langkeys = new Set(prefs.langkeys);
-    if(prefs.subkeys)  sel.subkeys  = new Set(prefs.subkeys);
-    if(prefs.types)    sel.types    = new Set(prefs.types);
-  } catch(e){}
-}
-
 async function sheetsReq(method, path, body) {
   const url='https://sheets.googleapis.com/v4/spreadsheets'+path;
   const opts={method, headers:{'Authorization':'Bearer '+_gToken,'Content-Type':'application/json'}};
@@ -2918,20 +2473,16 @@ async function initSpreadsheet() {
   });
   _spreadsheetId=create.spreadsheetId;
   // Write headers
-  await sheetsReq('PUT',`/${_spreadsheetId}/values/詞彙表!A1:I1?valueInputOption=RAW`,{
+  await sheetsReq('PUT',`/${_spreadsheetId}/values/詞彙表!A1:H1?valueInputOption=RAW`,{
     values:[SHEET_HEADERS]
   });
-  // Create 設定 sheet
-  await sheetsReq('POST',`/${_spreadsheetId}:batchUpdate`,{
-    requests:[{addSheet:{properties:{title:'設定'}}}]
-  }).catch(()=>{}); // ignore if already exists
 }
 
 // ── Load starred IDs from sheet ────────────────────────────────
 async function loadStarredIds() {
   if(!_gToken||!_spreadsheetId) return;
   try {
-    const res=await sheetsReq('GET',`/${_spreadsheetId}/values/詞彙表!A:I`);
+    const res=await sheetsReq('GET',`/${_spreadsheetId}/values/詞彙表!A:H`);
     const rows=res.values||[];
     _vocabRows=rows.slice(1); // skip header
     _starredIds=new Set(_vocabRows.map(r=>r[6]||'').filter(Boolean)); // col G = 編號
@@ -2965,9 +2516,9 @@ async function addStar(r, btn) {
   const lvl=fmtLevel(r['等級']||'');
   const af=audioPath(r);
   const now=new Date().toISOString();
-  const row=[r['語句'],r['翻譯'],ll,sl,lvl,af,String(r['編號']),now,''];
+  const row=[r['語句'],r['翻譯'],ll,sl,lvl,af,String(r['編號']),now];
   try {
-    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A:I:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
+    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A:H:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
       values:[row]
     });
     _starredIds.add(String(r['編號']));
@@ -2985,7 +2536,7 @@ async function removeStar(eid, btn) {
   const sheetRow=rowIdx+2; // +1 header +1 1-indexed
   try {
     // Clear the row (Sheets API doesn't easily delete rows, so we clear then clean up)
-    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A${sheetRow}:I${sheetRow}:clear`,null);
+    await sheetsReq('POST',`/${_spreadsheetId}/values/詞彙表!A${sheetRow}:H${sheetRow}:clear`,null);
     _starredIds.delete(String(eid));
     _vocabRows.splice(rowIdx,1);
     if(btn) { btn.classList.remove('starred'); btn.title='加入詞彙表'; }
@@ -3003,6 +2554,5 @@ if(_loadToken()) {
 
 loadBuiltInCSV();
 </script>
-<button id="scrollTopBtn" onclick="scrollToTop()" title="跳至最上方">↑</button>
 </body>
 </html>

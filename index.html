@@ -765,6 +765,7 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
 <script>
 let allData = [];
 let filteredData = [];
+const isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 let currentPage = 1;
 const PAGE_SIZE = 60;
 let audioBase = 'https://pub-44bec38ae2824f519a8519301efe3bd7.r2.dev/';
@@ -2679,7 +2680,7 @@ function updateAuthUI() {
 }
 
 // Detect if running inside Capacitor native app
-const isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+// Detect if running inside Capacitor native app
 
 function handleAuthClick() {
   if(_gToken) { signOut(); } else { signIn(); }
