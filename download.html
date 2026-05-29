@@ -248,6 +248,23 @@ async function loadIndexJson(){
     const res = await fetch(INDEX_URL, {cache:'no-cache'});
     if(res.ok) _indexData = await res.json();
   } catch(e){ showToast('無法載入方言清單'); }
+
+  // Fetch actual audio counts from each dial JSON (batches of 6)
+  showToast('計算音檔數量中…');
+  const BATCH = 6;
+  for(let i=0; i<_indexData.length; i+=BATCH){
+    const batch = _indexData.slice(i, i+BATCH);
+    await Promise.all(batch.map(async d => {
+      try {
+        const res = await fetch(DATA_BASE+`dial_${d.dialId}.json`, {cache:'default'});
+        if(!res.ok) return;
+        const data = await res.json();
+        const count = data.filter(r => r['音檔路徑'] && r['音檔路徑'].trim()).length;
+        d.audioCount = count; // store actual count
+      } catch{ d.audioCount = 0; }
+    }));
+  }
+
   document.getElementById('hdrNote').textContent =
     `共 ${_indexData.length} 個方言`;
 }
@@ -350,10 +367,13 @@ function renderList(){
       const dialId = dk === 'NO_DIAL' ? _getPaddedLangId(lang.key) : dk;
       if(!_indexData.some(d => d.dialId === dialId)) continue;
       const st = _dialState[dialId] || {total:0, downloaded:0};
-      const totalFiles = st.total || 4330; // estimate if unknown
+      // Use actual audio count from dial JSON, fall back to index count
+      const indexEntry = _indexData.find(d => d.dialId === dialId);
+      const actualTotal = indexEntry?.audioCount ?? st.total ?? 0;
+      const totalFiles = st.total || actualTotal;
       const dlFiles = st.downloaded || 0;
       const pct = totalFiles > 0 ? Math.round(dlFiles/totalFiles*100) : 0;
-      const sizeMB = Math.round(totalFiles * AVG_FILE_KB / 1024);
+      const sizeMB = actualTotal > 0 ? Math.round(actualTotal * AVG_FILE_KB / 1024) : '?';
       const isDone = dlFiles > 0 && dlFiles >= totalFiles;
       const isDownloading = !!st.downloading;
       const dialName = dk === 'NO_DIAL' ? '' : dn;
@@ -361,7 +381,7 @@ function renderList(){
       html += `<div class="dial-row" id="dr-${dialId}">
         <div class="dial-name">${dialName||lang.name}</div>
         <div class="dial-count" id="dc-${dialId}">${dlFiles>0?dlFiles+'/'+totalFiles+' 個':'未下載'}</div>
-        <div class="dial-size" id="ds-${dialId}">~${sizeMB}MB</div>
+        <div class="dial-size" id="ds-${dialId}">${sizeMB==='?'?'計算中':'~'+sizeMB+'MB'}</div>
         <div class="prog-wrap">
           <div class="prog-bar ${isDone?'done':''} ${st.error?'err':''}"
                id="pb-${dialId}" style="width:${pct}%"></div>
@@ -588,7 +608,9 @@ async function deleteDialect(dialId, name){
 function updateDialRow(dialId){
   const st = _dialState[dialId];
   if(!st) return;
-  const total = st.total || 4330;
+  const indexEntry2 = _indexData.find(d => d.dialId === dialId);
+  const actualCount = indexEntry2?.audioCount ?? 0;
+  const total = st.total || actualCount;
   const dl    = st.downloaded || 0;
   const pct   = total > 0 ? Math.round(dl/total*100) : 0;
   const isDone = dl > 0 && dl >= total;
@@ -625,7 +647,7 @@ function updateDialRow(dialId){
       btn.className = 'btn-dl download';
       btn.textContent = '下載';
       btn.disabled = false;
-      const sizeMB = Math.round(total * AVG_FILE_KB / 1024);
+      const sizeMB = actualCount > 0 ? Math.round(actualCount * AVG_FILE_KB / 1024) : '?';
       const dialName = _getDialName(dialId);
       btn.onclick = () => confirmDownload(dialId, dialName, sizeMB);
     }
