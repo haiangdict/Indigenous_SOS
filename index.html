@@ -714,6 +714,7 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
     <!-- Dark/light toggle -->
     <button class="ui-ctrl-btn" id="themeBtn" onclick="toggleTheme()" title="切換深色/淺色模式">🌙</button>
     <a class="vocab-link-btn" href="vocab.html" target="_blank">⭐ 詞彙表</a>
+    <a class="vocab-link-btn" href="download.html" id="dlBtn" style="display:none">⬇ 離線音檔</a>
     <a class="vocab-link-btn" href="about.html" target="_blank" style="border-color:var(--border);color:var(--muted);">關於</a>
     <div class="auth-badge" id="authBadge" onclick="handleAuthClick()">
       <span id="authLabel">登入</span>
@@ -1744,6 +1745,31 @@ async function _loadMonolithic(){
   buildRowIndex(); _filterCache=null; initUI();
 }
 
+// ── Offline audio support ─────────────────────────────────────
+if(isNativeApp){
+  const dlBtn = document.getElementById('dlBtn');
+  if(dlBtn) dlBtn.style.display = '';
+}
+
+async function getLocalAudioURI(relPath){
+  if(!isNativeApp) return null;
+  if(!window.Capacitor?.Plugins?.Filesystem) return null;
+  try {
+    const res = await window.Capacitor.Plugins.Filesystem.getUri({
+      path: 'offline_audio/'+relPath,
+      directory: 'DATA'
+    });
+    return res.uri || null;
+  } catch{ return null; }
+}
+
+async function resolveAudioURL(remoteURL){
+  if(!isNativeApp) return remoteURL;
+  const rel = remoteURL.replace(audioBase, '');
+  const local = await getLocalAudioURI(rel);
+  return local || remoteURL;
+}
+
 // ── Scroll to top ────────────────────────────────────────────
 (function(){
   const contentEl = document.getElementById('content');
@@ -2423,14 +2449,17 @@ function togglePlay(filename,id){
     stopAll(); return;
   }
   stopAll();
-  currentAudio=new Audio(audioBase+filename);
-  currentPlayBtn=btn;
-  btn.textContent='⏸'; btn.classList.add('active'); row.classList.add('playing');
-  currentAudio.play().catch(()=>{
-    showToast('⚠ 音檔無法播放，請確認路徑設定');
-    stopAll();
+  const remoteURL = audioBase+filename;
+  resolveAudioURL(remoteURL).then(url => {
+    currentAudio=new Audio(url);
+    currentPlayBtn=btn;
+    btn.textContent='⏸'; btn.classList.add('active'); row.classList.add('playing');
+    currentAudio.play().catch(()=>{
+      showToast('⚠ 音檔無法播放，請確認路徑設定');
+      stopAll();
+    });
+    currentAudio.onended=()=>{ stopAll(); };
   });
-  currentAudio.onended=()=>{ stopAll(); };
 }
 
 // ── Group play ─────────────────────────────────────────────────────
@@ -2491,22 +2520,22 @@ function playGroupAt(idx){
   if(!record||!record['音檔路徑']){ playGroupAt(idx+1); return; }
 
   const af=audioPath(record);
-  currentAudio=new Audio(audioBase+af);
-  currentPlayBtn=btn;
-  if(btn){ btn.textContent='⏸'; btn.classList.add('active'); }
-  if(row){ row.classList.add('gp-current'); }
+  resolveAudioURL(audioBase+af).then(url => {
+    currentAudio=new Audio(url);
+    currentPlayBtn=btn;
+    if(btn){ btn.textContent='⏸'; btn.classList.add('active'); }
+    if(row){ row.classList.add('gp-current'); }
+    if(row) row.scrollIntoView({block:'nearest',behavior:'smooth'});
 
-  // Scroll row into view
-  if(row) row.scrollIntoView({block:'nearest',behavior:'smooth'});
-
-  currentAudio.play().catch(()=>{ playGroupAt(idx+1); });
-  currentAudio.onended=()=>{
-    if(btn){ btn.textContent='▶'; btn.classList.remove('active'); }
-    if(row){ row.classList.remove('gp-current'); }
-    currentAudio=null; currentPlayBtn=null;
-    if(gpState && !gpState.paused) playGroupAt(idx+1);
-    else if(!gpState){ /* stopped externally */ }
-  };
+    currentAudio.play().catch(()=>{ playGroupAt(idx+1); });
+    currentAudio.onended=()=>{
+      if(btn){ btn.textContent='▶'; btn.classList.remove('active'); }
+      if(row){ row.classList.remove('gp-current'); }
+      currentAudio=null; currentPlayBtn=null;
+      if(gpState && !gpState.paused) playGroupAt(idx+1);
+      else if(!gpState){ /* stopped externally */ }
+    };
+  });
 }
 
 function groupNext(gid){

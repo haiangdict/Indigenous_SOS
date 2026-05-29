@@ -6,5 +6,10 @@
     "allowNavigation": [
       "haiangdict.github.io"
     ]
+  },
+  "plugins": {
+    "Filesystem": {
+      "iosScheme": "ionic"
+    }
   }
 }

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>離線音檔管理 — Payrang族語自救會</title>
+<style>
+  :root {
+    --bg:       #0e0e0e;
+    --surface:  #1a1a1a;
+    --surface2: #232323;
+    --border:   #2e2e2e;
+    --text:     #e8e4dc;
+    --muted:    #888;
+    --accent:   #d4a843;
+    --accent2:  #8bc4a8;
+    --danger:   #e57373;
+    --fs:       15px;
+  }
+  body.light {
+    --bg:#f5f0e8; --surface:#fff; --surface2:#f0ebe0;
+    --border:#ddd; --text:#1a1a1a; --muted:#888;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'jf-openhuninn','Noto Serif TC',serif;
+    background:var(--bg); color:var(--text);
+    font-size:var(--fs); min-height:100vh;
+  }
+
+  /* ── Header ── */
+  .hdr {
+    display:flex; align-items:center; gap:12px;
+    padding:14px 16px; background:var(--surface);
+    border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:100;
+  }
+  .hdr-back {
+    background:none; border:none; color:var(--accent);
+    font-size:1.1rem; cursor:pointer; padding:4px 8px;
+    border-radius:6px;
+  }
+  .hdr-back:hover { background:var(--surface2); }
+  .hdr-title { font-size:1rem; font-weight:700; flex:1; }
+  .hdr-note { font-size:0.75rem; color:var(--muted); }
+
+  /* ── Summary bar ── */
+  .summary-bar {
+    background:var(--surface2); border-bottom:1px solid var(--border);
+    padding:10px 16px; display:flex; gap:20px; flex-wrap:wrap;
+  }
+  .summary-item { font-size:0.8rem; color:var(--muted); }
+  .summary-item span { color:var(--accent); font-weight:700; }
+
+  /* ── Storage warning ── */
+  .storage-warn {
+    margin:12px 16px; padding:10px 14px;
+    background:rgba(212,168,67,0.1); border:1px solid rgba(212,168,67,0.3);
+    border-radius:8px; font-size:0.82rem; color:var(--accent);
+    display:none;
+  }
+  .storage-warn.show { display:block; }
+
+  /* ── Lang group ── */
+  .lang-group { border-bottom:1px solid var(--border); }
+  .lang-hdr {
+    display:flex; align-items:center; gap:10px;
+    padding:12px 16px; cursor:pointer;
+    user-select:none;
+  }
+  .lang-hdr:hover { background:var(--surface2); }
+  .lang-name { font-weight:700; font-size:0.95rem; flex:1; }
+  .lang-status { font-size:0.75rem; color:var(--muted); }
+  .lang-expand { color:var(--muted); font-size:0.75rem; }
+
+  /* ── Dialect row ── */
+  .dial-list { background:var(--surface2); }
+  .dial-row {
+    display:flex; align-items:center; gap:10px;
+    padding:10px 16px 10px 28px;
+    border-top:1px solid var(--border);
+  }
+  .dial-name { flex:1; font-size:0.88rem; }
+  .dial-count { font-size:0.75rem; color:var(--muted); min-width:80px; text-align:right; }
+  .dial-size { font-size:0.75rem; color:var(--muted); min-width:60px; text-align:right; }
+
+  /* ── Progress bar ── */
+  .prog-wrap {
+    flex:1; height:5px; background:var(--border);
+    border-radius:3px; overflow:hidden; min-width:60px;
+  }
+  .prog-bar {
+    height:100%; background:var(--accent2);
+    border-radius:3px; transition:width 0.3s;
+    width:0%;
+  }
+  .prog-bar.done { background:var(--accent2); }
+  .prog-bar.err  { background:var(--danger); }
+
+  /* ── Action buttons ── */
+  .btn-dl {
+    padding:5px 12px; border-radius:6px; border:none;
+    font-size:0.78rem; cursor:pointer; font-family:inherit;
+    transition:all 0.15s; white-space:nowrap;
+    min-width:64px; text-align:center;
+  }
+  .btn-dl.download {
+    background:rgba(139,196,168,0.15); color:var(--accent2);
+    border:1px solid rgba(139,196,168,0.3);
+  }
+  .btn-dl.download:hover { background:rgba(139,196,168,0.25); }
+  .btn-dl.delete {
+    background:rgba(229,115,115,0.12); color:var(--danger);
+    border:1px solid rgba(229,115,115,0.25);
+  }
+  .btn-dl.delete:hover { background:rgba(229,115,115,0.22); }
+  .btn-dl.downloading {
+    background:var(--surface); color:var(--muted);
+    border:1px solid var(--border); cursor:default;
+  }
+  .btn-dl:disabled { opacity:0.4; cursor:default; }
+
+  /* ── Toast ── */
+  .toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:var(--surface2); border:1px solid var(--border);
+    color:var(--text); padding:8px 18px; border-radius:20px;
+    font-size:0.85rem; z-index:999; pointer-events:none;
+    animation:fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+  /* ── Confirm modal ── */
+  .modal-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.7); z-index:500;
+    align-items:center; justify-content:center;
+  }
+  .modal-overlay.show { display:flex; }
+  .modal {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:24px; max-width:320px; width:90%;
+  }
+  .modal h3 { margin-bottom:10px; font-size:1rem; }
+  .modal p { font-size:0.85rem; color:var(--muted); margin-bottom:20px; line-height:1.6; }
+  .modal-btns { display:flex; gap:10px; justify-content:flex-end; }
+  .modal-btns button {
+    padding:7px 18px; border-radius:7px; border:none;
+    font-size:0.85rem; cursor:pointer; font-family:inherit;
+  }
+  .btn-cancel { background:var(--surface2); color:var(--text); border:1px solid var(--border) !important; }
+  .btn-confirm-del { background:var(--danger); color:#fff; }
+  .btn-confirm-dl  { background:var(--accent2); color:#111; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <button class="hdr-back" onclick="goBack()">←</button>
+  <div class="hdr-title">離線音檔管理</div>
+  <div class="hdr-note" id="hdrNote">載入中…</div>
+</div>
+
+<!-- Summary -->
+<div class="summary-bar">
+  <div class="summary-item">已下載：<span id="sumDl">0</span> 個方言</div>
+  <div class="summary-item">音檔數：<span id="sumFiles">0</span> 個</div>
+  <div class="summary-item">預估容量：<span id="sumSize">0 MB</span></div>
+</div>
+
+<!-- Storage warning -->
+<div class="storage-warn" id="storageWarn">
+  ⚠ 下載前請確認裝置有足夠空間。每個方言約需 <span id="warnSize">430</span> MB。
+</div>
+
+<!-- Lang list -->
+<div id="langList"></div>
+
+<!-- Confirm modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">確認下載</h3>
+    <p id="modalBody"></p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button id="modalConfirm" onclick="confirmAction()">確認</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────
+const AUDIO_BASE = 'https://pub-44bec38ae2824f519a8519301efe3bd7.r2.dev/';
+const INDEX_URL  = 'https://haiangdict.github.io/Indigenous_SOS/data/index.json';
+const DATA_BASE  = 'https://haiangdict.github.io/Indigenous_SOS/data/';
+const AVG_FILE_KB = 100; // average MP3 size estimate in KB
+const DL_CONCURRENCY = 4; // parallel downloads
+
+// Capacitor plugins
+const Filesystem = window.Capacitor?.Plugins?.Filesystem;
+const isNative   = !!(window.Capacitor?.isNativePlatform?.());
+
+// ── LANG_LIST (same as index.html) ──────────────────────────
+const LANG_LIST = [
+  {key:'阿美語',   name:'阿美語',   dialects:[['01','南勢'],['02','秀姑巒'],['03','海岸'],['04','馬蘭'],['05','恆春']]},
+  {key:'泰雅語',   name:'泰雅語',   dialects:[['06','賽考利克'],['07','澤敖利'],['08','汶水'],['09','萬大'],['10','四季'],['11','宜蘭澤敖利']]},
+  {key:'13',       name:'賽夏語',   dialects:[]},
+  {key:'14',       name:'邵語',     dialects:[]},
+  {key:'賽德克語', name:'賽德克語', dialects:[['15','都達'],['16','德固達雅'],['17','德鹿谷']]},
+  {key:'布農語',   name:'布農語',   dialects:[['18','卓群'],['19','卡群'],['20','丹群'],['21','巒群'],['22','郡群']]},
+  {key:'排灣語',   name:'排灣語',   dialects:[['23','東'],['24','北'],['25','中'],['26','南']]},
+  {key:'魯凱語',   name:'魯凱語',   dialects:[['27','東'],['28','霧台'],['29','大武'],['30','多納'],['31','茂林'],['32','萬山']]},
+  {key:'33',       name:'太魯閣語', dialects:[]},
+  {key:'34',       name:'噶瑪蘭語', dialects:[]},
+  {key:'35',       name:'鄒語',     dialects:[]},
+  {key:'卑南語',   name:'卑南語',   dialects:[['38','南王'],['39','知本'],['40','西群'],['41','建和']]},
+  {key:'42',       name:'雅美語',   dialects:[]},
+  {key:'43',       name:'撒奇萊雅語',dialects:[]},
+  {key:'36',       name:'卡那卡那富語',dialects:[]},
+  {key:'37',       name:'拉阿魯哇語',dialects:[]},
+];
+
+// ── State ───────────────────────────────────────────────────
+let _indexData  = [];     // [{dialId, lang, count}]
+let _dialState  = {};     // dialId → {total, downloaded, downloading, error}
+let _activeDownload = null; // {dialId, cancel:bool}
+let _pendingAction  = null; // {type:'dl'|'del', dialId}
+
+// ── Init ────────────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  applyTheme();
+  await loadIndexJson();
+  await loadStoredState();
+  renderList();
+  updateSummary();
+});
+
+function applyTheme(){
+  try {
+    const th = localStorage.getItem('sos_theme') || 'dark';
+    if(th === 'light') document.body.classList.add('light');
+  } catch{}
+}
+
+async function loadIndexJson(){
+  try {
+    const res = await fetch(INDEX_URL, {cache:'no-cache'});
+    if(res.ok) _indexData = await res.json();
+  } catch(e){ showToast('無法載入方言清單'); }
+  document.getElementById('hdrNote').textContent =
+    `共 ${_indexData.length} 個方言`;
+}
+
+// ── Filesystem helpers ───────────────────────────────────────
+function dialDir(dialId){ return `offline_audio/dial_${dialId}`; }
+function audioLocalPath(dialId, relPath){ return `${dialDir(dialId)}/${relPath}`; }
+
+async function listLocalFiles(dialId){
+  if(!Filesystem) return [];
+  try {
+    const res = await Filesystem.readdir({
+      path: dialDir(dialId),
+      directory: 'DATA'
+    });
+    return res.files || [];
+  } catch{ return []; }
+}
+
+async function fileExists(path){
+  if(!Filesystem) return false;
+  try {
+    await Filesystem.stat({ path, directory:'DATA' });
+    return true;
+  } catch{ return false; }
+}
+
+// ── Load stored state from localStorage ─────────────────────
+async function loadStoredState(){
+  try {
+    const raw = localStorage.getItem('sos_dl_state');
+    if(raw) _dialState = JSON.parse(raw);
+  } catch{}
+  // Fill in missing dialects
+  for(const d of _indexData){
+    if(!_dialState[d.dialId]){
+      _dialState[d.dialId] = {total:0, downloaded:0, downloading:false, error:false};
+    }
+  }
+}
+
+function saveState(){
+  try { localStorage.setItem('sos_dl_state', JSON.stringify(_dialState)); } catch{}
+}
+
+// ── Load audio list for a dialect ───────────────────────────
+async function loadDialectAudioList(dialId){
+  const url = DATA_BASE + `dial_${dialId}.json`;
+  try {
+    const res = await fetch(url, {cache:'default'});
+    if(!res.ok) return [];
+    const data = await res.json();
+    return data
+      .filter(r => r['音檔路徑'] && r['音檔路徑'].trim())
+      .map(r => {
+        // Build relative path: {folder}/{分類}/{filename}
+        const filename = r['音檔路徑'].trim().replace(/\\/g,'/').split('/').pop();
+        const cat = (r['分類']||'').trim();
+        const raw = String(r['方言別']||'').replace(/\.0$/,'').trim();
+        let folder = '';
+        if(raw){
+          const n = parseInt(raw, 10);
+          folder = (!isNaN(n) && n >= 1 && n <= 9) ? '0'+n : raw;
+        }
+        return folder && cat ? `${folder}/${cat}/${filename}` : filename;
+      })
+      .filter((v,i,a) => v && a.indexOf(v)===i); // unique
+  } catch{ return []; }
+}
+
+// ── Render ───────────────────────────────────────────────────
+function renderList(){
+  const container = document.getElementById('langList');
+  let html = '';
+
+  for(const lang of LANG_LIST){
+    const dials = lang.dialects.length > 0
+      ? lang.dialects
+      : [['NO_DIAL', lang.name]];
+
+    // Check if this lang has any data
+    const availDials = dials.filter(([dk]) => {
+      const id = dk === 'NO_DIAL'
+        ? _getPaddedLangId(lang.key)
+        : dk;
+      return _indexData.some(d => d.dialId === id);
+    });
+    if(!availDials.length) continue;
+
+    const langOpen = true; // default open
+    html += `<div class="lang-group" id="lg-${lang.key.replace(/\W/g,'_')}">
+      <div class="lang-hdr" onclick="toggleLangGroup('${lang.key.replace(/'/g,"\\'")}')">
+        <div class="lang-name">${lang.name}</div>
+        <div class="lang-status" id="lstat-${lang.key.replace(/\W/g,'_')}"></div>
+        <div class="lang-expand" id="lexp-${lang.key.replace(/\W/g,'_')}">▾</div>
+      </div>
+      <div class="dial-list" id="ldials-${lang.key.replace(/\W/g,'_')}">`;
+
+    for(const [dk, dn] of dials){
+      const dialId = dk === 'NO_DIAL' ? _getPaddedLangId(lang.key) : dk;
+      if(!_indexData.some(d => d.dialId === dialId)) continue;
+      const st = _dialState[dialId] || {total:0, downloaded:0};
+      const totalFiles = st.total || 4330; // estimate if unknown
+      const dlFiles = st.downloaded || 0;
+      const pct = totalFiles > 0 ? Math.round(dlFiles/totalFiles*100) : 0;
+      const sizeMB = Math.round(totalFiles * AVG_FILE_KB / 1024);
+      const isDone = dlFiles > 0 && dlFiles >= totalFiles;
+      const isDownloading = !!st.downloading;
+      const dialName = dk === 'NO_DIAL' ? '' : dn;
+
+      html += `<div class="dial-row" id="dr-${dialId}">
+        <div class="dial-name">${dialName||lang.name}</div>
+        <div class="dial-count" id="dc-${dialId}">${dlFiles>0?dlFiles+'/'+totalFiles+' 個':'未下載'}</div>
+        <div class="dial-size" id="ds-${dialId}">~${sizeMB}MB</div>
+        <div class="prog-wrap">
+          <div class="prog-bar ${isDone?'done':''} ${st.error?'err':''}"
+               id="pb-${dialId}" style="width:${pct}%"></div>
+        </div>
+        <button class="btn-dl ${isDone?'delete':isDownloading?'downloading':'download'}"
+                id="btn-${dialId}"
+                onclick="${isDone?`confirmDelete('${dialId}','${(dialName||lang.name).replace(/'/g,"\\'")}')`:isDownloading?'':`confirmDownload('${dialId}','${(dialName||lang.name).replace(/'/g,"\\'")}',${sizeMB})`}"
+                ${isDownloading?'disabled':''}>
+          ${isDone?'刪除':isDownloading?'下載中…':'下載'}
+        </button>
+      </div>`;
+    }
+
+    html += `</div></div>`;
+  }
+  container.innerHTML = html;
+  updateLangHeaders();
+}
+
+function _getPaddedLangId(key){
+  try {
+    const n = parseInt(key, 10);
+    if(!isNaN(n)) return n < 10 ? '0'+n : String(n);
+  } catch{}
+  return key;
+}
+
+function toggleLangGroup(langKey){
+  const safe = langKey.replace(/\W/g,'_');
+  const body = document.getElementById('ldials-'+safe);
+  const arrow = document.getElementById('lexp-'+safe);
+  if(!body) return;
+  const closed = body.style.display === 'none';
+  body.style.display = closed ? '' : 'none';
+  if(arrow) arrow.textContent = closed ? '▾' : '▸';
+}
+
+function updateLangHeaders(){
+  for(const lang of LANG_LIST){
+    const safe = lang.key.replace(/\W/g,'_');
+    const statEl = document.getElementById('lstat-'+safe);
+    if(!statEl) continue;
+
+    const dials = lang.dialects.length > 0
+      ? lang.dialects.map(([dk])=>dk)
+      : [_getPaddedLangId(lang.key)];
+
+    const total = dials.filter(dk => _indexData.some(d=>d.dialId===dk)).length;
+    const done  = dials.filter(dk => {
+      const st = _dialState[dk];
+      return st && st.downloaded > 0 && st.downloaded >= st.total;
+    }).length;
+
+    statEl.textContent = done > 0 ? `${done}/${total} 已下載` : '';
+  }
+}
+
+function updateSummary(){
+  let dlCount = 0, fileCount = 0;
+  for(const [, st] of Object.entries(_dialState)){
+    if(st.downloaded > 0 && st.downloaded >= st.total){
+      dlCount++;
+      fileCount += st.downloaded;
+    }
+  }
+  document.getElementById('sumDl').textContent    = dlCount;
+  document.getElementById('sumFiles').textContent  = fileCount.toLocaleString();
+  document.getElementById('sumSize').textContent   = Math.round(fileCount * AVG_FILE_KB / 1024) + ' MB';
+}
+
+// ── Confirm dialogs ──────────────────────────────────────────
+function confirmDownload(dialId, name, sizeMB){
+  _pendingAction = {type:'dl', dialId, name};
+  document.getElementById('modalTitle').textContent = '確認下載';
+  document.getElementById('modalBody').textContent =
+    `下載「${name}」的所有音檔？\n預估容量約 ${sizeMB} MB，建議在 Wi-Fi 環境下下載，以避免消耗大量行動數據。`;
+  document.getElementById('storageWarn').classList.add('show');
+  document.getElementById('warnSize').textContent = sizeMB;
+  const btn = document.getElementById('modalConfirm');
+  btn.textContent = '開始下載';
+  btn.className = 'btn-confirm-dl';
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function confirmDelete(dialId, name){
+  _pendingAction = {type:'del', dialId, name};
+  document.getElementById('modalTitle').textContent = '確認刪除';
+  document.getElementById('modalBody').textContent =
+    `刪除「${name}」的所有已下載音檔？\n刪除後需要重新下載才能離線播放。`;
+  document.getElementById('storageWarn').classList.remove('show');
+  const btn = document.getElementById('modalConfirm');
+  btn.textContent = '確認刪除';
+  btn.className = 'btn-confirm-del';
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('show');
+  _pendingAction = null;
+}
+
+async function confirmAction(){
+  closeModal();
+  if(!_pendingAction) return;
+  const {type, dialId, name} = _pendingAction;
+  if(type === 'dl') await startDownload(dialId, name);
+  else await deleteDialect(dialId, name);
+}
+
+// ── Download ─────────────────────────────────────────────────
+async function startDownload(dialId, name){
+  if(!isNative){
+    showToast('離線下載僅在 App 中可用');
+    return;
+  }
+
+  showToast(`⬇ 開始下載「${name}」…`);
+  _dialState[dialId] = {total:0, downloaded:0, downloading:true, error:false};
+  _activeDownload = {dialId, cancel:false};
+  updateDialRow(dialId);
+
+  // Load audio list
+  const audioList = await loadDialectAudioList(dialId);
+  if(!audioList.length){
+    showToast('找不到音檔清單');
+    _dialState[dialId].downloading = false;
+    _dialState[dialId].error = true;
+    updateDialRow(dialId);
+    return;
+  }
+
+  _dialState[dialId].total = audioList.length;
+  _dialState[dialId].downloaded = 0;
+  updateDialRow(dialId);
+
+  // Download in batches
+  let done = 0;
+  const errors = [];
+
+  for(let i=0; i<audioList.length; i+=DL_CONCURRENCY){
+    if(_activeDownload?.cancel) break;
+
+    const batch = audioList.slice(i, i+DL_CONCURRENCY);
+    await Promise.all(batch.map(async relPath => {
+      try {
+        const url = AUDIO_BASE + relPath;
+        const res = await fetch(url);
+        if(!res.ok) throw new Error(res.status);
+        const blob = await res.blob();
+        const b64  = await blobToBase64(blob);
+        const localPath = audioLocalPath(dialId, relPath);
+        // Ensure directory exists
+        await ensureDir(localPath);
+        await Filesystem.writeFile({
+          path: localPath,
+          data: b64,
+          directory: 'DATA',
+          recursive: true
+        });
+        done++;
+        _dialState[dialId].downloaded = done;
+        updateDialRow(dialId);
+      } catch(e){
+        errors.push(relPath);
+      }
+    }));
+  }
+
+  _dialState[dialId].downloading = false;
+  if(_activeDownload?.dialId === dialId) _activeDownload = null;
+
+  if(errors.length > 0 && done === 0){
+    _dialState[dialId].error = true;
+    showToast(`❌ 下載失敗：${name}`);
+  } else {
+    _dialState[dialId].error = false;
+    showToast(`✓ 下載完成：${name}（${done} 個音檔）`);
+  }
+
+  saveState();
+  updateDialRow(dialId);
+  updateLangHeaders();
+  updateSummary();
+}
+
+async function blobToBase64(blob){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function ensureDir(filePath){
+  // Filesystem.writeFile with recursive:true handles this in newer Capacitor versions
+  // This is a no-op fallback
+}
+
+// ── Delete ───────────────────────────────────────────────────
+async function deleteDialect(dialId, name){
+  if(!isNative){
+    showToast('僅在 App 中可用');
+    return;
+  }
+  try {
+    await Filesystem.rmdir({
+      path: dialDir(dialId),
+      directory: 'DATA',
+      recursive: true
+    });
+    _dialState[dialId] = {total:0, downloaded:0, downloading:false, error:false};
+    saveState();
+    updateDialRow(dialId);
+    updateLangHeaders();
+    updateSummary();
+    showToast(`✓ 已刪除「${name}」的音檔`);
+  } catch(e){
+    showToast(`❌ 刪除失敗：${e.message}`);
+  }
+}
+
+// ── Update single row ────────────────────────────────────────
+function updateDialRow(dialId){
+  const st = _dialState[dialId];
+  if(!st) return;
+  const total = st.total || 4330;
+  const dl    = st.downloaded || 0;
+  const pct   = total > 0 ? Math.round(dl/total*100) : 0;
+  const isDone = dl > 0 && dl >= total;
+  const isDownloading = !!st.downloading;
+
+  const pb  = document.getElementById('pb-'+dialId);
+  const dc  = document.getElementById('dc-'+dialId);
+  const btn = document.getElementById('btn-'+dialId);
+
+  if(pb){
+    pb.style.width = pct+'%';
+    pb.className = 'prog-bar'+(isDone?' done':'')+(st.error?' err':'');
+  }
+  if(dc){
+    if(isDownloading) dc.textContent = `${dl}/${total} 個 (${pct}%)`;
+    else if(isDone)   dc.textContent = `${dl} 個 ✓`;
+    else if(dl > 0)   dc.textContent = `${dl}/${total} 個`;
+    else              dc.textContent = '未下載';
+  }
+  if(btn){
+    if(isDownloading){
+      btn.className = 'btn-dl downloading';
+      btn.textContent = `下載中… ${pct}%`;
+      btn.disabled = true;
+      btn.onclick = null;
+    } else if(isDone){
+      btn.className = 'btn-dl delete';
+      btn.textContent = '刪除';
+      btn.disabled = false;
+      // find name from lang list
+      const dialName = _getDialName(dialId);
+      btn.onclick = () => confirmDelete(dialId, dialName);
+    } else {
+      btn.className = 'btn-dl download';
+      btn.textContent = '下載';
+      btn.disabled = false;
+      const sizeMB = Math.round(total * AVG_FILE_KB / 1024);
+      const dialName = _getDialName(dialId);
+      btn.onclick = () => confirmDownload(dialId, dialName, sizeMB);
+    }
+  }
+}
+
+function _getDialName(dialId){
+  for(const lang of LANG_LIST){
+    const d = lang.dialects.find(([dk])=>dk===dialId);
+    if(d) return d[1];
+    if(!lang.dialects.length && _getPaddedLangId(lang.key)===dialId) return lang.name;
+  }
+  return dialId;
+}
+
+// ── Navigation ───────────────────────────────────────────────
+function goBack(){
+  if(history.length > 1) history.back();
+  else window.location.href = 'index.html';
+}
+
+// ── Toast ────────────────────────────────────────────────────
+function showToast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+</script>
+</body>
+</html>

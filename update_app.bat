@@ -11,6 +11,8 @@ echo [1/3] Copying HTML files to www\...
 copy /Y index.html www\index.html
 copy /Y vocab.html www\vocab.html
 copy /Y about.html www\about.html
+copy /Y oauth-callback.html www\oauth-callback.html
+copy /Y download.html www\download.html
 echo Done.
 
 echo [2/3] Copying data files to www\data\...

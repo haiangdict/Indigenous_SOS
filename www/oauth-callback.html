@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登入中… — Indigenous SOS</title>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    background: #0e0e0e; color: #e8e4dc;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; margin: 0; flex-direction: column; gap: 16px;
+  }
+  .msg { font-size: 1rem; opacity: 0.8; }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid #333;
+    border-top-color: #d4a843; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="spinner"></div>
+<div class="msg" id="msg">登入處理中，請稍候…</div>
+
+<script>
+(function(){
+  // Parse access_token from URL hash (implicit flow)
+  const hash = window.location.hash;
+  const params = new URLSearchParams(hash.slice(1));
+  const token = params.get('access_token');
+  const error = params.get('error');
+
+  if(error){
+    document.getElementById('msg').textContent = '登入失敗：' + error;
+    return;
+  }
+
+  if(!token){
+    document.getElementById('msg').textContent = '找不到登入資訊，請重試。';
+    return;
+  }
+
+  document.getElementById('msg').textContent = '登入成功，正在返回 App…';
+
+  // Try to send token back to opener (web context)
+  if(window.opener){
+    window.opener.postMessage({ type: 'oauth_token', token: token }, '*');
+    setTimeout(() => window.close(), 500);
+    return;
+  }
+
+  // Native app: redirect back to app with token in hash
+  // The app's main page will detect this on load
+  const appUrl = 'https://haiangdict.github.io/Indigenous_SOS/#access_token=' + encodeURIComponent(token);
+  window.location.href = appUrl;
+})();
+</script>
+</body>
+</html>
