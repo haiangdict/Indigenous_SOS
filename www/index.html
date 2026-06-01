@@ -2680,7 +2680,7 @@ _loadPrefs();
 const GAPI_CLIENT_ID = '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com';
 const GAPI_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 // 邀請碼驗證後端 (Google Apps Script Web App URL) — 部署後填入
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCOX4y9-TsjKGZS4RoIVMQ5ImJsX3kcGwwuDqenQJgTIXob5wTQdJf-0umOgBIlR65/exec';
+const APPS_SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_URL_HERE';
 const SPREADSHEET_TITLE = 'Indigenous SOS 詞彙表';
 const SHEET_HEADERS = ['語句','翻譯','語別','教材','等級','音檔路徑','編號','收藏時間','備註'];
 
@@ -2763,8 +2763,10 @@ function signInWeb() {
   }).requestAccessToken();
 }
 
-// ── Native sign-in (Capacitor app, uses system browser) ────────
-// Uses OAuth 2.0 implicit flow via system browser + deep link callback
+// ── Native sign-in (Capacitor app) ────────────────────────────
+// Redirects within the app's own WebView (no system browser).
+// Google redirects back to oauth-callback.html which returns the
+// token via URL hash to the main page in the same WebView.
 async function signInNative() {
   const redirectUri = 'https://haiangdict.github.io/Indigenous_SOS/oauth-callback.html';
   const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
@@ -2774,17 +2776,9 @@ async function signInNative() {
     + '&scope=' + encodeURIComponent(GAPI_SCOPES)
     + '&prompt=select_account';
 
-  showToast('🔐 開啟 Google 登入…');
-
-  // Store flag so oauth-callback page knows to pass token back
-  try { sessionStorage.setItem('awaiting_oauth', '1'); } catch(e){}
-
-  // Open system browser
-  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-    await window.Capacitor.Plugins.Browser.open({ url: authUrl });
-  } else {
-    window.open(authUrl, '_blank');
-  }
+  // Navigate the current WebView directly to Google login.
+  // After login, oauth-callback.html redirects back here with the token.
+  window.location.href = authUrl;
 }
 
 // Called by oauth-callback.html via postMessage or URL fragment
@@ -2822,6 +2816,8 @@ window.addEventListener('message', (e) => {
   if(hash && hash.includes('access_token')){
     const params = new URLSearchParams(hash.slice(1));
     const token = params.get('access_token');
+    // Clear the hash so it isn't re-processed on reload
+    try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch(e){ window.location.hash = ''; }
     if(token) handleNativeOAuthCallback(token);
   }
 })();

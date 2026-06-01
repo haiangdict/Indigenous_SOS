@@ -42,19 +42,19 @@
     return;
   }
 
-  document.getElementById('msg').textContent = '登入成功，正在返回 App…';
+  document.getElementById('msg').textContent = '登入成功，正在返回…';
 
-  // Try to send token back to opener (web context)
+  // Web context (popup): send token to opener and close
   if(window.opener){
     window.opener.postMessage({ type: 'oauth_token', token: token }, '*');
     setTimeout(() => window.close(), 500);
     return;
   }
 
-  // Native app: redirect back to app with token in hash
-  // The app's main page will detect this on load
-  const appUrl = 'https://haiangdict.github.io/Indigenous_SOS/#access_token=' + encodeURIComponent(token);
-  window.location.href = appUrl;
+  // App / same-WebView context: redirect back to main page with token in hash.
+  // The main page's checkOAuthHash() will pick it up on load.
+  const appUrl = 'https://haiangdict.github.io/Indigenous_SOS/index.html#access_token=' + encodeURIComponent(token);
+  window.location.replace(appUrl);
 })();
 </script>
 </body>
