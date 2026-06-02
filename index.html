@@ -734,7 +734,6 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
   <input type="text" class="sub-input" id="subCodeInput" placeholder="輸入代碼" autocomplete="off">
   <button class="sub-btn" id="subRedeemBtn" onclick="redeemSubCode()">啟用</button>
   <div class="sub-hint">尚無代碼？請至<a href="https://haiangdict.github.io/Indigenous_SOS/about.html" target="_blank" style="color:var(--accent);text-decoration:underline;">官網</a>進一步了解獲得管道。</div>
-  <pre id="subDebug" style="font-size:0.65rem;color:var(--muted);margin-top:16px;max-width:340px;text-align:left;white-space:pre-wrap;word-break:break-all;max-height:120px;overflow-y:auto;"></pre>
 </div>
 
 
@@ -2774,7 +2773,6 @@ async function signInNative() {
       return;
     }
 
-    _debugLog('SocialLogin found, initializing...');
 
     // Initialize
     await SocialLogin.initialize({
@@ -2783,7 +2781,6 @@ async function signInNative() {
       }
     });
 
-    _debugLog('initialized, logging in...');
 
     // Sign in
     const result = await SocialLogin.login({
@@ -2798,18 +2795,15 @@ async function signInNative() {
       }
     });
 
-    _debugLog('login result: ' + JSON.stringify(result?.result?.profile?.email));
 
     if(!result || !result.result){
       showToast('❌ 登入失敗，請重試');
-      _debugLog('no result');
       return;
     }
 
     const profile   = result.result.profile;
     const accessToken = result.result.accessToken?.token;
 
-    _debugLog('token: ' + (accessToken ? accessToken.substring(0,20)+'...' : 'null'));
 
     if(!accessToken){
       showToast('❌ 無法取得存取金鑰，請重試');
@@ -2832,7 +2826,6 @@ async function signInNative() {
     if(isNativeApp) checkSubscription();
 
   } catch(e) {
-    _debugLog('signInNative error: ' + (e.message || String(e)));
     showToast('❌ 登入失敗：' + (e.message || String(e)));
   }
 }
@@ -2894,27 +2887,14 @@ function signOut() {
 // Only enforced in native app; website is always free to use.
 let _subActive = false;
 let _subExpiry = null;
-let _debugLines = [];
 
-function _debugLog(msg){
-  if(!isNativeApp) return;
-  const time = new Date().toLocaleTimeString();
-  _debugLines.push(`[${time}] ${msg}`);
-  if(_debugLines.length > 20) _debugLines.shift();
-  const el = document.getElementById('subDebug');
-  if(el) el.textContent = _debugLines.join('\n');
-  console.log('[SUB DEBUG]', msg);
-}
 
 // Check subscription status; show lock overlay if not active (App only)
 async function checkSubscription(){
   if(!isNativeApp) return true;
 
-  _debugLog('checkSubscription called');
-  _debugLog('_gToken: ' + (!!_gToken) + ' _gUser: ' + (_gUser?.email || 'null'));
 
   if(!_gToken || !_gUser || !_gUser.email){
-    _debugLog('not logged in → showSubOverlay(needLogin=true)');
     showSubOverlay(true);
     return false;
   }
@@ -2923,37 +2903,30 @@ async function checkSubscription(){
     const raw = localStorage.getItem('sos_sub');
     if(raw){
       const sub = JSON.parse(raw);
-      _debugLog('cached sub: email=' + sub.email + ' expiry=' + sub.expiryISO);
       if(sub.email === _gUser.email && sub.expiryISO){
         const exp = new Date(sub.expiryISO);
         if(exp > new Date()){
           _subActive = true; _subExpiry = exp;
-          _debugLog('cache valid → hide overlay');
           hideSubOverlay();
           _verifySubServer();
           return true;
         }
       }
     }
-  } catch(e){ _debugLog('cache error: '+e); }
+  } catch(e){}
 
-  _debugLog('no valid cache → verify with server');
   return await _verifySubServer();
 }
 
 async function _verifySubServer(){
-  _debugLog('_verifySubServer: APPS_SCRIPT_URL set=' + (!APPS_SCRIPT_URL.includes('PASTE_')));
   if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_')===0) {
-    _debugLog('URL not configured → allow through');
     hideSubOverlay();
     return true;
   }
   try {
     const url = APPS_SCRIPT_URL + '?action=status&email=' + encodeURIComponent(_gUser.email);
-    _debugLog('fetching: ' + url.substring(0,60)+'...');
     const res = await fetch(url);
     const data = await res.json();
-    _debugLog('server response: ok=' + data.ok + ' active=' + data.active + ' expiry=' + data.expiry);
     if(data.ok && data.active){
       _subActive = true;
       _subExpiry = data.expiryISO ? new Date(data.expiryISO) : null;
@@ -2962,12 +2935,10 @@ async function _verifySubServer(){
       return true;
     } else {
       _subActive = false;
-      _debugLog('not active → showSubOverlay');
       showSubOverlay(false);
       return false;
     }
   } catch(e){
-    _debugLog('fetch error: ' + e.message);
     showSubOverlay(false);
     return false;
   }
