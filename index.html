@@ -733,7 +733,8 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
   <div class="sub-msg" id="subMsg"></div>
   <input type="text" class="sub-input" id="subCodeInput" placeholder="輸入代碼" autocomplete="off">
   <button class="sub-btn" id="subRedeemBtn" onclick="redeemSubCode()">啟用</button>
-  <div class="sub-hint">尚無代碼？請至官網購買後輸入。</div>
+  <div class="sub-hint">尚無代碼？請至<a href="https://haiangdict.github.io/Indigenous_SOS/about.html" target="_blank" style="color:var(--accent);text-decoration:underline;">官網</a>進一步了解獲得管道。</div>
+  <pre id="subDebug" style="font-size:0.65rem;color:var(--muted);margin-top:16px;max-width:340px;text-align:left;white-space:pre-wrap;word-break:break-all;max-height:120px;overflow-y:auto;"></pre>
 </div>
 
 
@@ -2680,7 +2681,7 @@ _loadPrefs();
 const GAPI_CLIENT_ID = '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com';
 const GAPI_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 // 邀請碼驗證後端 (Google Apps Script Web App URL) — 部署後填入
-const APPS_SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_URL_HERE';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCOX4y9-TsjKGZS4RoIVMQ5ImJsX3kcGwwuDqenQJgTIXob5wTQdJf-0umOgBIlR65/exec';
 const SPREADSHEET_TITLE = 'Indigenous SOS 詞彙表';
 const SHEET_HEADERS = ['語句','翻譯','語別','教材','等級','音檔路徑','編號','收藏時間','備註'];
 
@@ -2773,12 +2774,16 @@ async function signInNative() {
       return;
     }
 
+    _debugLog('SocialLogin found, initializing...');
+
     // Initialize
     await SocialLogin.initialize({
       google: {
         webClientId: '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com',
       }
     });
+
+    _debugLog('initialized, logging in...');
 
     // Sign in
     const result = await SocialLogin.login({
@@ -2793,13 +2798,18 @@ async function signInNative() {
       }
     });
 
+    _debugLog('login result: ' + JSON.stringify(result?.result?.profile?.email));
+
     if(!result || !result.result){
       showToast('❌ 登入失敗，請重試');
+      _debugLog('no result');
       return;
     }
 
     const profile   = result.result.profile;
     const accessToken = result.result.accessToken?.token;
+
+    _debugLog('token: ' + (accessToken ? accessToken.substring(0,20)+'...' : 'null'));
 
     if(!accessToken){
       showToast('❌ 無法取得存取金鑰，請重試');
@@ -2822,7 +2832,7 @@ async function signInNative() {
     if(isNativeApp) checkSubscription();
 
   } catch(e) {
-    console.error('signInNative error:', e);
+    _debugLog('signInNative error: ' + (e.message || String(e)));
     showToast('❌ 登入失敗：' + (e.message || String(e)));
   }
 }
@@ -2884,49 +2894,66 @@ function signOut() {
 // Only enforced in native app; website is always free to use.
 let _subActive = false;
 let _subExpiry = null;
+let _debugLines = [];
+
+function _debugLog(msg){
+  if(!isNativeApp) return;
+  const time = new Date().toLocaleTimeString();
+  _debugLines.push(`[${time}] ${msg}`);
+  if(_debugLines.length > 20) _debugLines.shift();
+  const el = document.getElementById('subDebug');
+  if(el) el.textContent = _debugLines.join('\n');
+  console.log('[SUB DEBUG]', msg);
+}
 
 // Check subscription status; show lock overlay if not active (App only)
 async function checkSubscription(){
-  if(!isNativeApp) return true; // website: no subscription needed
+  if(!isNativeApp) return true;
 
-  // Must be logged in first
+  _debugLog('checkSubscription called');
+  _debugLog('_gToken: ' + (!!_gToken) + ' _gUser: ' + (_gUser?.email || 'null'));
+
   if(!_gToken || !_gUser || !_gUser.email){
-    showSubOverlay(true); // needs login
+    _debugLog('not logged in → showSubOverlay(needLogin=true)');
+    showSubOverlay(true);
     return false;
   }
 
-  // Try local cache first (fast)
   try {
     const raw = localStorage.getItem('sos_sub');
     if(raw){
       const sub = JSON.parse(raw);
+      _debugLog('cached sub: email=' + sub.email + ' expiry=' + sub.expiryISO);
       if(sub.email === _gUser.email && sub.expiryISO){
         const exp = new Date(sub.expiryISO);
         if(exp > new Date()){
           _subActive = true; _subExpiry = exp;
+          _debugLog('cache valid → hide overlay');
           hideSubOverlay();
-          // Verify with server in background (don't block)
           _verifySubServer();
           return true;
         }
       }
     }
-  } catch{}
+  } catch(e){ _debugLog('cache error: '+e); }
 
-  // No valid cache — verify with server
+  _debugLog('no valid cache → verify with server');
   return await _verifySubServer();
 }
 
 async function _verifySubServer(){
+  _debugLog('_verifySubServer: APPS_SCRIPT_URL set=' + (!APPS_SCRIPT_URL.includes('PASTE_')));
   if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_')===0) {
-    // Not configured yet — allow through (dev mode)
+    _debugLog('URL not configured → allow through');
     hideSubOverlay();
     return true;
   }
   try {
     const url = APPS_SCRIPT_URL + '?action=status&email=' + encodeURIComponent(_gUser.email);
+    _debugLog('fetching: ' + url.substring(0,60)+'...');
     const res = await fetch(url);
     const data = await res.json();
+    _debugLog('server response: ok=' + data.ok + ' active=' + data.active + ' expiry=' + data.expiry);
     if(data.ok && data.active){
       _subActive = true;
       _subExpiry = data.expiryISO ? new Date(data.expiryISO) : null;
@@ -2935,11 +2962,12 @@ async function _verifySubServer(){
       return true;
     } else {
       _subActive = false;
+      _debugLog('not active → showSubOverlay');
       showSubOverlay(false);
       return false;
     }
   } catch(e){
-    // Network error — if we had valid cache we'd have returned already
+    _debugLog('fetch error: ' + e.message);
     showSubOverlay(false);
     return false;
   }
