@@ -2764,21 +2764,67 @@ function signInWeb() {
 }
 
 // ── Native sign-in (Capacitor app) ────────────────────────────
-// Redirects within the app's own WebView (no system browser).
-// Google redirects back to oauth-callback.html which returns the
-// token via URL hash to the main page in the same WebView.
+// Uses @capgo/capacitor-social-login for native Google Sign-In.
 async function signInNative() {
-  const redirectUri = 'https://haiangdict.github.io/Indigenous_SOS/oauth-callback.html';
-  const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
-    + '?client_id=' + encodeURIComponent(GAPI_CLIENT_ID)
-    + '&redirect_uri=' + encodeURIComponent(redirectUri)
-    + '&response_type=token'
-    + '&scope=' + encodeURIComponent(GAPI_SCOPES)
-    + '&prompt=select_account';
+  try {
+    const { SocialLogin } = window.Capacitor.Plugins;
+    if(!SocialLogin){
+      showToast('❌ 登入插件未載入，請重新安裝 App');
+      return;
+    }
 
-  // Navigate the current WebView directly to Google login.
-  // After login, oauth-callback.html redirects back here with the token.
-  window.location.href = authUrl;
+    // Initialize
+    await SocialLogin.initialize({
+      google: {
+        webClientId: '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com',
+      }
+    });
+
+    // Sign in
+    const result = await SocialLogin.login({
+      provider: 'google',
+      options: {
+        scopes: [
+          'profile',
+          'email',
+          'https://www.googleapis.com/auth/spreadsheets',
+          'https://www.googleapis.com/auth/drive.file'
+        ],
+      }
+    });
+
+    if(!result || !result.result){
+      showToast('❌ 登入失敗，請重試');
+      return;
+    }
+
+    const profile   = result.result.profile;
+    const accessToken = result.result.accessToken?.token;
+
+    if(!accessToken){
+      showToast('❌ 無法取得存取金鑰，請重試');
+      return;
+    }
+
+    const user = {
+      name:    profile?.name    || '使用者',
+      email:   profile?.email   || '',
+      picture: profile?.imageUrl || '',
+    };
+
+    _saveToken(accessToken, user);
+    updateAuthUI();
+    showToast('✓ 已登入：' + user.name);
+    await initSpreadsheet();
+    await loadStarredIds();
+    await loadPrefsFromSheets();
+    renderPage();
+    if(isNativeApp) checkSubscription();
+
+  } catch(e) {
+    console.error('signInNative error:', e);
+    showToast('❌ 登入失敗：' + (e.message || String(e)));
+  }
 }
 
 // Called by oauth-callback.html via postMessage or URL fragment

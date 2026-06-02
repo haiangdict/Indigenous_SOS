@@ -10,6 +10,15 @@
   "plugins": {
     "Filesystem": {
       "iosScheme": "ionic"
+    },
+    "GoogleAuth": {
+      "scopes": [
+        "profile",
+        "email"
+      ],
+      "androidClientId": "879339990160-nmn399668ushv5o5fmu0f8du6v8tvpf4.apps.googleusercontent.com",
+      "serverClientId": "879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": false
     }
   }
 }
