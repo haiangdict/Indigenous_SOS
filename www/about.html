@@ -224,17 +224,22 @@ header {
 
           <div class="form-field">
             <label class="form-label">類別<span class="req">*</span></label>
-            <select class="form-select" id="f-type">
+            <select class="form-select" id="f-type" onchange="onTypeChange()">
               <option value="">請選擇…</option>
-              <option value="資料錯誤">資料錯誤（語句、翻譯等）</option>
-              <option value="音檔問題">音檔問題</option>
-              <option value="技術問題">網站技術問題</option>
-              <option value="功能建議">功能建議</option>
+              <option value="錯誤回報">錯誤回報</option>
+              <option value="使用問題">使用問題</option>
+              <option value="APP使用洽詢">APP使用洽詢</option>
               <option value="其他">其他</option>
             </select>
           </div>
 
-          <div class="form-field">
+          <div class="form-field" id="app-inquiry-notice" style="display:none;">
+            <div style="background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.3);border-radius:8px;padding:14px 16px;font-size:0.88rem;line-height:1.7;color:var(--text);">
+              填寫您的電子郵件後送出，我們將寄送 App 訂閱相關資訊與付費表單至您的信箱。
+            </div>
+          </div>
+
+          <div class="form-field" id="msg-field">
             <label class="form-label">訊息內容<span class="req">*</span></label>
             <textarea class="form-textarea" id="f-msg"
               placeholder="請描述您的問題或建議。若為資料錯誤，請提供語別、教材名稱及有問題的語句。"></textarea>
@@ -265,6 +270,16 @@ header {
 // To activate: sign up at formspree.io, create a form, replace YOUR_FORM_ID below
 const FORMSPREE_ID = 'mzdkqybd';
 
+const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSeg0OSkUlyVnXfeZ-M9TGW6Fgy2UAU2j9fc87nG3DmeI1LrjA/viewform';
+
+function onTypeChange(){
+  const type = document.getElementById('f-type').value;
+  const isApp = type === 'APP使用洽詢';
+  document.getElementById('app-inquiry-notice').style.display = isApp ? '' : 'none';
+  document.getElementById('msg-field').style.display = isApp ? 'none' : '';
+  document.getElementById('f-submit-txt').textContent = isApp ? '✉ 寄送表單連結' : '✉ 送出訊息';
+}
+
 async function submitForm() {
   const name  = document.getElementById('f-name').value.trim();
   const email = document.getElementById('f-email').value.trim();
@@ -277,7 +292,35 @@ async function submitForm() {
   if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
              { highlight('f-email'); showToast('請填寫有效的電子郵件'); return; }
   if(!type)  { highlight('f-type');  showToast('請選擇類別'); return; }
-  if(!msg)   { highlight('f-msg');   showToast('請填寫訊息內容'); return; }
+  if(type !== 'APP使用洽詢' && !msg)
+             { highlight('f-msg');   showToast('請填寫訊息內容'); return; }
+
+  // APP inquiry: send Google Form link via Formspree then show success
+  if(type === 'APP使用洽詢'){
+    btn.disabled = true;
+    txt.textContent = '傳送中…';
+    try {
+      const res = await fetch('https://formspree.io/f/' + FORMSPREE_ID, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          name, email, type,
+          message: '此用戶請求 App 訂閱資訊，付費表單連結：' + GOOGLE_FORM_URL,
+          _replyto: email,
+          _subject: '[Indigenous SOS] App 訂閱洽詢 — ' + name,
+        })
+      });
+      if(res.ok){
+        // Also send form link directly to user via Formspree reply
+        showAppInquirySuccess();
+      } else { throw new Error(); }
+    } catch(e){
+      btn.disabled = false;
+      txt.textContent = '✉ 寄送表單連結';
+      showToast('❌ 傳送失敗，請直接寄信至 haiang.dict@gmail.com');
+    }
+    return;
+  }
 
   btn.disabled = true;
   txt.textContent = '傳送中…';
@@ -310,6 +353,18 @@ async function submitForm() {
 
 function showSuccess() {
   document.querySelector('.form-grid').style.display = 'none';
+  document.getElementById('successMsg').style.display = 'block';
+}
+
+function showAppInquirySuccess() {
+  document.querySelector('.form-grid').style.display = 'none';
+  document.getElementById('successMsg').innerHTML = `
+    <div class="success-icon">✉️</div>
+    <p>已收到您的洽詢，感謝您！<br>
+    我們將盡快將付費表單寄送至您填寫的 Email。<br><br>
+    您也可以直接前往：<br>
+    <a href="${GOOGLE_FORM_URL}" target="_blank"
+       style="color:var(--accent2);text-decoration:underline;">App 訂閱付費表單</a></p>`;
   document.getElementById('successMsg').style.display = 'block';
 }
 
