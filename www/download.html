@@ -495,6 +495,13 @@ async function confirmAction(){
 // ── Download ──────────────────────────────────────────────────
 async function startDownload(dialId, dialName, cat){
   if(!isNative){ showToast('離線下載僅在 App 中可用'); return; }
+
+  // Check Filesystem
+  if(!Filesystem){
+    showToast('❌ Filesystem 插件未載入，請重新安裝 App');
+    return;
+  }
+
   showToast(`⬇ 下載 ${dialName}—${CAT_LABELS[cat]||cat}…`);
 
   const st = getState(dialId, cat);
@@ -525,22 +532,24 @@ async function startDownload(dialId, dialName, cat){
 
   if(!audioList.length){
     st.downloading=false;
-    updateDialDisplay(dialId); showToast('此教材無音檔');
+    updateDialDisplay(dialId);
+    showToast('此教材無音檔');
     saveState(); return;
   }
 
   st.total = audioList.length; st.downloaded=0;
+  showToast(`共 ${audioList.length} 個音檔，開始下載…`);
   updateDialDisplay(dialId);
 
-  let done=0;
+  let done=0, errors=0;
   for(let i=0; i<audioList.length; i+=DL_CONCURRENCY){
-    if(!getState(dialId,cat).downloading) break; // cancelled
+    if(!getState(dialId,cat).downloading) break;
     const batch = audioList.slice(i, i+DL_CONCURRENCY);
     await Promise.all(batch.map(async relPath=>{
       try {
         const url = AUDIO_BASE+relPath;
         const res = await fetch(url);
-        if(!res.ok) throw new Error(res.status);
+        if(!res.ok) throw new Error('HTTP '+res.status);
         const blob = await res.blob();
         const b64  = await blobToBase64(blob);
         const lp   = `offline_audio/dial_${dialId}/${cat}/${relPath.split('/').pop()}`;
@@ -548,19 +557,27 @@ async function startDownload(dialId, dialName, cat){
         done++;
         const s = getState(dialId,cat);
         s.downloaded=done;
-        // Update progress bar only
-        const pb = document.getElementById(`cpb-${dialId}-${cat}`);
         const pct = st.total>0?Math.round(done/st.total*100):0;
+        const pb = document.getElementById(`cpb-${dialId}-${cat}`);
         if(pb) pb.style.width=pct+'%';
         const cbtn = document.getElementById(`cbtn-${dialId}-${cat}`);
         if(cbtn&&cbtn.classList.contains('downloading')) cbtn.textContent=pct+'%';
-      } catch{}
+        // Show progress toast every 25%
+        if(pct===25||pct===50||pct===75) showToast(`下載中 ${pct}%（${done}/${st.total}）`);
+      } catch(e){
+        errors++;
+      }
     }));
   }
 
   st.downloading=false;
-  if(done>0){ st.downloaded=done; st.error=false; showToast(`✓ ${dialName}—${CAT_LABELS[cat]||cat} 下載完成（${done}個）`); }
-  else { st.error=true; showToast(`❌ 下載失敗`); }
+  if(done>0){
+    st.downloaded=done; st.error=false;
+    showToast(`✓ 完成！${done} 個音檔已儲存${errors>0?' ('+errors+' 個失敗)':''}`);
+  } else {
+    st.error=true;
+    showToast(`❌ 下載失敗，請確認網路連線後重試`);
+  }
   saveState();
   updateDialDisplay(dialId);
 }
