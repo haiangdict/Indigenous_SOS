@@ -149,8 +149,9 @@ const DATA_BASE  = 'https://haiangdict.github.io/Indigenous_SOS/data/';
 const AVG_FILE_KB = 100;
 const DL_CONCURRENCY = 4;
 
-const Filesystem = window.Capacitor?.Plugins?.Filesystem;
-const isNative   = !!(window.Capacitor?.isNativePlatform?.());
+// Lazy getter for Filesystem plugin
+function getFilesystem(){ return window.Capacitor?.Plugins?.Filesystem; }
+const isNative = !!(window.Capacitor?.isNativePlatform?.());
 
 const CAT_LABELS = { C:'會話', P:'句型', R:'閱讀', T:'十二階', V:'詞彙', W:'文化' };
 const CAT_KEYS   = ['C','P','R','T','V','W'];
@@ -254,22 +255,22 @@ function getState(dialId, cat){
   return _state[k];
 }
 
-// ── Filesystem helpers ────────────────────────────────────────
+// ── Filesystem helpers ─────────────────────────────────────────────
 function localPath(dialId, cat, relPath){
   return `offline_audio/dial_${dialId}/${cat}/${relPath.split('/').pop()}`;
 }
 
 async function getLocalURI(path){
-  if(!Filesystem) return null;
+  if(!getFilesystem()) return null;
   try {
-    const res = await Filesystem.getUri({ path, directory:'DATA' });
+    const res = await getFilesystem().getUri({ path, directory:'DATA' });
     return res.uri || null;
   } catch{ return null; }
 }
 
 async function removeDir(path){
-  if(!Filesystem) return;
-  try { await Filesystem.rmdir({ path, directory:'DATA', recursive:true }); } catch{}
+  if(!getFilesystem()) return;
+  try { await getFilesystem().rmdir({ path, directory:'DATA', recursive:true }); } catch{}
 }
 
 // ── Render ────────────────────────────────────────────────────
@@ -510,6 +511,7 @@ async function startDownload(dialId, dialName, cat){
   if(!isNative){ showToast('離線下載僅在 App 中可用'); return; }
 
   // Check Filesystem
+  const Filesystem = getFilesystem();
   if(!Filesystem){
     showToast('❌ Filesystem 插件未載入，請重新安裝 App');
     return;
