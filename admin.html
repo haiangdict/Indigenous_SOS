@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>代碼管理 — Indigenous SOS Admin</title>
+<style>
+:root {
+  --bg:#0e0e0e; --surface:#1a1a1a; --surface2:#232323;
+  --border:#2e2e2e; --text:#e8e4dc; --muted:#888;
+  --accent:#d4a843; --accent2:#8bc4a8; --danger:#e57373;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Noto Serif TC',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* ── Login screen ── */
+#loginScreen {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; min-height:100vh; gap:20px; padding:32px;
+}
+#loginScreen h1 { font-size:1.3rem; color:var(--accent); }
+#loginScreen p  { font-size:0.85rem; color:var(--muted); text-align:center; }
+.gsi-btn {
+  display:flex; align-items:center; gap:12px;
+  background:#fff; color:#333; border:none; padding:12px 24px;
+  border-radius:8px; font-size:0.95rem; cursor:pointer; font-weight:600;
+}
+.gsi-btn img { width:20px; }
+.gsi-btn:hover { background:#f0f0f0; }
+.access-denied {
+  color:var(--danger); font-size:0.85rem; display:none; margin-top:8px;
+}
+
+/* ── Main layout ── */
+#mainScreen { display:none; }
+header {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:14px 24px; display:flex; align-items:center; gap:16px;
+  position:sticky; top:0; z-index:100;
+}
+header h1 { font-size:1rem; color:var(--accent); flex:1; }
+.hdr-user { font-size:0.8rem; color:var(--muted); }
+.hdr-logout {
+  font-size:0.75rem; padding:5px 12px; border:1px solid var(--border);
+  border-radius:6px; background:none; color:var(--muted); cursor:pointer;
+}
+.hdr-logout:hover { border-color:var(--danger); color:var(--danger); }
+
+/* ── Tabs ── */
+.tabs { display:flex; gap:0; border-bottom:1px solid var(--border); padding:0 24px; background:var(--surface); }
+.tab {
+  padding:12px 20px; font-size:0.85rem; cursor:pointer;
+  border-bottom:2px solid transparent; color:var(--muted); transition:all 0.15s;
+}
+.tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.tab:hover { color:var(--text); }
+
+.tab-content { display:none; padding:28px 24px; max-width:960px; margin:0 auto; }
+.tab-content.active { display:block; }
+
+/* ── Cards ── */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:22px; margin-bottom:20px;
+}
+.card-title { font-size:0.9rem; font-weight:700; margin-bottom:16px; color:var(--accent2); }
+
+/* ── Form elements ── */
+.form-row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+label { font-size:0.75rem; color:var(--muted); display:block; margin-bottom:5px; }
+input, select {
+  background:var(--surface2); border:1px solid var(--border); color:var(--text);
+  padding:8px 12px; border-radius:7px; font-size:0.88rem; outline:none;
+  transition:border-color 0.15s; font-family:inherit;
+}
+input:focus, select:focus { border-color:var(--accent2); }
+select option { background:var(--surface2); }
+
+.btn {
+  padding:9px 20px; border-radius:7px; border:none; font-size:0.85rem;
+  cursor:pointer; font-family:inherit; font-weight:600; transition:all 0.15s;
+}
+.btn-primary { background:var(--accent2); color:#111; }
+.btn-primary:hover { background:#a8d8c8; }
+.btn-primary:disabled { opacity:0.4; cursor:default; }
+.btn-danger { background:rgba(229,115,115,0.15); color:var(--danger); border:1px solid rgba(229,115,115,0.3); }
+.btn-danger:hover { background:rgba(229,115,115,0.25); }
+.btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.btn-ghost:hover { border-color:var(--accent2); }
+
+/* ── Table ── */
+.tbl-wrap { overflow-x:auto; margin-top:16px; }
+table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+th { text-align:left; padding:8px 12px; color:var(--muted); font-weight:600; border-bottom:1px solid var(--border); white-space:nowrap; }
+td { padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:var(--surface2); }
+.badge {
+  display:inline-block; padding:2px 9px; border-radius:10px; font-size:0.72rem; font-weight:600;
+}
+.badge-used    { background:rgba(229,115,115,0.15); color:var(--danger); }
+.badge-unused  { background:rgba(139,196,168,0.15); color:var(--accent2); }
+.badge-sub     { background:rgba(212,168,67,0.15);  color:var(--accent); }
+.badge-event   { background:rgba(180,140,200,0.15); color:#b48cc8; }
+.badge-active  { background:rgba(139,196,168,0.15); color:var(--accent2); }
+.badge-expired { background:rgba(229,115,115,0.15); color:var(--danger); }
+.code-txt { font-family:monospace; font-size:0.85rem; letter-spacing:0.5px; }
+
+/* ── Generated codes output ── */
+.codes-output {
+  background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+  padding:16px; margin-top:16px; display:none;
+}
+.codes-output pre { font-family:monospace; font-size:0.82rem; white-space:pre-wrap; line-height:1.8; }
+
+/* ── Toast ── */
+.toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  background:var(--surface2); border:1px solid var(--border);
+  color:var(--text); padding:8px 18px; border-radius:20px;
+  font-size:0.85rem; z-index:999; pointer-events:none;
+}
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<!-- Login screen -->
+<div id="loginScreen">
+  <h1>🔐 Indigenous SOS 管理後台</h1>
+  <p>僅限授權管理員使用<br>請使用 haiang.dict@gmail.com 登入</p>
+  <button class="gsi-btn" onclick="adminSignIn()">
+    <img src="https://developers.google.com/identity/images/g-logo.png" alt="G">
+    使用 Google 登入
+  </button>
+  <div class="access-denied" id="accessDenied">❌ 此帳號無管理員權限</div>
+</div>
+
+<!-- Main screen -->
+<div id="mainScreen">
+  <header>
+    <h1>Indigenous SOS 管理後台</h1>
+    <span class="hdr-user" id="hdrUser"></span>
+    <button class="hdr-logout" onclick="adminSignOut()">登出</button>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('generate')">產生代碼</div>
+    <div class="tab" onclick="switchTab('codes')">代碼清單</div>
+    <div class="tab" onclick="switchTab('subs')">訂閱狀態</div>
+  </div>
+
+  <!-- Tab: Generate codes -->
+  <div class="tab-content active" id="tab-generate">
+
+    <!-- Generate subscription codes -->
+    <div class="card">
+      <div class="card-title">批次產生訂閱碼</div>
+      <div class="form-row">
+        <div>
+          <label>訂閱期間</label>
+          <select id="gen-days">
+            <option value="30">1 個月（30天）</option>
+            <option value="90">3 個月（90天）</option>
+            <option value="180">6 個月（180天）</option>
+            <option value="365">12 個月（365天）</option>
+          </select>
+        </div>
+        <div>
+          <label>產生數量</label>
+          <input type="number" id="gen-count" value="1" min="1" max="50" style="width:90px">
+        </div>
+        <div>
+          <label>代碼前綴（選填）</label>
+          <input type="text" id="gen-prefix" placeholder="如 PAYR" maxlength="8" style="width:120px">
+        </div>
+        <div>
+          <button class="btn btn-primary" id="gen-btn" onclick="generateCodes()">產生代碼</button>
+        </div>
+      </div>
+      <div class="codes-output" id="gen-output">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:0.8rem;color:var(--accent2);" id="gen-output-title"></span>
+          <button class="btn btn-ghost" style="font-size:0.75rem;padding:5px 12px;" onclick="copyGenerated()">複製全部</button>
+        </div>
+        <pre id="gen-output-codes"></pre>
+      </div>
+    </div>
+
+    <!-- Generate event code -->
+    <div class="card">
+      <div class="card-title">產生活動碼</div>
+      <div class="form-row">
+        <div>
+          <label>活動名稱（用於代碼）</label>
+          <input type="text" id="evt-name" placeholder="如 XMAS2024" maxlength="12" style="width:160px">
+        </div>
+        <div>
+          <label>有效天數</label>
+          <input type="number" id="evt-days" value="7" min="1" max="365" style="width:90px">
+        </div>
+        <div>
+          <button class="btn btn-primary" onclick="generateEventCode()">產生活動碼</button>
+        </div>
+      </div>
+      <div class="codes-output" id="evt-output">
+        <pre id="evt-output-code"></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tab: Codes list -->
+  <div class="tab-content" id="tab-codes">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="font-size:0.85rem;color:var(--muted);" id="codes-count"></span>
+      <button class="btn btn-ghost" style="font-size:0.78rem;" onclick="loadCodes()">🔄 重新整理</button>
+    </div>
+    <div class="tbl-wrap">
+      <table id="codes-table">
+        <thead>
+          <tr>
+            <th>代碼</th><th>類型</th><th>期間</th><th>狀態</th>
+            <th>使用者 Gmail</th><th>啟用日</th><th>到期日</th>
+          </tr>
+        </thead>
+        <tbody id="codes-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab: Subscriptions -->
+  <div class="tab-content" id="tab-subs">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="font-size:0.85rem;color:var(--muted);" id="subs-count"></span>
+      <button class="btn btn-ghost" style="font-size:0.78rem;" onclick="loadSubs()">🔄 重新整理</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Gmail</th><th>狀態</th><th>到期日</th><th>剩餘天數</th></tr>
+        </thead>
+        <tbody id="subs-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────
+const ADMIN_EMAIL     = 'haiang.dict@gmail.com';
+const GAPI_CLIENT_ID  = '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCOX4y9-TsjKGZS4RoIVMQ5ImJsX3kcGwwuDqenQJgTIXob5wTQdJf-0umOgBIlR65/exec';
+
+let _token = null;
+let _userEmail = null;
+
+// ── Auth ────────────────────────────────────────────────────
+function adminSignIn(){
+  google.accounts.oauth2.initTokenClient({
+    client_id: GAPI_CLIENT_ID,
+    scope: 'email profile',
+    callback: async (resp) => {
+      if(!resp.access_token){ showToast('❌ 登入失敗'); return; }
+      // Get user info
+      const ui = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
+        { headers:{ Authorization:'Bearer '+resp.access_token } }).then(r=>r.json());
+      if(ui.email !== ADMIN_EMAIL){
+        document.getElementById('accessDenied').style.display = 'block';
+        return;
+      }
+      _token = resp.access_token;
+      _userEmail = ui.email;
+      document.getElementById('loginScreen').style.display  = 'none';
+      document.getElementById('mainScreen').style.display   = 'block';
+      document.getElementById('hdrUser').textContent = ui.email;
+      loadCodes();
+      loadSubs();
+    }
+  }).requestAccessToken();
+}
+
+function adminSignOut(){
+  _token = null; _userEmail = null;
+  document.getElementById('mainScreen').style.display  = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('accessDenied').style.display = 'none';
+}
+
+// ── Tabs ────────────────────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const names = ['generate','codes','subs'];
+    t.classList.toggle('active', names[i]===name);
+  });
+  document.querySelectorAll('.tab-content').forEach(t=>{
+    t.classList.toggle('active', t.id==='tab-'+name);
+  });
+}
+
+// ── Generate codes ───────────────────────────────────────────
+function randomCode(prefix){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for(let i=0; i<8; i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return (prefix ? prefix.toUpperCase()+'-' : 'PAYR-') + code;
+}
+
+async function generateCodes(){
+  const days   = parseInt(document.getElementById('gen-days').value);
+  const count  = Math.min(50, Math.max(1, parseInt(document.getElementById('gen-count').value)||1));
+  const prefix = document.getElementById('gen-prefix').value.trim();
+  const btn    = document.getElementById('gen-btn');
+
+  btn.disabled = true; btn.textContent = '產生中…';
+
+  const codes = [];
+  for(let i=0; i<count; i++) codes.push(randomCode(prefix));
+
+  // Write to Apps Script
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?action=addCodes', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ codes, type:'訂閱', days })
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error);
+
+    const daysLabel = {30:'1個月',90:'3個月',180:'6個月',365:'12個月'}[days]||days+'天';
+    document.getElementById('gen-output-title').textContent =
+      `已產生 ${count} 組 ${daysLabel} 訂閱碼`;
+    document.getElementById('gen-output-codes').textContent = codes.join('\n');
+    document.getElementById('gen-output').style.display = 'block';
+    showToast(`✓ 已產生 ${count} 組代碼並寫入試算表`);
+    loadCodes();
+  } catch(e){
+    showToast('❌ 失敗：'+e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '產生代碼';
+  }
+}
+
+async function generateEventCode(){
+  const name = document.getElementById('evt-name').value.trim().toUpperCase();
+  const days = parseInt(document.getElementById('evt-days').value)||7;
+  if(!name){ showToast('請填寫活動名稱'); return; }
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?action=addCodes', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ codes:[name], type:'活動', days })
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error);
+    document.getElementById('evt-output-code').textContent =
+      `活動碼：${name}\n有效天數：${days} 天`;
+    document.getElementById('evt-output').style.display = 'block';
+    showToast('✓ 活動碼已建立');
+    loadCodes();
+  } catch(e){
+    showToast('❌ 失敗：'+e.message);
+  }
+}
+
+function copyGenerated(){
+  const txt = document.getElementById('gen-output-codes').textContent;
+  navigator.clipboard.writeText(txt).then(()=>showToast('✓ 已複製到剪貼簿'));
+}
+
+// ── Load codes list ──────────────────────────────────────────
+async function loadCodes(){
+  const tbody = document.getElementById('codes-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px;">載入中…</td></tr>';
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL+'?action=listCodes');
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error);
+    const rows = data.codes || [];
+    document.getElementById('codes-count').textContent = `共 ${rows.length} 筆代碼`;
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td><span class="code-txt">${r.code}</span></td>
+        <td><span class="badge ${r.type==='訂閱'?'badge-sub':'badge-event'}">${r.type}</span></td>
+        <td>${r.days} 天</td>
+        <td><span class="badge ${r.used?'badge-used':'badge-unused'}">${r.used?'已使用':'未使用'}</span></td>
+        <td style="font-size:0.78rem;color:var(--muted)">${r.usedBy||'—'}</td>
+        <td style="font-size:0.78rem;color:var(--muted)">${r.activatedAt||'—'}</td>
+        <td style="font-size:0.78rem;color:var(--muted)">${r.expiresAt||'—'}</td>
+      </tr>`).join('');
+  } catch(e){
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger);text-align:center;padding:20px;">❌ 載入失敗：${e.message}</td></tr>`;
+  }
+}
+
+// ── Load subscriptions ────────────────────────────────────────
+async function loadSubs(){
+  const tbody = document.getElementById('subs-tbody');
+  tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px;">載入中…</td></tr>';
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL+'?action=listSubs');
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error);
+    const rows = data.subs || [];
+    const now = new Date();
+    document.getElementById('subs-count').textContent =
+      `共 ${rows.length} 筆，${rows.filter(r=>new Date(r.expiryISO)>now).length} 個有效訂閱`;
+    tbody.innerHTML = rows.map(r => {
+      const exp = new Date(r.expiryISO);
+      const active = exp > now;
+      const days = Math.ceil((exp-now)/86400000);
+      return `<tr>
+        <td style="font-size:0.82rem">${r.email}</td>
+        <td><span class="badge ${active?'badge-active':'badge-expired'}">${active?'有效':'已到期'}</span></td>
+        <td style="font-size:0.78rem;color:var(--muted)">${r.expiryISO?.substring(0,10)||'—'}</td>
+        <td style="font-size:0.78rem;color:${active?'var(--accent2)':'var(--danger)'}">${active?days+' 天':'—'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){
+    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--danger);text-align:center;padding:20px;">❌ 載入失敗：${e.message}</td></tr>`;
+  }
+}
+
+// ── Toast ────────────────────────────────────────────────────
+function showToast(msg){
+  const old = document.querySelector('.toast'); if(old) old.remove();
+  const t = document.createElement('div'); t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(), 3000);
+}
+</script>
+</body>
+</html>
