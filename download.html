@@ -330,7 +330,8 @@ function renderDialItem(dialId, dialName){
   return `<div class="dial-item" id="di-${dialId}">
     <div class="dial-row">
       <div class="chk-btn ${chkCls}" id="dchk-${dialId}"
-           onclick="toggleDialAll('${dialId}','${dialName}')">${chkTxt}</div>
+           data-dial="${dialId}" data-name="${dialName.replace(/"/g,'&quot;')}"
+           onclick="handleDialChk(this)">${chkTxt}</div>
       <div class="dial-name">${dialName}</div>
       <div class="dial-stat" id="dstat-${dialId}">${totalFiles>0?'~'+sizeMB+'MB':'計算中'}</div>
       <div class="prog-wrap">
@@ -367,10 +368,9 @@ function renderCatRow(dialId, dialName, cat){
     </div>
     <button class="btn-dl ${btnCls}" id="cbtn-${dialId}-${cat}"
             ${isDownloading?'disabled':''}
-            onclick="${isDone
-              ?`confirmDeleteCat('${dialId}','${dialName}','${cat}')`
-              :isDownloading?''
-              :`confirmDownloadCat('${dialId}','${dialName}','${cat}',${sizeMB})`}">
+            data-dial="${dialId}" data-name="${dialName.replace(/"/g,'&quot;')}"
+            data-cat="${cat}" data-size="${sizeMB}" data-done="${isDone?'1':'0'}"
+            onclick="handleCatBtn(this)">
       ${btnTxt}
     </button>
   </div>`;
@@ -431,6 +431,16 @@ function toggleExpand(dialId){
 }
 
 // ── Confirm dialogs ───────────────────────────────────────────
+function handleCatBtn(btn){
+  const dialId   = btn.dataset.dial;
+  const dialName = btn.dataset.name;
+  const cat      = btn.dataset.cat;
+  const sizeMB   = parseInt(btn.dataset.size)||0;
+  const done     = btn.dataset.done === '1';
+  if(done) confirmDeleteCat(dialId, dialName, cat);
+  else     confirmDownloadCat(dialId, dialName, cat, sizeMB);
+}
+
 function confirmDownloadCat(dialId, dialName, cat, sizeMB){
   _pendingAction = {type:'dl', dialId, cat, dialName};
   document.getElementById('modalTitle').textContent = '確認下載';
@@ -449,6 +459,10 @@ function confirmDeleteCat(dialId, dialName, cat){
   const btn = document.getElementById('modalConfirm');
   btn.textContent='確認刪除'; btn.className='btn-confirm-del';
   document.getElementById('modalOverlay').classList.add('show');
+}
+
+function handleDialChk(el){
+  toggleDialAll(el.dataset.dial, el.dataset.name);
 }
 
 function toggleDialAll(dialId, dialName){
