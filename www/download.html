@@ -330,15 +330,15 @@ function renderDialItem(dialId, dialName){
   return `<div class="dial-item" id="di-${dialId}">
     <div class="dial-row">
       <div class="chk-btn ${chkCls}" id="dchk-${dialId}"
-           data-dial="${dialId}" data-name="${dialName.replace(/"/g,'&quot;')}"
-           onclick="handleDialChk(this)">${chkTxt}</div>
+           data-dial="${dialId}" data-name="${dialName.replace(/"/g,'&quot;')}">
+        ${chkTxt}</div>
       <div class="dial-name">${dialName}</div>
       <div class="dial-stat" id="dstat-${dialId}">${totalFiles>0?'~'+sizeMB+'MB':'計算中'}</div>
       <div class="prog-wrap">
         <div class="prog-bar" id="dpb-${dialId}" style="width:${pct}%"></div>
       </div>
       <button class="btn-expand" id="dexp-${dialId}"
-              onclick="toggleExpand('${dialId}')">${isExp?'▴':'▾'}</button>
+              data-dial="${dialId}">${isExp?'▴':'▾'}</button>
     </div>
     <div class="cat-list ${isExp?'open':''}" id="dcats-${dialId}">
       ${CAT_KEYS.map(c=>renderCatRow(dialId, dialName, c)).join('')}
@@ -369,8 +369,7 @@ function renderCatRow(dialId, dialName, cat){
     <button class="btn-dl ${btnCls}" id="cbtn-${dialId}-${cat}"
             ${isDownloading?'disabled':''}
             data-dial="${dialId}" data-name="${dialName.replace(/"/g,'&quot;')}"
-            data-cat="${cat}" data-size="${sizeMB}" data-done="${isDone?'1':'0'}"
-            onclick="handleCatBtn(this)">
+            data-cat="${cat}" data-size="${sizeMB}" data-done="${isDone?'1':'0'}">
       ${btnTxt}
     </button>
   </div>`;
@@ -616,6 +615,29 @@ async function blobToBase64(blob){
     r.readAsDataURL(blob);
   });
 }
+
+// ── Event delegation (replaces all inline onclick) ────────────
+document.addEventListener('click', function(e){
+  const target = e.target;
+
+  // Category download/delete button
+  if(target.classList.contains('btn-dl') && target.dataset.dial){
+    handleCatBtn(target);
+    return;
+  }
+
+  // Dialect checkbox
+  if(target.classList.contains('chk-btn') && target.dataset.dial){
+    handleDialChk(target);
+    return;
+  }
+
+  // Expand button
+  if(target.classList.contains('btn-expand') && target.dataset.dial){
+    toggleExpand(target.dataset.dial);
+    return;
+  }
+});
 
 // ── Navigation ────────────────────────────────────────────────
 function goBack(){
