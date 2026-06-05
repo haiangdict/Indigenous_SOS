@@ -496,13 +496,13 @@ function closeModal(){
 }
 
 async function confirmAction(){
-  closeModal();
   if(!_pendingAction) return;
   const {type, dialId, dialName, cat, cats} = _pendingAction;
-  if(type==='dl')      await startDownload(dialId, dialName, cat);
-  else if(type==='del') await deleteCat(dialId, dialName, cat);
-  else if(type==='dl-all')  for(const c of cats) await startDownload(dialId, dialName, c);
-  else if(type==='del-all') for(const c of cats) await deleteCat(dialId, dialName, c);
+  closeModal();
+  if(type==='dl')          await startDownload(dialId, dialName, cat);
+  else if(type==='del')    await deleteCat(dialId, dialName, cat);
+  else if(type==='dl-all') for(const c of cats) await startDownload(dialId, dialName, c);
+  else if(type==='del-all')for(const c of cats) await deleteCat(dialId, dialName, c);
 }
 
 // ── Download ──────────────────────────────────────────────────

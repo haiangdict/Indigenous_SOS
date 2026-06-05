@@ -117,7 +117,7 @@ body { font-family:'jf-openhuninn','Noto Serif TC',serif;
 <body>
 
 <div class="hdr">
-  <button class="hdr-back" onclick="goBack()">←</button>
+  <button class="hdr-back" id="btnBack">←</button>
   <div class="hdr-title">離線音檔管理</div>
   <div class="hdr-note" id="hdrNote">載入中…</div>
 </div>
@@ -135,8 +135,8 @@ body { font-family:'jf-openhuninn','Noto Serif TC',serif;
     <h3 id="modalTitle">確認下載</h3>
     <p id="modalBody"></p>
     <div class="modal-btns">
-      <button class="btn-cancel" onclick="closeModal()">取消</button>
-      <button id="modalConfirm" onclick="confirmAction()">確認</button>
+      <button class="btn-cancel" id="modalCancel">取消</button>
+      <button id="modalConfirm">確認</button>
     </div>
   </div>
 </div>
@@ -619,6 +619,24 @@ async function blobToBase64(blob){
 // ── Event delegation (replaces all inline onclick) ────────────
 document.addEventListener('click', function(e){
   const target = e.target;
+
+  // Back button
+  if(target.id === 'btnBack'){
+    goBack();
+    return;
+  }
+
+  // Modal confirm
+  if(target.id === 'modalConfirm'){
+    confirmAction();
+    return;
+  }
+
+  // Modal cancel
+  if(target.id === 'modalCancel'){
+    closeModal();
+    return;
+  }
 
   // Category download/delete button
   if(target.classList.contains('btn-dl') && target.dataset.dial){
