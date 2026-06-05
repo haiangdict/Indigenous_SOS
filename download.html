@@ -380,9 +380,10 @@ function renderCatRow(dialId, dialName, cat){
 function updateDialDisplay(dialId){
   const di = document.getElementById('di-'+dialId);
   if(!di) return;
-  // Rebuild cat rows
+  // Only rebuild cat rows if nothing is currently downloading for this dial
+  const anyDownloading = CAT_KEYS.some(c => getState(dialId,c).downloading);
   const cats = document.getElementById('dcats-'+dialId);
-  if(cats){
+  if(cats && !anyDownloading){
     const dialName = di.querySelector('.dial-name')?.textContent||'';
     cats.innerHTML = CAT_KEYS.map(c=>renderCatRow(dialId,dialName,c)).join('');
   }
@@ -557,14 +558,15 @@ async function startDownload(dialId, dialName, cat){
   updateDialDisplay(dialId);
 
   let done=0, errors=0;
+  const key = stateKey(dialId, cat); // use key to always get same object
   for(let i=0; i<audioList.length; i+=DL_CONCURRENCY){
-    if(!getState(dialId,cat).downloading) break;
+    if(!_state[key] || !_state[key].downloading) break;
     const batch = audioList.slice(i, i+DL_CONCURRENCY);
     await Promise.all(batch.map(async relPath=>{
       try {
         const url = AUDIO_BASE+relPath;
         const res = await fetch(url);
-        if(!res.ok) throw new Error('HTTP '+res.status);
+        if(!res.ok) throw new Error('HTTP '+res.status+' '+relPath.substring(0,30));
         const blob = await res.blob();
         const b64  = await blobToBase64(blob);
         const lp   = `offline_audio/dial_${dialId}/${cat}/${relPath.split('/').pop()}`;
@@ -581,6 +583,7 @@ async function startDownload(dialId, dialName, cat){
         if(pct===25||pct===50||pct===75) showToast(`下載中 ${pct}%（${done}/${st.total}）`);
       } catch(e){
         errors++;
+        if(errors===1) showToast('⚠ 首個失敗：'+e.message.substring(0,50));
       }
     }));
   }
