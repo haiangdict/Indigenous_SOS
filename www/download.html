@@ -126,6 +126,10 @@ body { font-family:'jf-openhuninn','Noto Serif TC',serif;
   <div class="summary-item">已下載：<span id="sumItems">0</span> 項</div>
   <div class="summary-item">音檔數：<span id="sumFiles">0</span> 個</div>
   <div class="summary-item">預估容量：<span id="sumSize">0 MB</span></div>
+  <div class="summary-item">
+    <button style="font-size:0.72rem;padding:2px 8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);border-radius:4px;cursor:pointer;"
+            id="btnTestFetch">測試網路</button>
+  </div>
 </div>
 
 <div id="langList"></div>
@@ -624,6 +628,15 @@ async function blobToBase64(blob){
 // ── Event delegation (replaces all inline onclick) ────────────
 document.addEventListener('click', function(e){
   const target = e.target;
+
+  // Test fetch button
+  if(target.id === 'btnTestFetch'){
+    showToast('測試中…');
+    fetch('https://pub-44bec38ae2824f519a8519301efe3bd7.r2.dev/01/C/10002.mp3')
+      .then(r=>showToast('✅ 成功 HTTP '+r.status))
+      .catch(e=>showToast('❌ '+e.message));
+    return;
+  }
 
   // Back button
   if(target.id === 'btnBack'){
