@@ -4,7 +4,8 @@
   "webDir": "www",
   "server": {
     "allowNavigation": [
-      "haiangdict.github.io"
+      "haiangdict.github.io",
+      "*.r2.dev"
     ]
   },
   "plugins": {
