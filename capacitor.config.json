@@ -12,6 +12,9 @@
     "Filesystem": {
       "iosScheme": "ionic"
     },
+    "CapacitorHttp": {
+      "enabled": false
+    },
     "GoogleAuth": {
       "scopes": [
         "profile",

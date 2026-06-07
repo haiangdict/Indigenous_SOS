@@ -569,12 +569,18 @@ async function startDownload(dialId, dialName, cat){
     await Promise.all(batch.map(async relPath=>{
       try {
         const url = AUDIO_BASE+relPath;
-        const res = await fetch(url);
-        if(!res.ok) throw new Error('HTTP '+res.status+' '+relPath.substring(0,30));
-        const blob = await res.blob();
-        const b64  = await blobToBase64(blob);
-        const lp   = `offline_audio/dial_${dialId}/${cat}/${relPath.split('/').pop()}`;
-        await Filesystem.writeFile({ path:lp, data:b64, directory:'DATA', recursive:true });
+        const lp  = `offline_audio/dial_${dialId}/${cat}/${relPath.split('/').pop()}`;
+        const dir = `offline_audio/dial_${dialId}/${cat}`;
+        let mkdirOk = false;
+        try {
+          await Filesystem.mkdir({ path:dir, directory:'DATA', recursive:true });
+          mkdirOk = true;
+        } catch(e){ mkdirOk = true; /* already exists is ok */ }
+        await Filesystem.downloadFile({
+          path: lp,
+          url:  url,
+          directory: 'DATA',
+        });
         done++;
         const s = getState(dialId,cat);
         s.downloaded=done;
@@ -583,11 +589,13 @@ async function startDownload(dialId, dialName, cat){
         if(pb) pb.style.width=pct+'%';
         const cbtn = document.getElementById(`cbtn-${dialId}-${cat}`);
         if(cbtn&&cbtn.classList.contains('downloading')) cbtn.textContent=pct+'%';
-        // Show progress toast every 25%
         if(pct===25||pct===50||pct===75) showToast(`下載中 ${pct}%（${done}/${st.total}）`);
       } catch(e){
         errors++;
-        if(errors===1) showToast('⚠ 首個失敗：'+e.message.substring(0,50));
+        if(errors===1){
+          const shortUrl = (AUDIO_BASE+relPath).substring(0,60);
+          showToast('URL: '+shortUrl, 6000);
+        }
       }
     }));
   }
@@ -632,8 +640,14 @@ document.addEventListener('click', function(e){
   // Test fetch button
   if(target.id === 'btnTestFetch'){
     showToast('測試中…');
-    fetch('https://pub-44bec38ae2824f519a8519301efe3bd7.r2.dev/01/C/10002.mp3')
-      .then(r=>showToast('✅ 成功 HTTP '+r.status))
+    // First test: can we fetch anything at all?
+    fetch('https://haiangdict.github.io/Indigenous_SOS/data/index.json')
+      .then(r=>{
+        showToast('GitHub ✅ HTTP '+r.status+' → 測試R2…');
+        // Second test: R2
+        return fetch('https://pub-44bec38ae2824f519a8519301efe3bd7.r2.dev/01/C/10002.mp3');
+      })
+      .then(r=>showToast('R2 ✅ HTTP '+r.status))
       .catch(e=>showToast('❌ '+e.message));
     return;
   }
@@ -682,10 +696,10 @@ function goBack(){
 }
 
 // ── Toast ─────────────────────────────────────────────────────
-function showToast(msg){
+function showToast(msg, duration=3000){
   const old=document.querySelector('.toast'); if(old) old.remove();
   const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
-  document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
+  document.body.appendChild(t); setTimeout(()=>t.remove(), duration);
 }
 </script>
 </body>
