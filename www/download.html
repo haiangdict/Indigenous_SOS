@@ -538,10 +538,8 @@ async function startDownload(dialId, dialName, cat){
       .filter(r=>r['分類']===cat && r['音檔路徑'] && r['音檔路徑'].trim())
       .map(r=>{
         const fn = r['音檔路徑'].trim().replace(/\\/g,'/').split('/').pop();
-        const raw = String(r['方言別']||'').replace(/\.0$/,'').trim();
-        let folder='';
-        if(raw){ const n=parseInt(raw,10); folder=(!isNaN(n)&&n>=1&&n<=9)?'0'+n:raw; }
-        return folder ? `${folder}/${cat}/${fn}` : fn;
+        // Always use dialId from function parameter (handles no-dialect languages)
+        return `${dialId}/${cat}/${fn}`;
       })
       .filter((v,i,a)=>v&&a.indexOf(v)===i);
   } catch(e){
