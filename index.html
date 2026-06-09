@@ -733,6 +733,7 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
   <div class="sub-msg" id="subMsg"></div>
   <input type="text" class="sub-input" id="subCodeInput" placeholder="輸入代碼" autocomplete="off">
   <button class="sub-btn" id="subRedeemBtn" onclick="redeemSubCode()">啟用</button>
+  <pre id="subDebug" style="font-size:0.62rem;color:#aaa;margin-top:12px;max-width:340px;text-align:left;white-space:pre-wrap;word-break:break-all;max-height:150px;overflow-y:auto;background:#111;padding:8px;border-radius:6px;"></pre>
   <div class="sub-hint">尚無代碼？請至<a href="https://haiangdict.github.io/Indigenous_SOS/about.html" target="_blank" style="color:var(--accent);text-decoration:underline;">官網</a>進一步了解獲得管道。</div>
 </div>
 
@@ -2775,12 +2776,19 @@ async function signInNative() {
 
 
     // Initialize
-    await SocialLogin.initialize({
-      google: {
-        webClientId: '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com',
-      }
-    });
-
+    _debugLog('signInNative: start');
+    try {
+      await SocialLogin.initialize({
+        google: {
+          webClientId: '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com',
+        }
+      });
+      _debugLog('initialize: OK');
+    } catch(initErr) {
+      _debugLog('initialize error: ' + (initErr.message || String(initErr)));
+      showToast('\u274c initialize\u5931\u6557\uff1a' + (initErr.message || String(initErr)));
+      return;
+    }
 
     // Sign in
     const result = await SocialLogin.login({
@@ -2795,14 +2803,16 @@ async function signInNative() {
       }
     });
 
-    alert('SocialLogin result: ' + JSON.stringify(result));
+    _debugLog('login result: ' + JSON.stringify(result));
 
     if(!result || !result.result){
+      _debugLog('result or result.result is null');
       showToast('\u274c \u767b\u5165\u5931\u6557\uff0c\u8acb\u91cd\u8a66');
       return;
     }
 
-    alert('accessToken: ' + JSON.stringify(result.result.accessToken));
+    _debugLog('accessToken: ' + JSON.stringify(result.result.accessToken));
+    _debugLog('profile: ' + JSON.stringify(result.result.profile));
 
     const profile   = result.result.profile;
     const accessToken = result.result.accessToken?.token;
@@ -2829,7 +2839,8 @@ async function signInNative() {
     if(isNativeApp) checkSubscription();
 
   } catch(e) {
-    showToast('❌ 登入失敗：' + (e.message || String(e)));
+    _debugLog('catch error: ' + (e.message || String(e)));
+    showToast('\u274c \u767b\u5165\u5931\u6557\uff1a' + (e.message || String(e)));
   }
 }
 
@@ -2890,6 +2901,16 @@ function signOut() {
 // Only enforced in native app; website is always free to use.
 let _subActive = false;
 let _subExpiry = null;
+let _debugLines = [];
+
+function _debugLog(msg){
+  if(!isNativeApp) return;
+  const time = new Date().toLocaleTimeString();
+  _debugLines.push('['+time+'] '+msg);
+  if(_debugLines.length > 30) _debugLines.shift();
+  const el = document.getElementById('subDebug');
+  if(el) el.textContent = _debugLines.join('\n');
+}
 
 
 // Check subscription status; show lock overlay if not active (App only)
