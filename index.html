@@ -2795,16 +2795,14 @@ async function signInNative() {
       }
     });
 
-    console.log('SocialLogin raw result:', JSON.stringify(result));
+    alert('SocialLogin result: ' + JSON.stringify(result));
 
     if(!result || !result.result){
-      showToast('\u274c result\u70ba\u7a7a\uff0c\u898b console');
-      console.log('result is null or result.result is null');
+      showToast('\u274c \u767b\u5165\u5931\u6557\uff0c\u8acb\u91cd\u8a66');
       return;
     }
 
-    console.log('accessToken object:', JSON.stringify(result.result.accessToken));
-    console.log('profile object:', JSON.stringify(result.result.profile));
+    alert('accessToken: ' + JSON.stringify(result.result.accessToken));
 
     const profile   = result.result.profile;
     const accessToken = result.result.accessToken?.token;
