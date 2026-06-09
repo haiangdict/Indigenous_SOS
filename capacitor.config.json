@@ -3,6 +3,8 @@
   "appName": "Payrang族語自救會",
   "webDir": "www",
   "server": {
+    "url": "https://haiangdict.github.io/Indigenous_SOS/",
+    "cleartext": false,
     "allowNavigation": [
       "haiangdict.github.io",
       "*.r2.dev"
