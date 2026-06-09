@@ -2500,13 +2500,12 @@ function togglePlay(filename,id){
   stopAll();
   const remoteURL = audioBase+filename;
   resolveAudioURL(remoteURL).then(url => {
-    _debugLog('playing URL: ' + url);
+    showToast('URL: ' + url.substring(0,60));
     currentAudio=new Audio(url);
     currentPlayBtn=btn;
     btn.textContent='⏸'; btn.classList.add('active'); row.classList.add('playing');
     currentAudio.play().catch((err)=>{
-      _debugLog('play error: ' + (err.message||String(err)));
-      showToast('⚠ 音檔無法播放，請確認路徑設定');
+      showToast('err: ' + (err.message||String(err)).substring(0,60));
       stopAll();
     });
     currentAudio.onended=()=>{ stopAll(); };
