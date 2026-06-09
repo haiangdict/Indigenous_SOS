@@ -1811,8 +1811,12 @@ async function getLocalAudioURI(relPath){
 async function resolveAudioURL(remoteURL){
   if(!isNativeApp) return remoteURL;
   const rel = remoteURL.replace(audioBase, '');
-  const local = await getLocalAudioURI(rel);
-  return local || remoteURL;
+  try {
+    const local = await getLocalAudioURI(rel);
+    if(local && local.startsWith('file://')) return local;
+  } catch(e){}
+  // 無本地音檔或路徑無效，直接使用遠端 URL
+  return remoteURL;
 }
 
 // ── Scroll to top ────────────────────────────────────────────
@@ -2695,6 +2699,7 @@ let _vocabRows = [];      // local cache of vocab rows
 function _saveToken(token, user) {
   _gToken=token; _gUser=user;
   try {
+    // 存 50 分鐘（3000秒），預留 10 分鐘緩衝
     localStorage.setItem('gsis_token', JSON.stringify({token,user,exp:Date.now()+3500000}));
   } catch(e) {}
 }
@@ -2707,6 +2712,16 @@ function _loadToken() {
     _gToken=token; _gUser=user;
     return true;
   } catch(e) { return false; }
+}
+
+// Token 是否即將過期（剩餘不足 5 分鐘）
+function _isTokenExpiringSoon() {
+  try {
+    const raw=localStorage.getItem('gsis_token');
+    if(!raw) return true;
+    const {exp}=JSON.parse(raw);
+    return Date.now() > exp - 300000; // 5 分鐘前視為即將過期
+  } catch(e) { return true; }
 }
 
 // ── Auth UI ────────────────────────────────────────────────────
@@ -2917,10 +2932,47 @@ function _debugLog(msg){
 async function checkSubscription(){
   if(!isNativeApp) return true;
 
+  // 若 token 不存在或已過期，嘗試靜默重新登入
+  if(!_gToken || !_gUser || !_gUser.email || _isTokenExpiringSoon()){
+    // 先清除舊 token
+    try { localStorage.removeItem('gsis_token'); } catch(e){}
+    _gToken=null; _gUser=null;
 
-  if(!_gToken || !_gUser || !_gUser.email){
-    showSubOverlay(true);
-    return false;
+    // 若是 native app，嘗試靜默重新登入
+    if(isNativeApp){
+      try {
+        const { SocialLogin } = window.Capacitor.Plugins;
+        if(SocialLogin){
+          await SocialLogin.initialize({
+            google:{ webClientId:'879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com' }
+          });
+          // 嘗試用 restoreState 取得新 token
+          const restored = await SocialLogin.login({
+            provider:'google',
+            options:{
+              scopes:['profile','email',
+                'https://www.googleapis.com/auth/spreadsheets',
+                'https://www.googleapis.com/auth/drive.file'],
+            }
+          });
+          if(restored && restored.result && restored.result.accessToken?.token){
+            const t = restored.result.accessToken.token;
+            const p = restored.result.profile || {};
+            const u = { name:p.name||p.displayName||'', email:p.email||'', picture:p.imageUrl||p.photoUrl||'' };
+            _saveToken(t, u);
+            updateAuthUI();
+          }
+        }
+      } catch(e){
+        _debugLog('silent re-login failed: '+(e.message||String(e)));
+      }
+    }
+
+    // 若仍無 token，顯示登入畫面
+    if(!_gToken || !_gUser || !_gUser.email){
+      showSubOverlay(true);
+      return false;
+    }
   }
 
   try {
@@ -3111,6 +3163,12 @@ window.addEventListener('beforeunload', ()=>{
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'hidden' && _gToken && _spreadsheetId){
     savePrefsToSheets();
+  }
+  // App 從背景回到前景時，檢查 token 是否已過期
+  if(document.visibilityState === 'visible' && isNativeApp){
+    if(_isTokenExpiringSoon()){
+      checkSubscription();
+    }
   }
 });
 
