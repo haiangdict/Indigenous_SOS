@@ -2748,8 +2748,31 @@ function handleAuthClick() {
 }
 
 function signIn() {
-  // 統一走網頁版 OAuth，不依賴 SocialLogin 插件
-  signInWeb();
+  if(isNativeApp) {
+    signInNativeBrowser();
+  } else {
+    signInWeb();
+  }
+}
+
+// ── Native sign-in via Capacitor Browser (外部瀏覽器 OAuth) ────
+function signInNativeBrowser() {
+  const clientId = GAPI_CLIENT_ID;
+  const redirectUri = encodeURIComponent('https://haiangdict.github.io/Indigenous_SOS/oauth-callback.html');
+  const scope = encodeURIComponent('profile email https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file');
+  const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
+    + '?client_id=' + clientId
+    + '&redirect_uri=' + redirectUri
+    + '&response_type=token'
+    + '&scope=' + scope
+    + '&prompt=select_account';
+
+  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+    window.Capacitor.Plugins.Browser.open({ url: authUrl, windowName: '_blank' });
+  } else {
+    // Fallback: open in same window
+    window.location.href = authUrl;
+  }
 }
 
 // ── Web sign-in (browser, uses Google JS SDK popup) ───────────
@@ -2886,6 +2909,20 @@ window.addEventListener('message', (e) => {
     handleNativeOAuthCallback(e.data.token);
   }
 });
+
+// 監聽 Capacitor Browser 關閉事件，檢查是否有 token 傳回
+if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+  window.Capacitor.Plugins.Browser.addListener('browserFinished', () => {
+    // token 會透過 oauth-callback.html redirect 帶回 URL hash
+    const hash = window.location.hash;
+    if(hash && hash.includes('access_token')){
+      const params = new URLSearchParams(hash.slice(1));
+      const token = params.get('access_token');
+      try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch(e){}
+      if(token) handleNativeOAuthCallback(token);
+    }
+  });
+}
 
 // Also check URL hash on page load (in case redirected back to app)
 (function checkOAuthHash(){
