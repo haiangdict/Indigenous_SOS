@@ -2795,11 +2795,16 @@ async function signInNative() {
       }
     });
 
+    console.log('SocialLogin raw result:', JSON.stringify(result));
 
     if(!result || !result.result){
-      showToast('❌ 登入失敗，請重試');
+      showToast('\u274c result\u70ba\u7a7a\uff0c\u898b console');
+      console.log('result is null or result.result is null');
       return;
     }
+
+    console.log('accessToken object:', JSON.stringify(result.result.accessToken));
+    console.log('profile object:', JSON.stringify(result.result.profile));
 
     const profile   = result.result.profile;
     const accessToken = result.result.accessToken?.token;
