@@ -2795,11 +2795,16 @@ async function signInNative() {
       }
     });
 
+    console.log('SocialLogin raw result:', JSON.stringify(result));
 
     if(!result || !result.result){
-      showToast('❌ 登入失敗，請重試');
+      showToast('\u274c result\u70ba\u7a7a\uff0c\u898b console');
+      console.log('result is null or result.result is null');
       return;
     }
+
+    console.log('accessToken object:', JSON.stringify(result.result.accessToken));
+    console.log('profile object:', JSON.stringify(result.result.profile));
 
     const profile   = result.result.profile;
     const accessToken = result.result.accessToken?.token;
@@ -2965,8 +2970,8 @@ function showSubOverlay(needLogin){
       ? '您的訂閱已到期，請輸入新代碼以繼續使用。'
       : '本 App 為訂閱制功能。請輸入您的代碼以啟用，尚無代碼請至官網購買。';
     note.innerHTML = '';
-    if(input) input.style.display = '';
-    if(btn) btn.style.display = '';
+    if(input) input.style.display = 'block';
+    if(btn) btn.style.display = 'block';
   }
   ov.classList.add('show');
 }
