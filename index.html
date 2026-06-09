@@ -2748,11 +2748,8 @@ function handleAuthClick() {
 }
 
 function signIn() {
-  if(isNativeApp) {
-    signInNative();
-  } else {
-    signInWeb();
-  }
+  // 統一走網頁版 OAuth，不依賴 SocialLogin 插件
+  signInWeb();
 }
 
 // ── Web sign-in (browser, uses Google JS SDK popup) ───────────
@@ -2779,83 +2776,85 @@ function signInWeb() {
   }).requestAccessToken();
 }
 
-// ── Native sign-in (Capacitor app) ────────────────────────────
-// Uses @capgo/capacitor-social-login for native Google Sign-In.
-async function signInNative() {
-  try {
-    const { SocialLogin } = window.Capacitor.Plugins;
-    if(!SocialLogin){
-      showToast('❌ 登入插件未載入，請重新安裝 App');
-      return;
-    }
+// ── Native sign-in (原生 Google Sign-In) ──────────────────────
+// 使用 MainActivity.java 的原生 Google Sign-In，繞過 SocialLogin 插件
 
+let _nativeSignInPending = false;
 
-    // Initialize
-    _debugLog('signInNative: start');
+function signInNative() {
+  if(_nativeSignInPending) return;
+  _nativeSignInPending = true;
+  _debugLog('signInNative: 呼叫原生登入');
+
+  // 監聽原生登入結果
+  window.addEventListener('nativeGoogleSignIn', async function handler(e) {
+    window.removeEventListener('nativeGoogleSignIn', handler);
+    _nativeSignInPending = false;
+
     try {
-      await SocialLogin.initialize({
-        google: {
-          webClientId: '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com',
-        }
-      });
-      _debugLog('initialize: OK');
-    } catch(initErr) {
-      _debugLog('initialize error: ' + (initErr.message || String(initErr)));
-      showToast('\u274c initialize\u5931\u6557\uff1a' + (initErr.message || String(initErr)));
-      return;
-    }
+      const data = typeof e.detail === 'string' ? JSON.parse(e.detail) : e.detail;
+      _debugLog('nativeGoogleSignIn result: ' + JSON.stringify(data));
 
-    // Sign in
-    const result = await SocialLogin.login({
-      provider: 'google',
-      options: {
-        scopes: [
-          'profile',
-          'email',
-          'https://www.googleapis.com/auth/spreadsheets',
-          'https://www.googleapis.com/auth/drive.file'
-        ],
+      if(data.error) {
+        _debugLog('登入錯誤: ' + data.error);
+        showToast('❌ 登入失敗，請重試');
+        return;
       }
-    });
 
-    _debugLog('login result: ' + JSON.stringify(result));
+      if(!data.authCode) {
+        _debugLog('無 authCode');
+        showToast('❌ 無法取得授權碼，請重試');
+        return;
+      }
 
-    if(!result || !result.result){
-      _debugLog('result or result.result is null');
-      showToast('\u274c \u767b\u5165\u5931\u6557\uff0c\u8acb\u91cd\u8a66');
-      return;
+      // 用 authCode 向 Apps Script 換取 accessToken
+      _debugLog('exchanging authCode...');
+      showToast('⌛ 登入中...');
+
+      const exchangeURL = APPS_SCRIPT_URL + '?action=exchangeAuthCode&code=' + encodeURIComponent(data.authCode);
+      const res = await fetch(exchangeURL);
+      const resp = await res.json();
+
+      _debugLog('exchange result: ' + JSON.stringify(resp));
+
+      if(!resp.access_token) {
+        showToast('❌ 無法取得存取金鑰，請重試');
+        return;
+      }
+
+      const user = {
+        name:    data.name    || '使用者',
+        email:   data.email   || '',
+        picture: data.photoUrl || '',
+      };
+
+      _saveToken(resp.access_token, user);
+      updateAuthUI();
+      showToast('✓ 已登入：' + user.name);
+      await initSpreadsheet();
+      await loadStarredIds();
+      await loadPrefsFromSheets();
+      renderPage();
+      if(isNativeApp) checkSubscription();
+
+    } catch(e) {
+      _nativeSignInPending = false;
+      _debugLog('catch error: ' + (e.message || String(e)));
+      showToast('❌ 登入失敗：' + (e.message || String(e)));
     }
+  });
 
-    _debugLog('accessToken: ' + JSON.stringify(result.result.accessToken));
-    _debugLog('profile: ' + JSON.stringify(result.result.profile));
-
-    const profile   = result.result.profile;
-    const accessToken = result.result.accessToken?.token;
-
-
-    if(!accessToken){
-      showToast('❌ 無法取得存取金鑰，請重試');
-      return;
+  // 呼叫 MainActivity 的原生登入
+  try {
+    if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+      window.Capacitor.Plugins.App.exitApp; // 確認 Capacitor 正常
     }
-
-    const user = {
-      name:    profile?.name    || '使用者',
-      email:   profile?.email   || '',
-      picture: profile?.imageUrl || '',
-    };
-
-    _saveToken(accessToken, user);
-    updateAuthUI();
-    showToast('✓ 已登入：' + user.name);
-    await initSpreadsheet();
-    await loadStarredIds();
-    await loadPrefsFromSheets();
-    renderPage();
-    if(isNativeApp) checkSubscription();
-
+    // 透過 Capacitor bridge 呼叫 MainActivity 方法
+    window.Capacitor.toNative('MainActivity', 'startGoogleSignIn', {}, ()=>{});
   } catch(e) {
-    _debugLog('catch error: ' + (e.message || String(e)));
-    showToast('\u274c \u767b\u5165\u5931\u6557\uff1a' + (e.message || String(e)));
+    _nativeSignInPending = false;
+    _debugLog('toNative error: ' + (e.message || String(e)));
+    showToast('❌ 無法啟動登入，請重試');
   }
 }
 
@@ -2938,35 +2937,7 @@ async function checkSubscription(){
     try { localStorage.removeItem('gsis_token'); } catch(e){}
     _gToken=null; _gUser=null;
 
-    // 若是 native app，嘗試靜默重新登入
-    if(isNativeApp){
-      try {
-        const { SocialLogin } = window.Capacitor.Plugins;
-        if(SocialLogin){
-          await SocialLogin.initialize({
-            google:{ webClientId:'879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com' }
-          });
-          // 嘗試用 restoreState 取得新 token
-          const restored = await SocialLogin.login({
-            provider:'google',
-            options:{
-              scopes:['profile','email',
-                'https://www.googleapis.com/auth/spreadsheets',
-                'https://www.googleapis.com/auth/drive.file'],
-            }
-          });
-          if(restored && restored.result && restored.result.accessToken?.token){
-            const t = restored.result.accessToken.token;
-            const p = restored.result.profile || {};
-            const u = { name:p.name||p.displayName||'', email:p.email||'', picture:p.imageUrl||p.photoUrl||'' };
-            _saveToken(t, u);
-            updateAuthUI();
-          }
-        }
-      } catch(e){
-        _debugLog('silent re-login failed: '+(e.message||String(e)));
-      }
-    }
+    // token 過期，需要重新登入
 
     // 若仍無 token，顯示登入畫面
     if(!_gToken || !_gUser || !_gUser.email){

@@ -1,63 +1,112 @@
-apply plugin: 'com.android.application'
+package tw.github.haiangdict.indigenoussos;
 
-android {
-    namespace = "tw.github.haiangdict.indigenoussos"
-    compileSdk = rootProject.ext.compileSdkVersion
-    defaultConfig {
-        applicationId "tw.github.haiangdict.indigenoussos"
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.1"
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        aaptOptions {
-             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
-             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
-            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.webkit.WebView;
+import android.util.Log;
+
+import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.PluginHandle;
+
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.Scope;
+import com.google.android.gms.tasks.Task;
+
+import ee.forgr.capacitor.social.login.SocialLoginPlugin;
+import ee.forgr.capacitor.social.login.ModifiedMainActivityForSocialLoginPlugin;
+
+public class MainActivity extends BridgeActivity implements ModifiedMainActivityForSocialLoginPlugin {
+
+    private static final String TAG = "MainActivity";
+    private static final int RC_SIGN_IN = 9001;
+    private static final String WEB_CLIENT_ID = "879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com";
+
+    private GoogleSignInClient mGoogleSignInClient;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(SocialLoginPlugin.class);
+        super.onCreate(savedInstanceState);
+        WebView.setWebContentsDebuggingEnabled(true);
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestServerAuthCode(WEB_CLIENT_ID, true)
+                .requestEmail()
+                .requestProfile()
+                .requestScopes(
+                        new Scope("https://www.googleapis.com/auth/spreadsheets"),
+                        new Scope("https://www.googleapis.com/auth/drive.file")
+                )
+                .build();
+
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+    }
+
+    @Override
+    public void IHaveModifiedTheMainActivityForTheUseWithSocialLoginPlugin() {}
+
+    // Called from JavaScript via Capacitor
+    public void startGoogleSignIn() {
+        // Force account picker every time
+        mGoogleSignInClient.signOut().addOnCompleteListener(this, task -> {
+            Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+            startActivityForResult(signInIntent, RC_SIGN_IN);
+        });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Handle SocialLogin plugin callbacks
+        try {
+            PluginHandle pluginHandle = getBridge().getPlugin("SocialLogin");
+            if (pluginHandle != null) {
+                SocialLoginPlugin plugin = (SocialLoginPlugin) pluginHandle.getInstance();
+                if (plugin != null) {
+                    plugin.handleGoogleLoginIntent(requestCode, data);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "SocialLogin plugin handler error: " + e.getMessage());
+        }
+
+        // Handle native Google Sign-In
+        if (requestCode == RC_SIGN_IN) {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
         }
     }
-    signingConfigs {
-    release {
-        storeFile file("C:/Dev/indigenous-sos.jks")
-        storePassword "4569n5S53on4"
-        keyAlias "indigenoussos"
-        keyPassword "4569n5S53on4"
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+            String authCode = account.getServerAuthCode();
+            String email = account.getEmail();
+            String name = account.getDisplayName();
+            String photoUrl = account.getPhotoUrl() != null ? account.getPhotoUrl().toString() : "";
+
+            // Exchange authCode for accessToken via our Apps Script
+            JSObject result = new JSObject();
+            result.put("authCode", authCode != null ? authCode : "");
+            result.put("email", email != null ? email : "");
+            result.put("name", name != null ? name : "");
+            result.put("photoUrl", photoUrl);
+
+            getBridge().triggerJSEvent("nativeGoogleSignIn", "window", result.toString());
+            Log.d(TAG, "Sign-in success: " + email);
+
+        } catch (ApiException e) {
+            Log.w(TAG, "Sign-in failed, code: " + e.getStatusCode());
+            JSObject error = new JSObject();
+            error.put("error", "Sign-in failed: " + e.getStatusCode());
+            getBridge().triggerJSEvent("nativeGoogleSignIn", "window", error.toString());
         }
     }
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-}
-
-repositories {
-    flatDir{
-        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
-    }
-}
-
-dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
-    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
-    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
-    implementation project(':capacitor-android')
-    testImplementation "junit:junit:$junitVersion"
-    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
-    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
-    implementation project(':capacitor-cordova-android-plugins')
-}
-
-apply from: 'capacitor.build.gradle'
-
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
