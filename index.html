@@ -2945,25 +2945,17 @@ function _debugLog(msg){
 }
 
 
-// Check subscription status; show lock overlay if not active (App only)
+// 確認訂閱狀態；未登入或訂閱無效時顯示 lock overlay（App 限定）。
 async function checkSubscription(){
   if(!isNativeApp) return true;
 
-  // 若 token 不存在或已過期，嘗試靜默重新登入
-  if(!_gToken || !_gUser || !_gUser.email || _isTokenExpiringSoon()){
-    // 先清除舊 token
-    try { localStorage.removeItem('gsis_token'); } catch(e){}
-    _gToken=null; _gUser=null;
-
-    // token 過期，需要重新登入
-
-    // 若仍無 token，顯示登入畫面
-    if(!_gToken || !_gUser || !_gUser.email){
-      showSubOverlay(true);
-      return false;
-    }
+  // 未登入 → 顯示登入畫面
+  if(!_gToken || !_gUser || !_gUser.email){
+    showSubOverlay(true);
+    return false;
   }
 
+  // 本地快取有效 → 放行，背景靜默向伺服器確認
   try {
     const raw = localStorage.getItem('sos_sub');
     if(raw){
@@ -2973,13 +2965,14 @@ async function checkSubscription(){
         if(exp > new Date()){
           _subActive = true; _subExpiry = exp;
           hideSubOverlay();
-          _verifySubServer();
+          _verifySubServer(); // 背景確認，不 await
           return true;
         }
       }
     }
   } catch(e){}
 
+  // 快取過期或不存在 → 向伺服器確認
   return await _verifySubServer();
 }
 
@@ -3000,12 +2993,17 @@ async function _verifySubServer(){
       return true;
     } else {
       _subActive = false;
+      // 若伺服器回傳到期時間，更新本地記錄（讓 overlay 標題正確顯示「已到期」）
+      if(data.expiryISO) _subExpiry = new Date(data.expiryISO);
+      try { localStorage.removeItem('sos_sub'); } catch(e){}
       showSubOverlay(false);
       return false;
     }
   } catch(e){
-    showSubOverlay(false);
-    return false;
+    // 網路失敗：信任本地快取，不擋使用者；訂閱過期與否等下次上線再確認
+    _debugLog('_verifySubServer network error: ' + (e && e.message));
+    hideSubOverlay();
+    return true;
   }
 }
 
@@ -3153,10 +3151,28 @@ document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'hidden' && _gToken && _spreadsheetId){
     savePrefsToSheets();
   }
-  // App 從背景回到前景時，檢查 token 是否已過期
+  // App 從背景回到前景時，若 token 即將過期，靜默刷新；失敗才跳登入畫面
   if(document.visibilityState === 'visible' && isNativeApp){
     if(_isTokenExpiringSoon()){
-      checkSubscription();
+      (async()=>{
+        try {
+          const { SocialLogin } = window.Capacitor.Plugins;
+          if(SocialLogin){
+            const r = await SocialLogin.refresh({ provider:'google' });
+            const token = r && r.accessToken && r.accessToken.token;
+            if(token && _gUser){
+              _saveToken(token, _gUser);
+              updateAuthUI();
+              return;
+            }
+          }
+        } catch(e){ _debugLog('silent token refresh failed: '+(e&&e.message)); }
+        // 刷新失敗：清除舊 token，要求重新登入
+        _gToken=null; _gUser=null;
+        try { localStorage.removeItem('gsis_token'); } catch(e){}
+        updateAuthUI();
+        checkSubscription();
+      })();
     }
   }
 });
