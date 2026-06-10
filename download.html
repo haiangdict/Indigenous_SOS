@@ -193,6 +193,7 @@ let _expandedDials = new Set();
 // ── Init ─────────────────────────────────────────────────────
 window.addEventListener('load', async () => {
   applyTheme();
+  if(isNative) await migrateOfflineAudioDirs(); // 遷移舊版 dial_ 資料夾
   await loadIndexJson();
   loadStoredState();
   renderList();
@@ -260,8 +261,32 @@ function getState(dialId, cat){
 }
 
 // ── Filesystem helpers ─────────────────────────────────────────────
+// 本地儲存結構與線上位址完全鏡像：offline_audio/<方言ID>/<分類>/<檔名>
 function localPath(dialId, cat, relPath){
-  return `offline_audio/dial_${dialId}/${cat}/${relPath.split('/').pop()}`;
+  return `offline_audio/${dialId}/${cat}/${relPath.split('/').pop()}`;
+}
+
+// 一次性遷移：將舊版 offline_audio/dial_XX 資料夾改名為 offline_audio/XX，
+// 保留先前已下載的音檔，無需重新下載。
+async function migrateOfflineAudioDirs(){
+  const FS = getFilesystem();
+  if(!FS) return;
+  try {
+    const res = await FS.readdir({ path:'offline_audio', directory:'DATA' });
+    const entries = res.files || [];
+    for(const f of entries){
+      const name = (typeof f === 'string') ? f : (f && f.name);
+      if(name && name.indexOf('dial_') === 0){
+        try {
+          await FS.rename({
+            from: 'offline_audio/'+name,
+            to:   'offline_audio/'+name.slice(5),
+            directory: 'DATA'
+          });
+        } catch(e){ /* 目標已存在等情況，略過 */ }
+      }
+    }
+  } catch(e){ /* offline_audio 不存在 → 無需遷移 */ }
 }
 
 async function getLocalURI(path){
@@ -567,8 +592,8 @@ async function startDownload(dialId, dialName, cat){
     await Promise.all(batch.map(async relPath=>{
       try {
         const url = AUDIO_BASE+relPath;
-        const lp  = `offline_audio/dial_${dialId}/${cat}/${relPath.split('/').pop()}`;
-        const dir = `offline_audio/dial_${dialId}/${cat}`;
+        const lp  = `offline_audio/${dialId}/${cat}/${relPath.split('/').pop()}`;
+        const dir = `offline_audio/${dialId}/${cat}`;
         let mkdirOk = false;
         try {
           await Filesystem.mkdir({ path:dir, directory:'DATA', recursive:true });
@@ -613,7 +638,7 @@ async function startDownload(dialId, dialName, cat){
 async function deleteCat(dialId, dialName, cat){
   if(!isNative){ showToast('僅在 App 中可用'); return; }
   try {
-    await removeDir(`offline_audio/dial_${dialId}/${cat}`);
+    await removeDir(`offline_audio/${dialId}/${cat}`);
     const st = getState(dialId, cat);
     st.total=0; st.downloaded=0; st.downloading=false; st.error=false;
     saveState();

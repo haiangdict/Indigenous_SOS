@@ -1796,17 +1796,44 @@ if(isNativeApp){
 }
 
 async function getLocalAudioURI(relPath){
+  // relPath 為遠端相對路徑「<方言ID>/<分類>/<檔名>」（如 01/C/xxx.mp3）。
+  // 本地儲存結構與線上位址完全鏡像：offline_audio/<方言ID>/<分類>/<檔名>。
   if(!isNativeApp) return null;
   const FS = window.Capacitor?.Plugins?.Filesystem;
   if(!FS) return null;
+  const path = 'offline_audio/' + relPath;
   try {
     // 重要：getUri 不會檢查檔案是否存在，必須先用 stat 確認，
     // 否則未下載離線音檔時會拿到指向不存在檔案的 file:// 路徑。
-    await FS.stat({ path: 'offline_audio/'+relPath, directory: 'DATA' });
-    const res = await FS.getUri({ path: 'offline_audio/'+relPath, directory: 'DATA' });
+    await FS.stat({ path, directory: 'DATA' });
+    const res = await FS.getUri({ path, directory: 'DATA' });
     return res.uri || null;
   } catch{ return null; } // stat 失敗 = 檔案不存在
 }
+
+// 一次性遷移：將舊版 offline_audio/dial_XX 資料夾改名為 offline_audio/XX，
+// 保留先前已下載的音檔，無需重新下載。
+async function migrateOfflineAudioDirs(){
+  const FS = window.Capacitor?.Plugins?.Filesystem;
+  if(!FS) return;
+  try {
+    const res = await FS.readdir({ path:'offline_audio', directory:'DATA' });
+    const entries = res.files || [];
+    for(const f of entries){
+      const name = (typeof f === 'string') ? f : (f && f.name);
+      if(name && name.indexOf('dial_') === 0){
+        try {
+          await FS.rename({
+            from: 'offline_audio/'+name,
+            to:   'offline_audio/'+name.slice(5),
+            directory: 'DATA'
+          });
+        } catch(e){ /* 目標已存在等情況，略過 */ }
+      }
+    }
+  } catch(e){ /* offline_audio 不存在 → 無需遷移 */ }
+}
+if(isNativeApp) migrateOfflineAudioDirs();
 
 async function resolveAudioURL(remoteURL){
   if(!isNativeApp) return remoteURL;
