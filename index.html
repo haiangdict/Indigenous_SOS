@@ -733,7 +733,6 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
   <div class="sub-msg" id="subMsg"></div>
   <input type="text" class="sub-input" id="subCodeInput" placeholder="輸入代碼" autocomplete="off">
   <button class="sub-btn" id="subRedeemBtn" onclick="redeemSubCode()">啟用</button>
-  <pre id="subDebug" style="font-size:0.62rem;color:#aaa;margin-top:12px;max-width:340px;text-align:left;white-space:pre-wrap;word-break:break-all;max-height:150px;overflow-y:auto;background:#111;padding:8px;border-radius:6px;"></pre>
   <div class="sub-hint">尚無代碼？請至<a href="https://haiangdict.github.io/Indigenous_SOS/about.html" target="_blank" style="color:var(--accent);text-decoration:underline;">官網</a>進一步了解獲得管道。</div>
 </div>
 
@@ -1798,14 +1797,15 @@ if(isNativeApp){
 
 async function getLocalAudioURI(relPath){
   if(!isNativeApp) return null;
-  if(!window.Capacitor?.Plugins?.Filesystem) return null;
+  const FS = window.Capacitor?.Plugins?.Filesystem;
+  if(!FS) return null;
   try {
-    const res = await window.Capacitor.Plugins.Filesystem.getUri({
-      path: 'offline_audio/'+relPath,
-      directory: 'DATA'
-    });
+    // 重要：getUri 不會檢查檔案是否存在，必須先用 stat 確認，
+    // 否則未下載離線音檔時會拿到指向不存在檔案的 file:// 路徑。
+    await FS.stat({ path: 'offline_audio/'+relPath, directory: 'DATA' });
+    const res = await FS.getUri({ path: 'offline_audio/'+relPath, directory: 'DATA' });
     return res.uri || null;
-  } catch{ return null; }
+  } catch{ return null; } // stat 失敗 = 檔案不存在
 }
 
 async function resolveAudioURL(remoteURL){
@@ -1813,9 +1813,13 @@ async function resolveAudioURL(remoteURL){
   const rel = remoteURL.replace(audioBase, '');
   try {
     const local = await getLocalAudioURI(rel);
-    if(local && local.startsWith('file://')) return local;
+    if(local){
+      // file:// 無法在 https 來源的 WebView 播放，需轉成 Capacitor 本地伺服 URL
+      const conv = window.Capacitor.convertFileSrc ? window.Capacitor.convertFileSrc(local) : local;
+      if(conv) return conv;
+    }
   } catch(e){}
-  // 無本地音檔或路徑無效，直接使用遠端 URL
+  // 無本地音檔，直接使用遠端 URL（線上播放）
   return remoteURL;
 }
 
@@ -2503,11 +2507,21 @@ function togglePlay(filename,id){
     currentAudio=new Audio(url);
     currentPlayBtn=btn;
     btn.textContent='⏸'; btn.classList.add('active'); row.classList.add('playing');
-    currentAudio.play().catch(()=>{
-      showToast('⚠ 音檔無法播放，請確認路徑設定');
-      stopAll();
-    });
     currentAudio.onended=()=>{ stopAll(); };
+    currentAudio.play().catch(()=>{
+      // 本地檔播放失敗時改用線上音檔重試
+      if(url !== remoteURL){
+        currentAudio = new Audio(remoteURL);
+        currentAudio.onended=()=>{ stopAll(); };
+        currentAudio.play().catch(()=>{
+          showToast('⚠ 音檔無法播放，請檢查網路連線');
+          stopAll();
+        });
+      } else {
+        showToast('⚠ 音檔無法播放，請檢查網路連線');
+        stopAll();
+      }
+    });
   });
 }
 
@@ -2569,14 +2583,29 @@ function playGroupAt(idx){
   if(!record||!record['音檔路徑']){ playGroupAt(idx+1); return; }
 
   const af=audioPath(record);
-  resolveAudioURL(audioBase+af).then(url => {
+  const remoteURL = audioBase+af;
+  resolveAudioURL(remoteURL).then(url => {
     currentAudio=new Audio(url);
     currentPlayBtn=btn;
     if(btn){ btn.textContent='⏸'; btn.classList.add('active'); }
     if(row){ row.classList.add('gp-current'); }
     if(row) row.scrollIntoView({block:'nearest',behavior:'smooth'});
 
-    currentAudio.play().catch(()=>{ playGroupAt(idx+1); });
+    currentAudio.play().catch(()=>{
+      // 本地檔播放失敗時改用線上音檔重試，再失敗才跳下一句
+      if(url !== remoteURL){
+        currentAudio = new Audio(remoteURL);
+        currentAudio.onended=()=>{
+          if(btn){ btn.textContent='▶'; btn.classList.remove('active'); }
+          if(row){ row.classList.remove('gp-current'); }
+          currentAudio=null; currentPlayBtn=null;
+          if(gpState && !gpState.paused) playGroupAt(idx+1);
+        };
+        currentAudio.play().catch(()=>{ playGroupAt(idx+1); });
+      } else {
+        playGroupAt(idx+1);
+      }
+    });
     currentAudio.onended=()=>{
       if(btn){ btn.textContent='▶'; btn.classList.remove('active'); }
       if(row){ row.classList.remove('gp-current'); }
@@ -2829,11 +2858,12 @@ async function signInNative() {
       }
     });
 
-    _debugLog('login result: ' + JSON.stringify(res));
-
     const result = res && res.result ? res.result : null;
     const accessToken = result && result.accessToken ? result.accessToken.token : null;
     const profile = result ? result.profile : null;
+
+    _debugLog('login OK, token: ' + (accessToken ? accessToken.substring(0,12)+'…' : 'null')
+      + ', user: ' + (profile && profile.email));
 
     if(!accessToken) {
       _debugLog('accessToken 為 null — 多半是 OAuth 同意畫面尚未加入 Sheets/Drive scope，或此帳號未列為測試人員');
@@ -2880,15 +2910,11 @@ function signOut() {
 // Only enforced in native app; website is always free to use.
 let _subActive = false;
 let _subExpiry = null;
-let _debugLines = [];
 
+// 偵錯訊息僅輸出至 console（用 chrome://inspect 查看），不顯示在畫面上。
 function _debugLog(msg){
   if(!isNativeApp) return;
-  const time = new Date().toLocaleTimeString();
-  _debugLines.push('['+time+'] '+msg);
-  if(_debugLines.length > 30) _debugLines.shift();
-  const el = document.getElementById('subDebug');
-  if(el) el.textContent = _debugLines.join('\n');
+  try { console.log('[SOS] ' + msg); } catch(e){}
 }
 
 
