@@ -2749,29 +2749,9 @@ function handleAuthClick() {
 
 function signIn() {
   if(isNativeApp) {
-    signInNativeBrowser();
+    signInNative();
   } else {
     signInWeb();
-  }
-}
-
-// ── Native sign-in via Capacitor Browser (外部瀏覽器 OAuth) ────
-function signInNativeBrowser() {
-  const clientId = GAPI_CLIENT_ID;
-  const redirectUri = encodeURIComponent('https://haiangdict.github.io/Indigenous_SOS/oauth-callback.html');
-  const scope = encodeURIComponent('profile email https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file');
-  const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
-    + '?client_id=' + clientId
-    + '&redirect_uri=' + redirectUri
-    + '&response_type=token'
-    + '&scope=' + scope
-    + '&prompt=select_account';
-
-  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-    window.Capacitor.Plugins.Browser.open({ url: authUrl, windowName: '_blank' });
-  } else {
-    // Fallback: open in same window
-    window.location.href = authUrl;
   }
 }
 
@@ -2799,142 +2779,90 @@ function signInWeb() {
   }).requestAccessToken();
 }
 
-// ── Native sign-in (原生 Google Sign-In) ──────────────────────
-// 使用 MainActivity.java 的原生 Google Sign-In，繞過 SocialLogin 插件
+// ── Native sign-in (@capgo/capacitor-social-login, online 模式) ──
+// 透過原生 Google 帳號選擇器登入，直接取得帶有 Sheets/Drive scope
+// 的 access token，不經外部瀏覽器、不需 oauth-callback.html。
+let _socialLoginReady = false;
+
+async function _ensureSocialLoginInit() {
+  if(_socialLoginReady) return;
+  const { SocialLogin } = window.Capacitor.Plugins;
+  await SocialLogin.initialize({
+    google: {
+      webClientId: GAPI_CLIENT_ID,   // 必須是「Web」用戶端 ID（Android 也用這個）
+    }
+  });
+  _socialLoginReady = true;
+}
 
 let _nativeSignInPending = false;
 
-function signInNative() {
+async function signInNative() {
   if(_nativeSignInPending) return;
   _nativeSignInPending = true;
-  _debugLog('signInNative: 呼叫原生登入');
+  _debugLog('signInNative: start');
 
-  // 監聽原生登入結果
-  window.addEventListener('nativeGoogleSignIn', async function handler(e) {
-    window.removeEventListener('nativeGoogleSignIn', handler);
-    _nativeSignInPending = false;
-
-    try {
-      const data = typeof e.detail === 'string' ? JSON.parse(e.detail) : e.detail;
-      _debugLog('nativeGoogleSignIn result: ' + JSON.stringify(data));
-
-      if(data.error) {
-        _debugLog('登入錯誤: ' + data.error);
-        showToast('❌ 登入失敗，請重試');
-        return;
-      }
-
-      if(!data.authCode) {
-        _debugLog('無 authCode');
-        showToast('❌ 無法取得授權碼，請重試');
-        return;
-      }
-
-      // 用 authCode 向 Apps Script 換取 accessToken
-      _debugLog('exchanging authCode...');
-      showToast('⌛ 登入中...');
-
-      const exchangeURL = APPS_SCRIPT_URL + '?action=exchangeAuthCode&code=' + encodeURIComponent(data.authCode);
-      const res = await fetch(exchangeURL);
-      const resp = await res.json();
-
-      _debugLog('exchange result: ' + JSON.stringify(resp));
-
-      if(!resp.access_token) {
-        showToast('❌ 無法取得存取金鑰，請重試');
-        return;
-      }
-
-      const user = {
-        name:    data.name    || '使用者',
-        email:   data.email   || '',
-        picture: data.photoUrl || '',
-      };
-
-      _saveToken(resp.access_token, user);
-      updateAuthUI();
-      showToast('✓ 已登入：' + user.name);
-      await initSpreadsheet();
-      await loadStarredIds();
-      await loadPrefsFromSheets();
-      renderPage();
-      if(isNativeApp) checkSubscription();
-
-    } catch(e) {
-      _nativeSignInPending = false;
-      _debugLog('catch error: ' + (e.message || String(e)));
-      showToast('❌ 登入失敗：' + (e.message || String(e)));
-    }
-  });
-
-  // 呼叫 MainActivity 的原生登入
   try {
-    if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-      window.Capacitor.Plugins.App.exitApp; // 確認 Capacitor 正常
+    const { SocialLogin } = window.Capacitor.Plugins;
+    if(!SocialLogin) {
+      showToast('❌ 登入插件未載入，請重新安裝 App');
+      return;
     }
-    // 透過 Capacitor bridge 呼叫 MainActivity 方法
-    window.Capacitor.toNative('MainActivity', 'startGoogleSignIn', {}, ()=>{});
+
+    await _ensureSocialLoginInit();
+    _debugLog('initialize OK');
+
+    const res = await SocialLogin.login({
+      provider: 'google',
+      options: {
+        // 要求 email/profile 以及 Sheets/Drive 權限，
+        // 觸發原生授權同意畫面並回傳帶有這些 scope 的 access token。
+        scopes: [
+          'email',
+          'profile',
+          'https://www.googleapis.com/auth/spreadsheets',
+          'https://www.googleapis.com/auth/drive.file'
+        ],
+        // 讓使用受監護（Family Link）帳號的裝置也能看到帳號
+        filterByAuthorizedAccounts: false,
+        forceRefreshToken: true,
+      }
+    });
+
+    _debugLog('login result: ' + JSON.stringify(res));
+
+    const result = res && res.result ? res.result : null;
+    const accessToken = result && result.accessToken ? result.accessToken.token : null;
+    const profile = result ? result.profile : null;
+
+    if(!accessToken) {
+      _debugLog('accessToken 為 null — 多半是 OAuth 同意畫面尚未加入 Sheets/Drive scope，或此帳號未列為測試人員');
+      showToast('❌ 無法取得存取金鑰，請確認已被加入測試人員並重試');
+      return;
+    }
+
+    const user = {
+      name:    (profile && profile.name)     || '使用者',
+      email:   (profile && profile.email)    || '',
+      picture: (profile && profile.imageUrl) || '',
+    };
+
+    _saveToken(accessToken, user);
+    updateAuthUI();
+    showToast('✓ 已登入：' + user.name);
+    await initSpreadsheet();
+    await loadStarredIds();
+    await loadPrefsFromSheets();
+    renderPage();
+    if(isNativeApp) checkSubscription();
+
   } catch(e) {
+    _debugLog('signInNative error: ' + (e && (e.message || String(e))));
+    showToast('❌ 登入失敗：' + (e && (e.message || String(e))));
+  } finally {
     _nativeSignInPending = false;
-    _debugLog('toNative error: ' + (e.message || String(e)));
-    showToast('❌ 無法啟動登入，請重試');
   }
 }
-
-// Called by oauth-callback.html via postMessage or URL fragment
-async function handleNativeOAuthCallback(accessToken) {
-  if(!accessToken) return;
-  try { sessionStorage.removeItem('awaiting_oauth'); } catch(e){}
-  const uinfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-    headers:{Authorization:'Bearer '+accessToken}
-  }).then(r=>r.json()).catch(()=>({}));
-  const user = {name:uinfo.name||'使用者', email:uinfo.email||'', picture:uinfo.picture||''};
-  _saveToken(accessToken, user);
-  updateAuthUI();
-  showToast('✓ 已登入：'+user.name);
-  await initSpreadsheet();
-  await loadStarredIds();
-  await loadPrefsFromSheets(); // load saved prefs from Sheets
-  renderPage();
-  if(isNativeApp) checkSubscription();
-  // Close browser tab if still open
-  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-    window.Capacitor.Plugins.Browser.close().catch(()=>{});
-  }
-}
-
-// Listen for postMessage from oauth-callback page
-window.addEventListener('message', (e) => {
-  if(e.data && e.data.type === 'oauth_token') {
-    handleNativeOAuthCallback(e.data.token);
-  }
-});
-
-// 監聽 Capacitor Browser 關閉事件，檢查是否有 token 傳回
-if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-  window.Capacitor.Plugins.Browser.addListener('browserFinished', () => {
-    // token 會透過 oauth-callback.html redirect 帶回 URL hash
-    const hash = window.location.hash;
-    if(hash && hash.includes('access_token')){
-      const params = new URLSearchParams(hash.slice(1));
-      const token = params.get('access_token');
-      try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch(e){}
-      if(token) handleNativeOAuthCallback(token);
-    }
-  });
-}
-
-// Also check URL hash on page load (in case redirected back to app)
-(function checkOAuthHash(){
-  const hash = window.location.hash;
-  if(hash && hash.includes('access_token')){
-    const params = new URLSearchParams(hash.slice(1));
-    const token = params.get('access_token');
-    // Clear the hash so it isn't re-processed on reload
-    try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch(e){ window.location.hash = ''; }
-    if(token) handleNativeOAuthCallback(token);
-  }
-})();
 
 function signOut() {
   if(_gToken && typeof google!=='undefined') {
