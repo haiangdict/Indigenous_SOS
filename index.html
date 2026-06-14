@@ -776,6 +776,7 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
   <div class="char-btns">
     <button class="char-btn" onclick="insertChar('’')" title="’ (U+2019)">’</button>
     <button class="char-btn" onclick="insertChar('é')"  title="é (U+00E9)">é</button>
+    <button class="char-btn" onclick="insertChar('ē')"  title="ē (U+0113)">ē</button>
     <button class="char-btn" onclick="insertChar('ɨ')"  title="ɨ (U+0268)">ɨ</button>
     <button class="char-btn" onclick="insertChar('ṟ')"  title="ṟ (U+1E5F)">ṟ</button>
     <button class="char-btn" onclick="insertChar('ʉ')"  title="ʉ (U+0289)">ʉ</button>
@@ -1332,6 +1333,7 @@ function toggleScope(which){
 const SPECIAL_CHARS = {
   '’': '’', // U+2019 right single quotation mark (no case distinction)
   'é': 'É',   // U+00E9 / U+00C9
+  'ē': 'Ē',   // U+0113 / U+0112
   'ɨ': 'Ɨ',   // U+0268 / U+0197
   'ṟ': 'Ṟ',   // U+1E5F / U+1E5E
   'ʉ': 'Ʉ',   // U+0289 / U+0244
@@ -1359,7 +1361,7 @@ function cycleCase(){
     btn.textContent = _charCase === 'upper' ? 'ABC' : 'abc';
     btn.classList.toggle('upper', _charCase === 'upper');
     // Also update char button labels to show upper/lower
-    const labels = { '’':'’', 'é':'É', 'ɨ':'Ɨ', 'ṟ':'Ṟ', 'ʉ':'Ʉ' };
+    const labels = { '’':'’', 'é':'É', 'ē':'Ē', 'ɨ':'Ɨ', 'ṟ':'Ṟ', 'ʉ':'Ʉ' };
     document.querySelectorAll('.char-btn').forEach(b => {
       const lower = b.title.split(' ')[0];
       b.textContent = _charCase === 'upper' ? (labels[lower]||lower) : lower;
@@ -2856,30 +2858,32 @@ let _nativeSignInPending = false;
 async function signInNative() {
   if(_nativeSignInPending) return;
   _nativeSignInPending = true;
-  _debugLog('signInNative: start');
+
+  // 把錯誤訊息固定顯示在登入頁，不用 chrome://inspect 也能診斷
+  function _loginErr(msg) {
+    showToast(msg);
+    const el = document.getElementById('subMsg');
+    if(el){ el.className='sub-msg err'; el.textContent = msg; }
+  }
 
   try {
     const { SocialLogin } = window.Capacitor.Plugins;
     if(!SocialLogin) {
-      showToast('❌ 登入插件未載入，請重新安裝 App');
+      _loginErr('❌ 登入插件未載入，請重新安裝 App');
       return;
     }
 
     await _ensureSocialLoginInit();
-    _debugLog('initialize OK');
 
     const res = await SocialLogin.login({
       provider: 'google',
       options: {
-        // 要求 email/profile 以及 Sheets/Drive 權限，
-        // 觸發原生授權同意畫面並回傳帶有這些 scope 的 access token。
         scopes: [
           'email',
           'profile',
           'https://www.googleapis.com/auth/spreadsheets',
           'https://www.googleapis.com/auth/drive.file'
         ],
-        // 讓使用受監護（Family Link）帳號的裝置也能看到帳號
         filterByAuthorizedAccounts: false,
         forceRefreshToken: true,
       }
@@ -2889,12 +2893,10 @@ async function signInNative() {
     const accessToken = result && result.accessToken ? result.accessToken.token : null;
     const profile = result ? result.profile : null;
 
-    _debugLog('login OK, token: ' + (accessToken ? accessToken.substring(0,12)+'…' : 'null')
-      + ', user: ' + (profile && profile.email));
-
     if(!accessToken) {
-      _debugLog('accessToken 為 null — 多半是 OAuth 同意畫面尚未加入 Sheets/Drive scope，或此帳號未列為測試人員');
-      showToast('❌ 無法取得存取金鑰，請確認已被加入測試人員並重試');
+      // 把完整的 result 結構顯示出來以便診斷
+      const detail = JSON.stringify(result, null, 0).substring(0, 200);
+      _loginErr('❌ token 為 null。result: ' + detail);
       return;
     }
 
@@ -2914,8 +2916,8 @@ async function signInNative() {
     if(isNativeApp) checkSubscription();
 
   } catch(e) {
-    _debugLog('signInNative error: ' + (e && (e.message || String(e))));
-    showToast('❌ 登入失敗：' + (e && (e.message || String(e))));
+    const msg = (e && (e.message || String(e))) || 'unknown error';
+    _loginErr('❌ 登入例外：' + msg);
   } finally {
     _nativeSignInPending = false;
   }
