@@ -2196,9 +2196,13 @@ function groupSortKey(r){
   const cat = r['分類']||'';
   function pad(s){
     const n = (s||'').trim();
-    // Extract numeric prefix for proper numeric sorting
-    const m = n.match(/^(\d+)/);
-    return m ? m[1].padStart(4,'0') + n.slice(m[1].length) : n;
+    // 格式：數字補零(4位) + 字母後綴補位(1位，空白=無後綴排在a之前) + 中文內容
+    // 例：'03問關係'  → '0003 問關係'
+    //     '03a問關係' → '0003a問關係'
+    // 空白(0x20) < 'a'(0x61)，確保 03 < 03a
+    const m = n.match(/^(\d+)([a-zA-Z]?)(.*)/);
+    if(m) return m[1].padStart(4,'0') + (m[2] || ' ') + m[3];
+    return n;
   }
   const cat1 = pad(r['分類1']);
   const cat2 = pad(r['分類2']);
