@@ -2209,7 +2209,9 @@ function groupSortKey(r){
   // Append level to sort key for P/V when levels are selected
   const lvlOrder = {'B':'1','I':'2','S':'3','U':'4'};
   const lvl = (r['分類']==='P'||r['分類']==='V') ? (lvlOrder[r['等級']]||'9') : '';
-  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+langOrd+'|'+dialOrd+'|'+lvl;
+  // 排序優先級：資料位置（分類階層）→ 語別 → 方言 → 等級
+  // 讓同一資料位置的所有語言並排，再進入下一資料位置
+  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+lvl+'|'+langOrd+'|'+dialOrd;
 }
 
 // ── Render one row (no col-tags — info in card header) ─────────────
