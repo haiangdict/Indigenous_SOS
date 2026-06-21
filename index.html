@@ -1315,9 +1315,7 @@ function toggleExact(){
 }
 
 function toggleScope(which){
-  // Must keep at least one active
-  const other = which==='sentence'?'translation':'sentence';
-  if(searchScope[which] && !searchScope[other]) return; // can't deselect last one
+  // 兩個範圍都可以取消勾選：未勾選任何範圍 = 不限制範圍 = 同時搜尋語句與翻譯
   searchScope[which] = !searchScope[which];
   // Update UI
   const lbl = document.getElementById('scope-'+(which==='sentence'?'s':'t'));
@@ -2109,14 +2107,19 @@ function applyFilters(){
   }
 
   // Text search — apply last on filtered set, respecting scope
+  // 注意：兩個範圍勾選框都未勾選時，視為「不限制範圍」= 同時搜尋語句與翻譯，
+  // 與語別篩選「未選取任何語別 = 不限制」的邏輯一致。
   if(q){
+    const noScope = !searchScope.sentence && !searchScope.translation;
+    const useSentence = noScope || searchScope.sentence;
+    const useTranslation = noScope || searchScope.translation;
     rows=rows.filter(r=>{
       if(exactSearch){
-        if(searchScope.sentence && (r['語句']||'') === rawQ) return true;
-        if(searchScope.translation && (r['翻譯']||'') === rawQ) return true;
+        if(useSentence && (r['語句']||'') === rawQ) return true;
+        if(useTranslation && (r['翻譯']||'') === rawQ) return true;
       } else {
-        if(searchScope.sentence && (r['語句']||'').toLowerCase().includes(q)) return true;
-        if(searchScope.translation && (r['翻譯']||'').includes(q)) return true;
+        if(useSentence && (r['語句']||'').toLowerCase().includes(q)) return true;
+        if(useTranslation && (r['翻譯']||'').toLowerCase().includes(q)) return true;
       }
       return false;
     });
