@@ -95,7 +95,7 @@ header {
 /* TABLE */
 .table-wrap { overflow-x:auto; padding:0 0 40px; }
 table {
-  width:100%; border-collapse:collapse; min-width:700px;
+  width:100%; border-collapse:collapse; min-width:700px; table-layout:fixed;
 }
 thead th {
   padding:10px 16px; text-align:left;
@@ -477,6 +477,17 @@ function renderTable() {
   }).join('');
 
   document.getElementById('tableContainer').innerHTML=`<table>
+    <colgroup>
+      <col style="width:36px">
+      <col style="width:26%">
+      <col style="width:26%">
+      <col class="col-lang" style="width:100px">
+      <col class="col-source" style="width:90px">
+      <col class="col-level" style="width:70px">
+      <col class="col-time" style="width:110px">
+      <col class="col-note" style="width:160px">
+      <col style="width:36px">
+    </colgroup>
     <thead><tr>
       <th></th>
       <th onclick="setSort('sentence')">語句<span class="th-arrow" id="arr-sentence"></span></th>

@@ -774,7 +774,6 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
   </div>
   <!-- Special character buttons -->
   <div class="char-btns">
-    <button class="char-btn" onclick="insertChar('’')" title="’ (U+2019)">’</button>
     <button class="char-btn" onclick="insertChar('é')"  title="é (U+00E9)">é</button>
     <button class="char-btn" onclick="insertChar('ē')"  title="ē (U+0113)">ē</button>
     <button class="char-btn" onclick="insertChar('ɨ')"  title="ɨ (U+0268)">ɨ</button>
@@ -1331,7 +1330,6 @@ function toggleScope(which){
 // ── Special character input ──────────────────────────────────────
 // Three chars each have lower + upper form
 const SPECIAL_CHARS = {
-  '’': '’', // U+2019 right single quotation mark (no case distinction)
   'é': 'É',   // U+00E9 / U+00C9
   'ē': 'Ē',   // U+0113 / U+0112
   'ɨ': 'Ɨ',   // U+0268 / U+0197
@@ -1361,7 +1359,7 @@ function cycleCase(){
     btn.textContent = _charCase === 'upper' ? 'ABC' : 'abc';
     btn.classList.toggle('upper', _charCase === 'upper');
     // Also update char button labels to show upper/lower
-    const labels = { '’':'’', 'é':'É', 'ē':'Ē', 'ɨ':'Ɨ', 'ṟ':'Ṟ', 'ʉ':'Ʉ' };
+    const labels = { 'é':'É', 'ē':'Ē', 'ɨ':'Ɨ', 'ṟ':'Ṟ', 'ʉ':'Ʉ' };
     document.querySelectorAll('.char-btn').forEach(b => {
       const lower = b.title.split(' ')[0];
       b.textContent = _charCase === 'upper' ? (labels[lower]||lower) : lower;
@@ -2043,7 +2041,8 @@ function onSearchInput(){
 function applyFilters(){
   if(!_filterCache) _buildFilterCache();
   const rawQ = document.getElementById('searchInput').value;
-  const q = rawQ.trim().toLowerCase();
+  // 將撇音符號家族（' ʹ ` ‘）統一正規化為 ’（U+2019），與資料庫一致後再比對
+  const q = rawQ.trim().toLowerCase().replace(/[\u0027\u02B9\u0060\u2018]/g, '\u2019');
 
   // Fast path: collect candidate index sets and intersect
   let candidates = null; // null = all
