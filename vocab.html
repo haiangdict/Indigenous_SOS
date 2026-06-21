@@ -95,8 +95,10 @@ header {
 /* TABLE */
 .table-wrap { overflow-x:auto; padding:0 0 40px; }
 table {
-  width:100%; border-collapse:collapse; min-width:700px; table-layout:fixed;
+  width:100%; border-collapse:collapse; min-width:700px;
 }
+/* App 版（手機等窄螢幕）：固定欄寬，隱藏欄位後其餘欄位向左聚攏不跑位 */
+table.app-fixed-layout { table-layout:fixed; }
 thead th {
   padding:10px 16px; text-align:left;
   font-family:'Space Mono',monospace; font-size:0.6rem; font-weight:700;
@@ -272,6 +274,9 @@ table .hide-col { display: none; }
 </div>
 
 <script>
+// 與 index.html 一致的原生 App 偵測方式
+const isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
 const CLIENT_ID = '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com';
 const GAPI_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SPREADSHEET_TITLE = 'Indigenous SOS 詞彙表';
@@ -476,7 +481,7 @@ function renderTable() {
     </tr>`;
   }).join('');
 
-  document.getElementById('tableContainer').innerHTML=`<table>
+  document.getElementById('tableContainer').innerHTML=`<table class="${isNativeApp?'app-fixed-layout':''}">
     <colgroup>
       <col style="width:36px">
       <col style="width:26%">
