@@ -30,89 +30,115 @@
   .search-wrap input { width:100%; background:var(--surface2); border:1px solid var(--border);
     color:var(--text); padding:6px 10px; border-radius:6px; font-size:0.9rem; }
 
-  .container { max-width:1100px; margin:0 auto; padding:16px; }
+  .layout { display:flex; gap:16px; max-width:1400px; margin:0 auto; padding:16px; align-items:flex-start; }
+  .sidebar { width:260px; flex-shrink:0; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; padding:12px; position:sticky; top:64px; max-height:calc(100vh - 80px); overflow-y:auto; }
+  .main { flex:1; min-width:0; }
 
-  /* Filter panel */
-  .filters { background:var(--surface); border:1px solid var(--border); border-radius:8px;
-    padding:12px; margin-bottom:16px; }
-  .filter-row { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;
-    padding:8px 0; border-bottom:1px dashed var(--border); }
-  .filter-row:last-child { border-bottom:none; }
-  .filter-label { font-size:0.78rem; color:var(--muted); min-width:80px; padding-top:4px;
-    font-weight:600; letter-spacing:0.05em; }
-  .filter-chips { display:flex; gap:6px; flex-wrap:wrap; flex:1; }
-  .chip { background:var(--surface2); border:1px solid var(--border); color:var(--text);
-    padding:4px 10px; border-radius:14px; cursor:pointer; font-size:0.82rem; user-select:none; }
-  .chip.active { background:var(--accent); color:#000; border-color:var(--accent); }
-  .chip.all { font-weight:600; }
+  .sb-sec { margin-bottom:14px; }
+  .sb-sec-hdr { font-size:0.72rem; color:var(--muted); font-weight:600;
+    letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; padding-bottom:4px;
+    border-bottom:1px solid var(--border); }
+  .sb-chips { display:flex; gap:4px; flex-wrap:wrap; }
+  .sb-chip { background:var(--surface2); border:1px solid var(--border); color:var(--text);
+    padding:3px 8px; border-radius:12px; cursor:pointer; font-size:0.78rem; user-select:none;
+    line-height:1.3; }
+  .sb-chip:hover { border-color:var(--accent); }
+  .sb-chip.active { background:var(--accent); color:#000; border-color:var(--accent); }
+  .sb-chip.all { font-weight:600; }
+  .sb-chip.ipa { font-family:'Doulos SIL','Charis SIL',serif; }
+  .sb-subgroup-label { font-size:0.7rem; color:var(--muted); margin:6px 0 3px; }
 
-  /* Letter groups by lang/dialect */
-  .lang-section { margin-bottom:24px; }
-  .lang-header { font-size:0.95rem; color:var(--accent2); font-weight:600;
-    padding:8px 0; border-bottom:2px solid var(--accent2); margin-bottom:8px; }
+  table.letters-table { width:100%; border-collapse:collapse; }
+  .letters-table thead th { position:sticky; top:60px; background:var(--surface);
+    z-index:10; padding:8px 10px; text-align:left; font-size:0.72rem;
+    font-weight:600; color:var(--muted); letter-spacing:0.06em;
+    text-transform:uppercase; border-bottom:2px solid var(--border); }
+  .letters-table tbody tr { border-bottom:1px solid var(--border); }
+  .letters-table tbody tr.letter-row { cursor:pointer; }
+  .letters-table tbody tr.letter-row.no-examples { cursor:default; }
+  .letters-table tbody tr.letter-row:hover:not(.no-examples) td { background:var(--surface2); }
+  .letters-table td { padding:8px 10px; vertical-align:middle; }
+  .col-toggle { width:24px; }
+  .col-letter { width:60px; }
+  .col-lang { width:140px; }
+  .col-ipa { width:60px; }
+  .col-pos { width:80px; }
+  .col-manner { width:80px; }
+  .col-voice { width:60px; }
+  .col-noteref { width:40px; text-align:center; }
 
-  /* Letter row */
-  .letter-block { border:1px solid var(--border); border-radius:6px; margin-bottom:6px;
-    background:var(--surface); overflow:hidden; }
-  .letter-row { display:grid;
-    grid-template-columns: 28px 1fr 70px 90px 100px 70px 50px;
-    gap:8px; align-items:center; padding:8px 12px; cursor:pointer; }
-  .letter-row.no-examples { cursor:default; }
-  .letter-row:hover:not(.no-examples) { background:var(--surface2); }
-  .letter-toggle { color:var(--muted); font-size:0.8rem; transition:transform 0.15s; }
+  .letter-toggle { color:var(--muted); font-size:0.75rem;
+    display:inline-block; transition:transform 0.15s; }
   .letter-toggle.expanded { transform:rotate(90deg); }
   .letter-toggle.invisible { visibility:hidden; }
-  .letter-char { font-size:1.4rem; font-weight:600; color:var(--accent); }
+  .letter-char { font-size:1.4rem; font-weight:600; color:var(--accent);
+    font-family:'Doulos SIL','Charis SIL',serif; }
+  .lang-cell { font-size:0.85rem; color:var(--accent2); }
   .letter-ipa { color:var(--muted); font-family:'Doulos SIL','Charis SIL',serif; }
-  .letter-pos, .letter-manner, .letter-voice { font-size:0.85rem; color:var(--muted); }
-  .letter-note-ref { font-size:0.85rem; color:var(--accent2); cursor:help; }
+  .letter-attr { font-size:0.82rem; color:var(--muted); }
+  .letter-noteref { font-size:0.9rem; color:var(--accent2); cursor:help;
+    text-decoration:none; }
+  .letter-noteref:hover { color:var(--accent); }
 
-  .examples { padding:8px 12px 12px 48px; border-top:1px solid var(--border);
-    background:var(--surface2); display:none; }
-  .letter-block.expanded .examples { display:flex; gap:8px; flex-wrap:wrap; }
-  .example-card { background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  .examples-row td { padding:0; background:var(--bg); }
+  .examples-row.collapsed { display:none; }
+  .examples-container { display:flex; gap:8px; flex-wrap:wrap; padding:8px 12px 12px; }
+  .example-card { background:var(--surface); border:1px solid var(--border); border-radius:6px;
     padding:8px 12px; display:flex; align-items:center; gap:10px;
-    flex:1 1 200px; min-width:180px; max-width:300px; }
-  .play-btn { width:28px; height:28px; border-radius:50%; border:1px solid var(--accent);
-    background:transparent; color:var(--accent); cursor:pointer; font-size:0.85rem;
+    flex:1 1 240px; min-width:200px; max-width:320px; }
+  .play-btn { width:32px; height:32px; border-radius:50%; border:1px solid var(--accent);
+    background:transparent; color:var(--accent); cursor:pointer; font-size:0.9rem;
     display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .play-btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .play-btn:disabled { opacity:0.3; cursor:not-allowed; border-color:var(--muted); color:var(--muted); }
   .play-btn.active { background:var(--accent); color:#000; }
   .example-text { flex:1; min-width:0; }
-  .example-sentence { font-weight:600; word-break:break-word; }
-  .example-translation { font-size:0.85rem; color:var(--muted); word-break:break-word; }
+  .example-sentence { font-weight:500; word-break:break-word; font-size:0.95rem;
+    font-family:'Doulos SIL','Charis SIL',serif; }
+  .example-translation { font-size:0.85rem; color:var(--muted); word-break:break-word; margin-top:2px; }
+  .hl-letter { color:var(--accent); font-weight:600; }
 
-  /* Notes section */
-  .notes-section { margin-top:32px; }
+  .notes-section { margin-top:32px; padding:0 4px; }
   .notes-header { font-size:1.1rem; font-weight:600; padding:8px 0;
-    border-bottom:2px solid var(--accent); margin-bottom:12px; }
-  .note-item { display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--border);
-    line-height:1.6; }
-  .note-num { font-weight:600; color:var(--accent); min-width:30px; }
-  .note-text { flex:1; }
+    border-bottom:2px solid var(--accent); margin-bottom:12px; text-align:center; }
   .note-lang-header { font-size:0.95rem; color:var(--accent2); font-weight:600;
-    margin-top:16px; margin-bottom:4px; }
+    margin-top:18px; margin-bottom:6px; padding:6px 0; text-align:center;
+    border-bottom:1px dashed var(--border); }
   .note-lang-header:first-child { margin-top:0; }
+  .note-item { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--border);
+    line-height:1.7; text-align:left; }
+  .note-item:target { background:rgba(212,168,67,0.12); border-radius:4px; padding:10px 12px; }
+  .note-num { font-weight:600; color:var(--accent); min-width:36px; flex-shrink:0; }
+  .note-text { flex:1; }
 
   .empty-state { text-align:center; padding:40px 20px; color:var(--muted); }
   .loading { text-align:center; padding:40px; color:var(--muted); }
 
-  /* Tooltip for note refs */
-  [data-tip] { position:relative; }
-  [data-tip]:hover::after {
-    content:attr(data-tip); position:absolute; bottom:100%; left:0;
+  .tip-popup {
+    position:fixed; z-index:1000;
     background:var(--surface2); border:1px solid var(--accent); color:var(--text);
-    padding:8px 12px; border-radius:6px; font-size:0.82rem; line-height:1.5;
-    width:max-content; max-width:320px; z-index:100;
-    box-shadow:0 4px 12px rgba(0,0,0,0.4);
+    padding:10px 14px; border-radius:8px; font-size:0.85rem; line-height:1.5;
+    max-width:340px; box-shadow:0 6px 20px rgba(0,0,0,0.5);
+    pointer-events:auto;
+    display:none;
   }
+  .tip-popup a { color:var(--accent); text-decoration:underline; }
 
-  @media (max-width:600px) {
-    .letter-row { grid-template-columns: 24px 1fr 50px 70px 80px; gap:6px; padding:6px 8px; }
-    .letter-voice, .letter-note-ref { display:none; }
-    .examples { padding:8px; }
-    .example-card { flex:1 1 100%; }
-    .filter-label { min-width:60px; font-size:0.7rem; }
+  #scrollTopBtn {
+    position:fixed; right:20px; bottom:20px; width:44px; height:44px;
+    border-radius:50%; border:1px solid var(--accent); background:var(--surface);
+    color:var(--accent); font-size:1.2rem; cursor:pointer; z-index:200;
+    display:none; box-shadow:0 4px 12px rgba(0,0,0,0.3);
+  }
+  #scrollTopBtn:hover { background:var(--accent); color:#000; }
+
+  @media (max-width:780px) {
+    .layout { flex-direction:column; padding:8px; }
+    .sidebar { width:100%; position:static; max-height:none; }
+    .col-voice, .col-noteref { display:none; }
+    .letters-table thead th { font-size:0.65rem; padding:6px 4px; }
+    .letters-table td { padding:6px 4px; }
+    .col-lang { width:auto; }
   }
 </style>
 </head>
@@ -126,10 +152,15 @@
   </div>
 </div>
 
-<div class="container">
-  <div class="filters" id="filters"><!-- 由 JS 動態建立 --></div>
-  <div id="mainContent" class="loading">載入中…</div>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div id="mainContent" class="loading">載入中…</div>
+  </main>
 </div>
+
+<div class="tip-popup" id="tipPopup"></div>
+<button id="scrollTopBtn" onclick="scrollToTop()" title="跳至最上方">↑</button>
 
 <script>
 const AUDIO_BASE = 'https://pub-44bec38ae2824f519a8519301efe3bd7.r2.dev/';
@@ -154,157 +185,237 @@ const LANG_LIST = [
 ];
 const _langIdx = {}; LANG_LIST.forEach((l,i)=>_langIdx[l.name]=i);
 
-// 固定順序定義
 const TYPE_ORDER = ['元音','輔音','符號'];
 const VOWEL_POS_ORDER = ['前','央','後'];
-const VOWEL_MANNER_ORDER = ['高','中','低'];
-const VOWEL_VOICE_ORDER = ['圓唇','展唇'];
+const HEIGHT_ORDER = ['高','中','低'];
 const CONS_POS_ORDER = ['雙唇','雙唇舌根','唇齒','齒間','舌尖','舌尖後','舌面','捲舌','舌根','小舌','會厭','咽','喉'];
 const CONS_MANNER_ORDER = ['塞音','塞擦音','擦音','後擦音','邊擦音','鼻音','邊音','顫音','拍音','滑音','接近音','捲舌接近音','內爆音'];
-const CONS_VOICE_ORDER = ['清','濁'];
+const LIP_ORDER = ['圓唇','展唇'];
+const VOICING_ORDER = ['清','濁'];
 
-// 篩選狀態
 const sel = {
-  types: new Set(['元音']),  // 預設先看元音
+  langKeys: new Set(),
+  letters: new Set(),
+  types: new Set(),
   pos: new Set(),
+  height: new Set(),
   manner: new Set(),
-  voice: new Set(),
+  voicing: new Set(),
+  lip: new Set(),
   ipa: new Set(),
 };
-// 「全選」= 該集合為空，代表不過濾
-
-// 從上一頁傳來的語別/方言選擇（與 index.html 共用 sos_prefs）
-function loadSelectedLangs(){
-  try {
-    const raw = localStorage.getItem('sos_prefs');
-    if(!raw) return new Set();
-    const prefs = JSON.parse(raw);
-    return new Set(prefs.langkeys || []);
-  } catch(e){ return new Set(); }
-}
-const selLangKeys = loadSelectedLangs(); // 與主頁共用
 
 let DATA = null;
 
-// ── Load data ─────────────────────────────────────────
+function loadInitialLangKeys(){
+  try {
+    const raw = localStorage.getItem('sos_prefs');
+    if(!raw) return;
+    const prefs = JSON.parse(raw);
+    (prefs.langkeys || []).forEach(k => sel.langKeys.add(k));
+  } catch(e){}
+}
+loadInitialLangKeys();
+
 fetch('data/letters.json').then(r=>r.json()).then(d=>{
   DATA = d;
-  // 過濾出當前選取語別/方言別範圍內的字母
-  buildFilters();
+  buildSidebar();
   render();
 }).catch(e=>{
   document.getElementById('mainContent').innerHTML =
     `<div class="empty-state">⚠ 載入失敗：${e.message}</div>`;
 });
 
-// ── 語別/方言 篩選邏輯：以共用的 selLangKeys 為準 ─────
-// selLangKeys 內容範例："阿美語"（整個語別）或 "阿美語|1"（限定方言別）
-function langMatchesSelection(lang, dial){
-  if(selLangKeys.size === 0) return true; // 未選 = 全部
-  if(selLangKeys.has(lang)) return true;
-  if(selLangKeys.has(lang+'|'+dial)) return true;
+function langMatches(lang, dial){
+  if(sel.langKeys.size === 0) return true;
+  if(sel.langKeys.has(lang)) return true;
+  if(sel.langKeys.has(lang+'|'+dial)) return true;
   return false;
 }
 
-// ── 取得當前語別範圍內的所有 letter 列 ─────────────
-function getInScopeLetters(){
-  return DATA.letters.filter(l => langMatchesSelection(l.lang, l.dial));
+function ipaGroups(scope){
+  const v = new Set(), c = new Set();
+  scope.forEach(l => {
+    if(!l.ipa) return;
+    if(l.type==='元音') v.add(l.ipa);
+    else if(l.type==='輔音') c.add(l.ipa);
+  });
+  return {
+    vowel: [...v].sort((a,b)=>a.localeCompare(b)),
+    consonant: [...c].sort((a,b)=>a.localeCompare(b)),
+  };
 }
 
-// ── 動態建立篩選器 ───────────────────────────────
-function buildFilters(){
-  const scope = getInScopeLetters();
+function getLettersInLangScope(){
+  return DATA.letters.filter(l => langMatches(l.lang, l.dial));
+}
 
-  // 類型篩選（固定三選項，但只列出範圍內存在的）
-  const typesPresent = new Set(scope.map(l=>l.type));
+function buildSidebar(){
+  const sb = document.getElementById('sidebar');
+  const inScope = getLettersInLangScope();
+
+  let html = `<div class="sb-sec">
+    <div class="sb-sec-hdr">語別 / 方言</div>
+    <div class="sb-chips" id="sb-langs"></div>
+  </div>`;
+
+  const letterSet = new Set(inScope.map(l => l.letter).filter(Boolean));
+  const letterOpts = [...letterSet].sort((a,b) => {
+    const aAlpha = /^[a-zA-Z]/.test(a);
+    const bAlpha = /^[a-zA-Z]/.test(b);
+    if(aAlpha !== bAlpha) return aAlpha ? -1 : 1;
+    return a.localeCompare(b);
+  });
+
+  const subScope = inScope.filter(l =>
+    (sel.letters.size===0 || sel.letters.has(l.letter)) &&
+    (sel.types.size===0   || sel.types.has(l.type))
+  );
+
+  const typesPresent = new Set(inScope.map(l=>l.type));
   const typeOpts = TYPE_ORDER.filter(t => typesPresent.has(t));
 
-  // 進一步以當前選取類型再過濾，取得可用的子篩選器選項
-  const subScope = scope.filter(l => sel.types.size===0 || sel.types.has(l.type));
-
-  // 依「目前選取的類型」決定發音位置/方式的固定順序
-  const onlyVowel = sel.types.size===1 && sel.types.has('元音');
-  const onlyCons  = sel.types.size===1 && sel.types.has('輔音');
-  const onlySym   = sel.types.size===1 && sel.types.has('符號');
-
-  const posOrder    = onlyVowel ? VOWEL_POS_ORDER    : onlyCons ? CONS_POS_ORDER    : [...VOWEL_POS_ORDER, ...CONS_POS_ORDER];
-  const mannerOrder = onlyVowel ? VOWEL_MANNER_ORDER : onlyCons ? CONS_MANNER_ORDER : [...VOWEL_MANNER_ORDER, ...CONS_MANNER_ORDER];
-  const voiceOrder  = onlyVowel ? VOWEL_VOICE_ORDER  : onlyCons ? CONS_VOICE_ORDER  : [...VOWEL_VOICE_ORDER, ...CONS_VOICE_ORDER];
-
-  function sorted(values, fixedOrder){
+  function uniqSorted(values, fixedOrder){
     const set = new Set(values.filter(Boolean));
     const fixed = fixedOrder.filter(x => set.has(x));
     const rest = [...set].filter(x => !fixedOrder.includes(x)).sort();
     return [...fixed, ...rest];
   }
 
-  const posOpts    = sorted(subScope.map(l=>l.pos),    posOrder);
-  const mannerOpts = sorted(subScope.map(l=>l.manner), mannerOrder);
-  const voiceOpts  = sorted(subScope.map(l=>l.voice),  voiceOrder);
-  const ipaOpts    = [...new Set(subScope.map(l=>l.ipa).filter(Boolean))].sort();
+  const allPos = subScope.map(l => l.pos).filter(p => p && !HEIGHT_ORDER.includes(p));
+  const posOrder = [...VOWEL_POS_ORDER, ...CONS_POS_ORDER];
+  const posOpts = uniqSorted(allPos, posOrder);
 
-  const html = `
-    ${renderFilterRow('類型', typeOpts, sel.types, 'types', true)}
-    ${onlySym ? '' : `
-      ${posOpts.length    ? renderFilterRow('發音位置', posOpts, sel.pos, 'pos') : ''}
-      ${mannerOpts.length ? renderFilterRow(onlyVowel?'高低':'發音方式', mannerOpts, sel.manner, 'manner') : ''}
-      ${voiceOpts.length  ? renderFilterRow(onlyVowel?'唇形':'清濁', voiceOpts, sel.voice, 'voice') : ''}
-    `}
-    ${ipaOpts.length ? renderFilterRow('IPA', ipaOpts, sel.ipa, 'ipa') : ''}
-  `;
-  document.getElementById('filters').innerHTML = html;
+  const heightOpts = HEIGHT_ORDER.filter(h => subScope.some(l => l.pos===h || l.manner===h));
+
+  const allManner = subScope.map(l => l.manner).filter(m => m && !HEIGHT_ORDER.includes(m));
+  const mannerOpts = uniqSorted(allManner, CONS_MANNER_ORDER);
+
+  const voicingOpts = VOICING_ORDER.filter(v => subScope.some(l => l.voice===v));
+  const lipOpts = LIP_ORDER.filter(v => subScope.some(l => l.voice===v));
+
+  const ipa = ipaGroups(subScope);
+
+  html += sectionHTML('字母', letterOpts, sel.letters, 'letters');
+  html += sectionHTML('類型', typeOpts, sel.types, 'types');
+  if(posOpts.length)    html += sectionHTML('發音位置', posOpts, sel.pos, 'pos');
+  if(heightOpts.length) html += sectionHTML('高低', heightOpts, sel.height, 'height');
+  if(mannerOpts.length) html += sectionHTML('發音方式', mannerOpts, sel.manner, 'manner');
+  if(voicingOpts.length)html += sectionHTML('清濁', voicingOpts, sel.voicing, 'voicing');
+  if(lipOpts.length)    html += sectionHTML('唇形', lipOpts, sel.lip, 'lip');
+
+  if(ipa.vowel.length || ipa.consonant.length){
+    html += `<div class="sb-sec">
+      <div class="sb-sec-hdr">IPA</div>
+      <div class="sb-chips">
+        <span class="sb-chip all ${sel.ipa.size===0?'active':''}" onclick="clearFilter('ipa')">全選</span>
+      </div>`;
+    if(ipa.vowel.length){
+      html += `<div class="sb-subgroup-label">元音</div><div class="sb-chips">`;
+      ipa.vowel.forEach(v => {
+        html += `<span class="sb-chip ipa ${sel.ipa.has(v)?'active':''}" onclick="toggleFilter('ipa','${escapeAttr(v)}')">${escapeHtml(v)}</span>`;
+      });
+      html += `</div>`;
+    }
+    if(ipa.consonant.length){
+      html += `<div class="sb-subgroup-label">輔音</div><div class="sb-chips">`;
+      ipa.consonant.forEach(v => {
+        html += `<span class="sb-chip ipa ${sel.ipa.has(v)?'active':''}" onclick="toggleFilter('ipa','${escapeAttr(v)}')">${escapeHtml(v)}</span>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+
+  sb.innerHTML = html;
+  buildLangChips();
 }
 
-function renderFilterRow(label, opts, selSet, key, isExclusive){
+function sectionHTML(label, opts, selSet, key){
   const allActive = selSet.size === 0;
-  const chips = opts.map(opt =>
-    `<span class="chip ${selSet.has(opt)?'active':''}"
-        onclick="toggleFilter('${key}','${escapeAttr(opt)}',${isExclusive?'true':'false'})">${escapeHtml(opt)}</span>`
-  ).join('');
-  return `
-    <div class="filter-row">
-      <div class="filter-label">${label}</div>
-      <div class="filter-chips">
-        <span class="chip all ${allActive?'active':''}" onclick="clearFilter('${key}')">全選</span>
-        ${chips}
-      </div>
-    </div>
-  `;
+  let chips = `<span class="sb-chip all ${allActive?'active':''}" onclick="clearFilter('${key}')">全選</span>`;
+  opts.forEach(opt => {
+    chips += `<span class="sb-chip ${selSet.has(opt)?'active':''}" onclick="toggleFilter('${key}','${escapeAttr(opt)}')">${escapeHtml(opt)}</span>`;
+  });
+  return `<div class="sb-sec">
+    <div class="sb-sec-hdr">${escapeHtml(label)}</div>
+    <div class="sb-chips">${chips}</div>
+  </div>`;
 }
 
-function toggleFilter(key, val, isExclusive){
-  const s = sel[key];
-  if(isExclusive){
-    s.clear();
-    s.add(val);
-    // 切換類型時清空次篩選（因為元音/輔音的次篩選標準不同）
-    if(key === 'types'){
-      sel.pos.clear(); sel.manner.clear(); sel.voice.clear(); sel.ipa.clear();
+function buildLangChips(){
+  const c = document.getElementById('sb-langs');
+  if(!c) return;
+  const langsWithData = new Set(DATA.letters.map(l => l.lang));
+  let html = `<span class="sb-chip all ${sel.langKeys.size===0?'active':''}" onclick="clearFilter('langKeys')">全選</span>`;
+  LANG_LIST.forEach(L => {
+    if(!langsWithData.has(L.name)) return;
+    const allDialKeys = L.dialects.length ? L.dialects.map(d => L.name+'|'+d[0]) : [L.name];
+    const isLangAllSelected = sel.langKeys.has(L.name) ||
+      (L.dialects.length && allDialKeys.every(k => sel.langKeys.has(k)));
+    html += `<span class="sb-chip ${isLangAllSelected?'active':''}" onclick="toggleLang('${escapeAttr(L.name)}')">${escapeHtml(L.name)}</span>`;
+    L.dialects.forEach(d => {
+      const k = L.name+'|'+d[0];
+      const isSelected = sel.langKeys.has(L.name) || sel.langKeys.has(k);
+      html += `<span class="sb-chip ${isSelected?'active':''}" style="font-size:0.72rem;margin-left:8px;" onclick="toggleLang('${escapeAttr(L.name)}','${d[0]}')">${escapeHtml(d[1])}</span>`;
+    });
+  });
+  c.innerHTML = html;
+}
+
+function toggleLang(lang, dial){
+  const L = LANG_LIST.find(x => x.name === lang);
+  if(!L) return;
+  if(!dial){
+    const allKeys = L.dialects.length ? L.dialects.map(d => lang+'|'+d[0]) : [lang];
+    const allOn = sel.langKeys.has(lang) || allKeys.every(k => sel.langKeys.has(k));
+    if(allOn){
+      sel.langKeys.delete(lang);
+      allKeys.forEach(k => sel.langKeys.delete(k));
+    } else {
+      sel.langKeys.add(lang);
+      allKeys.forEach(k => sel.langKeys.add(k));
     }
   } else {
-    if(s.has(val)) s.delete(val); else s.add(val);
+    const k = lang+'|'+dial;
+    if(sel.langKeys.has(lang)){
+      sel.langKeys.delete(lang);
+      L.dialects.forEach(d => sel.langKeys.add(lang+'|'+d[0]));
+      sel.langKeys.delete(k);
+    } else if(sel.langKeys.has(k)){
+      sel.langKeys.delete(k);
+    } else {
+      sel.langKeys.add(k);
+    }
   }
-  buildFilters(); render();
+  buildSidebar(); render();
+}
+
+function toggleFilter(key, val){
+  const s = sel[key];
+  if(s.has(val)) s.delete(val); else s.add(val);
+  buildSidebar(); render();
 }
 function clearFilter(key){
   sel[key].clear();
-  if(key === 'types'){
-    sel.pos.clear(); sel.manner.clear(); sel.voice.clear(); sel.ipa.clear();
-  }
-  buildFilters(); render();
+  buildSidebar(); render();
 }
 
-// ── 篩選一個字母列是否符合所有目前條件 ─────────────
 function letterPasses(l){
+  if(!langMatches(l.lang, l.dial)) return false;
+  if(sel.letters.size && !sel.letters.has(l.letter)) return false;
   if(sel.types.size && !sel.types.has(l.type)) return false;
   if(sel.pos.size && !sel.pos.has(l.pos)) return false;
+  if(sel.height.size){
+    if(!sel.height.has(l.pos) && !sel.height.has(l.manner)) return false;
+  }
   if(sel.manner.size && !sel.manner.has(l.manner)) return false;
-  if(sel.voice.size && !sel.voice.has(l.voice)) return false;
+  if(sel.voicing.size && !sel.voicing.has(l.voice)) return false;
+  if(sel.lip.size && !sel.lip.has(l.voice)) return false;
   if(sel.ipa.size && !sel.ipa.has(l.ipa)) return false;
   return true;
 }
 
-// ── 排序鍵：先語別、再方言別、再字母編號 ─────────────
 function letterSortKey(l){
   const li = _langIdx[l.lang] ?? 999;
   const di = parseInt(l.dial||'0',10) || 0;
@@ -316,87 +427,153 @@ function cmpKey(a,b){
   return 0;
 }
 
-// ── 上標數字 ─────────────────────────────────────
 const SUP_DIGITS = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
 function toSup(n){ return String(n).split('').map(c=>SUP_DIGITS[c]||c).join(''); }
 
-// ── 主渲染 ────────────────────────────────────────
+// 阿美語的 ref 是 3 位數，但對應的 code 是 4 位數（ref + 1 個尾碼）。
+// 其他語別 ref 與 code 完全相同。用「前綴雙向匹配」涵蓋兩種情況。
+function findNote(lang, ref){
+  return DATA.notes.find(n => n.lang===lang && n.code.startsWith(ref))
+      || DATA.notes.find(n => n.lang===lang && ref.startsWith(n.code));
+}
+
+// 處理 digraph：找出同方言中比 target 長且含 target 為子字串的字母，
+// 先在語句中標記這些 blocker 位置佔用，target 只在未被佔用處標記高亮。
+function highlightLetter(sentence, targetLetter, dialectLetters){
+  if(!sentence || !targetLetter) return escapeHtml(sentence||'');
+  const target = targetLetter;
+  const blockers = dialectLetters.filter(L =>
+    L !== target && L.length > target.length && L.toLowerCase().includes(target.toLowerCase())
+  ).sort((a,b) => b.length - a.length);
+
+  const lower = sentence.toLowerCase();
+  const occupied = new Array(sentence.length).fill(false);
+  blockers.forEach(blk => {
+    const blkLower = blk.toLowerCase();
+    let from = 0;
+    while(true){
+      const idx = lower.indexOf(blkLower, from);
+      if(idx === -1) break;
+      for(let i=idx; i<idx+blk.length; i++) occupied[i] = true;
+      from = idx + blk.length;
+    }
+  });
+
+  const targetLower = target.toLowerCase();
+  const tLen = target.length;
+  let result = '';
+  let i = 0;
+  let buf = '';
+  let bufHl = false;
+  function flush(){
+    if(!buf) return;
+    result += bufHl ? `<span class="hl-letter">${escapeHtml(buf)}</span>` : escapeHtml(buf);
+    buf = '';
+  }
+  while(i < sentence.length){
+    const matchHere = lower.substr(i, tLen) === targetLower && !occupied[i];
+    if(matchHere){
+      if(!bufHl){ flush(); bufHl = true; }
+      buf += sentence.substr(i, tLen);
+      i += tLen;
+    } else {
+      if(bufHl){ flush(); bufHl = false; }
+      buf += sentence[i];
+      i++;
+    }
+  }
+  flush();
+  return result;
+}
+
 function render(){
-  if(!DATA){ return; }
-  const scope = getInScopeLetters().filter(letterPasses);
+  if(!DATA) return;
+  const scope = getLettersInLangScope().filter(letterPasses);
   scope.sort((a,b)=>cmpKey(letterSortKey(a),letterSortKey(b)));
 
-  // 注意事項全域連續編號：依語別順序、語別內依代號排序
-  // 收集所有「字母列引用到的注意事項代號」（只算當前可見的字母列）
-  const refsByLang = {}; // {lang: Set<code>}
+  const dialectLetterMap = {};
+  DATA.letters.forEach(l => {
+    const k = l.lang+'|'+l.dial;
+    if(!dialectLetterMap[k]) dialectLetterMap[k] = [];
+    dialectLetterMap[k].push(l.letter);
+  });
+
+  if(scope.length === 0){
+    document.getElementById('mainContent').innerHTML =
+      `<div class="empty-state">🔭 沒有符合條件的字母<br><br>請調整左方篩選</div>`;
+    return;
+  }
+
+  const refsByLang = {};
   scope.forEach(l => {
     if(!l.note_ref) return;
     refsByLang[l.lang] = refsByLang[l.lang] || new Set();
     refsByLang[l.lang].add(l.note_ref);
   });
-
-  // 建立 code → 全域編號 對照
-  const noteNumMap = {}; // {lang+'|'+code: globalNum}
+  const noteNumMap = {};
   const orderedLangs = LANG_LIST.map(l=>l.name).filter(name => refsByLang[name]);
   let counter = 0;
-  const notesToShow = []; // [{globalNum, lang, code, text}]
+  const notesToShow = [];
   orderedLangs.forEach(lang => {
     const codes = [...refsByLang[lang]].sort();
-    codes.forEach(code => {
+    codes.forEach(ref => {
       counter++;
-      noteNumMap[lang+'|'+code] = counter;
-      const noteRow = DATA.notes.find(n => n.lang===lang && n.code===code);
+      noteNumMap[lang+'|'+ref] = counter;
+      const noteRow = findNote(lang, ref);
       notesToShow.push({
-        globalNum: counter, lang, code,
+        globalNum: counter, lang, ref,
         text: noteRow ? noteRow.text : '（注意事項內容缺失）'
       });
     });
   });
 
-  if(scope.length === 0){
-    document.getElementById('mainContent').innerHTML =
-      `<div class="empty-state">🔭 沒有符合條件的字母<br><br>請調整篩選或在主頁選擇語別/方言別</div>`;
-    return;
-  }
+  let html = `<table class="letters-table">
+    <thead><tr>
+      <th class="col-toggle"></th>
+      <th class="col-letter">字母</th>
+      <th class="col-lang">語別 / 方言</th>
+      <th class="col-ipa">IPA</th>
+      <th class="col-pos">發音位置</th>
+      <th class="col-manner">高低 / 方式</th>
+      <th class="col-voice">清濁 / 唇形</th>
+      <th class="col-noteref">附註</th>
+    </tr></thead>
+    <tbody>`;
 
-  // 依語別+方言別分組顯示
-  let lastGroupKey = null;
-  let html = '';
-  scope.forEach(l => {
+  scope.forEach((l, idx) => {
     const dialName = (LANG_LIST.find(L=>L.name===l.lang)?.dialects.find(d=>d[0]===l.dial)?.[1]) || '';
-    const groupKey = l.lang + '/' + l.dial;
-    if(groupKey !== lastGroupKey){
-      if(lastGroupKey !== null) html += '</div>';
-      html += `<div class="lang-section">
-        <div class="lang-header">${escapeHtml(l.lang)}${dialName?'/'+escapeHtml(dialName):''}</div>`;
-      lastGroupKey = groupKey;
-    }
-
+    const langDisplay = l.lang + (dialName ? '/'+dialName : '');
+    const hasEx = l.examples.length > 0;
     const noteNum = (l.note_ref && noteNumMap[l.lang+'|'+l.note_ref]) || null;
     const noteText = noteNum ? (notesToShow.find(n=>n.globalNum===noteNum)?.text || '') : '';
 
-    const hasEx = l.examples.length > 0;
-    html += `
-      <div class="letter-block ${hasEx?'expanded':''}" id="lb-${l.no}-${l.lang}-${l.dial}">
-        <div class="letter-row ${hasEx?'':'no-examples'}"
-             ${hasEx?`onclick="toggleBlock(this.parentElement)"`:''}>
-          <span class="letter-toggle ${hasEx?'expanded':'invisible'}">▶</span>
-          <span class="letter-char">${escapeHtml(l.letter)}</span>
-          <span class="letter-ipa">${l.ipa?'['+escapeHtml(l.ipa)+']':''}</span>
-          <span class="letter-pos">${escapeHtml(l.pos||'')}</span>
-          <span class="letter-manner">${escapeHtml(l.manner||'')}</span>
-          <span class="letter-voice">${escapeHtml(l.voice||'')}</span>
-          <span class="letter-note-ref" ${noteNum?`data-tip="${escapeAttr(noteText)}"`:''}>${noteNum?toSup(noteNum):''}</span>
+    const rowId = `lr-${idx}`;
+    const exRowId = `er-${idx}`;
+    html += `<tr class="letter-row ${hasEx?'':'no-examples'}" id="${rowId}"
+        ${hasEx?`onclick="toggleEx('${exRowId}', '${rowId}')"`:''}>
+      <td class="col-toggle"><span class="letter-toggle ${hasEx?'expanded':'invisible'}">▶</span></td>
+      <td class="col-letter"><span class="letter-char">${escapeHtml(l.letter)}</span></td>
+      <td class="col-lang"><span class="lang-cell">${escapeHtml(langDisplay)}</span></td>
+      <td class="col-ipa"><span class="letter-ipa">${l.ipa?'['+escapeHtml(l.ipa)+']':''}</span></td>
+      <td class="col-pos"><span class="letter-attr">${escapeHtml(l.pos||'')}</span></td>
+      <td class="col-manner"><span class="letter-attr">${escapeHtml(l.manner||'')}</span></td>
+      <td class="col-voice"><span class="letter-attr">${escapeHtml(l.voice||'')}</span></td>
+      <td class="col-noteref">${noteNum?`<a class="letter-noteref" href="#note-${noteNum}"
+        onmouseenter="showTip(event, ${noteNum}, ${escapeAttrJS(noteText)})"
+        onmouseleave="hideTip()"
+        onclick="event.stopPropagation()">${toSup(noteNum)}</a>`:''}</td>
+    </tr>`;
+    if(hasEx){
+      const dialLetters = dialectLetterMap[l.lang+'|'+l.dial] || [];
+      html += `<tr class="examples-row" id="${exRowId}"><td colspan="8">
+        <div class="examples-container">
+          ${l.examples.map(ex => renderExample(ex, l, dialLetters)).join('')}
         </div>
-        ${hasEx ? `<div class="examples">
-          ${l.examples.map((ex,i) => renderExample(ex, l, i)).join('')}
-        </div>` : ''}
-      </div>
-    `;
+      </td></tr>`;
+    }
   });
-  if(lastGroupKey !== null) html += '</div>';
+  html += `</tbody></table>`;
 
-  // 注意事項區塊
   if(notesToShow.length > 0){
     html += `<div class="notes-section">
       <div class="notes-header">注意事項</div>`;
@@ -406,7 +583,7 @@ function render(){
         html += `<div class="note-lang-header">${escapeHtml(n.lang)}</div>`;
         lastLang = n.lang;
       }
-      html += `<div class="note-item">
+      html += `<div class="note-item" id="note-${n.globalNum}">
         <span class="note-num">${toSup(n.globalNum)}</span>
         <span class="note-text">${escapeHtml(n.text)}</span>
       </div>`;
@@ -417,27 +594,31 @@ function render(){
   document.getElementById('mainContent').innerHTML = html;
 }
 
-function renderExample(ex, letter, idx){
-  const audioPath = ex.audio ? `${letter.dial}/A/${ex.audio}.mp3` : '';
-  const audioUrl = audioPath ? AUDIO_BASE + audioPath : '';
+function renderExample(ex, letter, dialLetters){
+  // 方言別 1~9 補零（10 以上不變）
+  let dialPath = letter.dial || '';
+  if(/^\d+$/.test(dialPath) && dialPath.length === 1) dialPath = '0' + dialPath;
+  const audioUrl = ex.audio ? AUDIO_BASE + dialPath + '/A/' + ex.audio + '.mp3' : '';
+  const highlighted = highlightLetter(ex.sentence, letter.letter, dialLetters);
   return `<div class="example-card">
     <button class="play-btn" ${audioUrl?'':'disabled'}
       data-audio="${escapeAttr(audioUrl)}"
-      onclick="playExample(this)" title="${audioUrl?'播放':'無音檔'}">${audioUrl?'▶':'—'}</button>
+      onclick="event.stopPropagation();playExample(this)" title="${audioUrl?'播放':'無音檔'}">${audioUrl?'▶':'—'}</button>
     <div class="example-text">
-      <div class="example-sentence">${escapeHtml(ex.sentence)}</div>
+      <div class="example-sentence">${highlighted}</div>
       <div class="example-translation">${escapeHtml(ex.translation||'')}</div>
     </div>
   </div>`;
 }
 
-function toggleBlock(block){
-  block.classList.toggle('expanded');
-  const toggle = block.querySelector('.letter-toggle');
-  if(toggle) toggle.classList.toggle('expanded');
+function toggleEx(exRowId, lrId){
+  const exRow = document.getElementById(exRowId);
+  if(!exRow) return;
+  exRow.classList.toggle('collapsed');
+  const tog = document.querySelector(`#${lrId} .letter-toggle`);
+  if(tog) tog.classList.toggle('expanded');
 }
 
-// ── 音檔播放 ─────────────────────────────────────
 let currentAudio = null, currentBtn = null;
 function playExample(btn){
   const url = btn.dataset.audio;
@@ -460,17 +641,36 @@ function playExample(btn){
   };
 }
 
-// ── 返回主頁 ─────────────────────────────────────
+const tipEl = document.getElementById('tipPopup');
+let _tipHideTimer = null;
+function showTip(e, noteNum, text){
+  clearTimeout(_tipHideTimer);
+  tipEl.innerHTML = `${escapeHtml(text)}<br><a href="#note-${noteNum}" onclick="hideTipNow()">→ 跳至注意事項 ${toSup(noteNum)}</a>`;
+  tipEl.style.display = 'block';
+  const rect = e.target.getBoundingClientRect();
+  const tipW = 340, tipH = tipEl.offsetHeight || 100;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  if(left + tipW > window.innerWidth - 10) left = window.innerWidth - tipW - 10;
+  if(left < 10) left = 10;
+  if(top + tipH > window.innerHeight - 10) top = rect.top - tipH - 8;
+  tipEl.style.left = left + 'px';
+  tipEl.style.top = top + 'px';
+}
+function hideTip(){
+  _tipHideTimer = setTimeout(()=>{ tipEl.style.display = 'none'; }, 200);
+}
+function hideTipNow(){ tipEl.style.display = 'none'; }
+tipEl.addEventListener('mouseenter', ()=>clearTimeout(_tipHideTimer));
+tipEl.addEventListener('mouseleave', hideTip);
+
 function goBack(){
-  // 清除字母模式旗標，回到主搜尋
   try { localStorage.removeItem('sos_view_mode'); } catch(e){}
   location.href = 'index.html';
 }
-
 function onSearchInput(e){
   const v = e.target.value.trim();
   if(v.length === 0) return;
-  // 任何輸入 → 回到主頁並帶上搜尋字串
   try {
     localStorage.setItem('sos_pending_search', v);
     localStorage.removeItem('sos_view_mode');
@@ -478,7 +678,11 @@ function onSearchInput(e){
   location.href = 'index.html';
 }
 
-// ── 主題 ─────────────────────────────────────────
+function scrollToTop(){ window.scrollTo({top:0, behavior:'smooth'}); }
+window.addEventListener('scroll', ()=>{
+  document.getElementById('scrollTopBtn').style.display = window.scrollY > 200 ? 'block' : 'none';
+});
+
 (function applyTheme(){
   try {
     const t = localStorage.getItem('sos_theme');
@@ -486,9 +690,9 @@ function onSearchInput(e){
   } catch(e){}
 })();
 
-// ── 工具 ─────────────────────────────────────────
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escapeAttr(s){ return escapeHtml(s).replace(/'/g,"&#39;"); }
+function escapeAttrJS(s){ return JSON.stringify(String(s||'')); }
 </script>
 
 </body>
