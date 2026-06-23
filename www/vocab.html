@@ -104,6 +104,9 @@ table.app-fixed-layout { table-layout:fixed; }
 /* App 版縮小儲存格內距，讓固定欄寬內容有更多可用空間 */
 table.app-fixed-layout thead th { padding:8px 6px; }
 table.app-fixed-layout td { padding:8px 6px; }
+/* 覆蓋特殊 padding 的儲存格，確保表頭與內容欄位對齊 */
+table.app-fixed-layout td.play-cell { padding:8px 6px; }
+table.app-fixed-layout td[style] { padding:8px 6px !important; }
 thead th {
   padding:10px 16px; text-align:left;
   font-family:'Space Mono',monospace; font-size:0.6rem; font-weight:700;
@@ -659,6 +662,7 @@ function showToast(msg) {
 }
 
 // ── Boot ───────────────────────────────────────────────────────
+_loadColVisibility(); // 載入欄位顯示偏好（App 首次使用會套用預設隱藏）
 if(_loadToken()) {
   updateAuthUI();
   loadVocab();

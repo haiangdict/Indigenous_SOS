@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>字母分類 — Indigenous SOS</title>
+<style>
+  :root {
+    --bg:#0e0e0e; --surface:#1a1a1a; --surface2:#222;
+    --text:#e8e4dc; --muted:#8a8478; --border:#333;
+    --accent:#d4a843; --accent2:#7eb88a;
+  }
+  body.light {
+    --bg:#fafaf7; --surface:#fff; --surface2:#f0ede5;
+    --text:#1a1a1a; --muted:#666; --border:#ddd;
+    --accent:#a87f1e; --accent2:#3d7a4f;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,'Microsoft JhengHei',sans-serif;
+    background:var(--bg); color:var(--text); }
+  a { color:var(--accent); }
+
+  .topbar { display:flex; align-items:center; gap:12px; padding:12px 16px;
+    border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg); z-index:50; }
+  .back-btn { background:var(--surface); border:1px solid var(--border); color:var(--text);
+    padding:6px 14px; border-radius:6px; cursor:pointer; font-size:0.9rem; }
+  .back-btn:hover { border-color:var(--accent); }
+  .title { font-size:1rem; font-weight:600; }
+  .search-wrap { flex:1; max-width:340px; margin-left:auto; }
+  .search-wrap input { width:100%; background:var(--surface2); border:1px solid var(--border);
+    color:var(--text); padding:6px 10px; border-radius:6px; font-size:0.9rem; }
+
+  .container { max-width:1100px; margin:0 auto; padding:16px; }
+
+  /* Filter panel */
+  .filters { background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:12px; margin-bottom:16px; }
+  .filter-row { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;
+    padding:8px 0; border-bottom:1px dashed var(--border); }
+  .filter-row:last-child { border-bottom:none; }
+  .filter-label { font-size:0.78rem; color:var(--muted); min-width:80px; padding-top:4px;
+    font-weight:600; letter-spacing:0.05em; }
+  .filter-chips { display:flex; gap:6px; flex-wrap:wrap; flex:1; }
+  .chip { background:var(--surface2); border:1px solid var(--border); color:var(--text);
+    padding:4px 10px; border-radius:14px; cursor:pointer; font-size:0.82rem; user-select:none; }
+  .chip.active { background:var(--accent); color:#000; border-color:var(--accent); }
+  .chip.all { font-weight:600; }
+
+  /* Letter groups by lang/dialect */
+  .lang-section { margin-bottom:24px; }
+  .lang-header { font-size:0.95rem; color:var(--accent2); font-weight:600;
+    padding:8px 0; border-bottom:2px solid var(--accent2); margin-bottom:8px; }
+
+  /* Letter row */
+  .letter-block { border:1px solid var(--border); border-radius:6px; margin-bottom:6px;
+    background:var(--surface); overflow:hidden; }
+  .letter-row { display:grid;
+    grid-template-columns: 28px 1fr 70px 90px 100px 70px 50px;
+    gap:8px; align-items:center; padding:8px 12px; cursor:pointer; }
+  .letter-row.no-examples { cursor:default; }
+  .letter-row:hover:not(.no-examples) { background:var(--surface2); }
+  .letter-toggle { color:var(--muted); font-size:0.8rem; transition:transform 0.15s; }
+  .letter-toggle.expanded { transform:rotate(90deg); }
+  .letter-toggle.invisible { visibility:hidden; }
+  .letter-char { font-size:1.4rem; font-weight:600; color:var(--accent); }
+  .letter-ipa { color:var(--muted); font-family:'Doulos SIL','Charis SIL',serif; }
+  .letter-pos, .letter-manner, .letter-voice { font-size:0.85rem; color:var(--muted); }
+  .letter-note-ref { font-size:0.85rem; color:var(--accent2); cursor:help; }
+
+  .examples { padding:8px 12px 12px 48px; border-top:1px solid var(--border);
+    background:var(--surface2); display:none; }
+  .letter-block.expanded .examples { display:flex; gap:8px; flex-wrap:wrap; }
+  .example-card { background:var(--bg); border:1px solid var(--border); border-radius:6px;
+    padding:8px 12px; display:flex; align-items:center; gap:10px;
+    flex:1 1 200px; min-width:180px; max-width:300px; }
+  .play-btn { width:28px; height:28px; border-radius:50%; border:1px solid var(--accent);
+    background:transparent; color:var(--accent); cursor:pointer; font-size:0.85rem;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .play-btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .play-btn.active { background:var(--accent); color:#000; }
+  .example-text { flex:1; min-width:0; }
+  .example-sentence { font-weight:600; word-break:break-word; }
+  .example-translation { font-size:0.85rem; color:var(--muted); word-break:break-word; }
+
+  /* Notes section */
+  .notes-section { margin-top:32px; }
+  .notes-header { font-size:1.1rem; font-weight:600; padding:8px 0;
+    border-bottom:2px solid var(--accent); margin-bottom:12px; }
+  .note-item { display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--border);
+    line-height:1.6; }
+  .note-num { font-weight:600; color:var(--accent); min-width:30px; }
+  .note-text { flex:1; }
+  .note-lang-header { font-size:0.95rem; color:var(--accent2); font-weight:600;
+    margin-top:16px; margin-bottom:4px; }
+  .note-lang-header:first-child { margin-top:0; }
+
+  .empty-state { text-align:center; padding:40px 20px; color:var(--muted); }
+  .loading { text-align:center; padding:40px; color:var(--muted); }
+
+  /* Tooltip for note refs */
+  [data-tip] { position:relative; }
+  [data-tip]:hover::after {
+    content:attr(data-tip); position:absolute; bottom:100%; left:0;
+    background:var(--surface2); border:1px solid var(--accent); color:var(--text);
+    padding:8px 12px; border-radius:6px; font-size:0.82rem; line-height:1.5;
+    width:max-content; max-width:320px; z-index:100;
+    box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  }
+
+  @media (max-width:600px) {
+    .letter-row { grid-template-columns: 24px 1fr 50px 70px 80px; gap:6px; padding:6px 8px; }
+    .letter-voice, .letter-note-ref { display:none; }
+    .examples { padding:8px; }
+    .example-card { flex:1 1 100%; }
+    .filter-label { min-width:60px; font-size:0.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="goBack()">← 返回</button>
+  <div class="title">字母分類</div>
+  <div class="search-wrap">
+    <input type="text" id="globalSearch" placeholder="輸入文字將回到搜尋模式" oninput="onSearchInput(event)">
+  </div>
+</div>
+
+<div class="container">
+  <div class="filters" id="filters"><!-- 由 JS 動態建立 --></div>
+  <div id="mainContent" class="loading">載入中…</div>
+</div>
+
+<script>
+const AUDIO_BASE = 'https://pub-44bec38ae2824f519a8519301efe3bd7.r2.dev/';
+
+const LANG_LIST = [
+  {key:'阿美語',  name:'阿美語',   dialects:[['1','南勢'],['2','秀姑巒'],['3','海岸'],['4','馬蘭'],['5','恆春']]},
+  {key:'泰雅語',  name:'泰雅語',   dialects:[['6','賽考利克'],['7','澤敖利'],['8','汶水'],['9','萬大'],['10','四季'],['11','宜蘭澤敖利']]},
+  {key:'13',      name:'賽夏語',   dialects:[]},
+  {key:'14',      name:'邵語',     dialects:[]},
+  {key:'賽德克語',name:'賽德克語', dialects:[['15','都達'],['16','德固達雅'],['17','德鹿谷']]},
+  {key:'布農語',  name:'布農語',   dialects:[['18','卓群'],['19','卡群'],['20','丹群'],['21','巒群'],['22','郡群']]},
+  {key:'排灣語',  name:'排灣語',   dialects:[['23','東'],['24','北'],['25','中'],['26','南']]},
+  {key:'魯凱語',  name:'魯凱語',   dialects:[['27','東'],['28','霧台'],['29','大武'],['30','多納'],['31','茂林'],['32','萬山']]},
+  {key:'33',      name:'太魯閣語', dialects:[]},
+  {key:'34',      name:'噶瑪蘭語', dialects:[]},
+  {key:'35',      name:'鄒語',     dialects:[]},
+  {key:'卑南語',  name:'卑南語',   dialects:[['38','南王'],['39','知本'],['40','西群'],['41','建和']]},
+  {key:'42',      name:'雅美語',   dialects:[]},
+  {key:'43',      name:'撒奇萊雅語',dialects:[]},
+  {key:'36',      name:'卡那卡那富語',dialects:[]},
+  {key:'37',      name:'拉阿魯哇語',dialects:[]},
+];
+const _langIdx = {}; LANG_LIST.forEach((l,i)=>_langIdx[l.name]=i);
+
+// 固定順序定義
+const TYPE_ORDER = ['元音','輔音','符號'];
+const VOWEL_POS_ORDER = ['前','央','後'];
+const VOWEL_MANNER_ORDER = ['高','中','低'];
+const VOWEL_VOICE_ORDER = ['圓唇','展唇'];
+const CONS_POS_ORDER = ['雙唇','雙唇舌根','唇齒','齒間','舌尖','舌尖後','舌面','捲舌','舌根','小舌','會厭','咽','喉'];
+const CONS_MANNER_ORDER = ['塞音','塞擦音','擦音','後擦音','邊擦音','鼻音','邊音','顫音','拍音','滑音','接近音','捲舌接近音','內爆音'];
+const CONS_VOICE_ORDER = ['清','濁'];
+
+// 篩選狀態
+const sel = {
+  types: new Set(['元音']),  // 預設先看元音
+  pos: new Set(),
+  manner: new Set(),
+  voice: new Set(),
+  ipa: new Set(),
+};
+// 「全選」= 該集合為空，代表不過濾
+
+// 從上一頁傳來的語別/方言選擇（與 index.html 共用 sos_prefs）
+function loadSelectedLangs(){
+  try {
+    const raw = localStorage.getItem('sos_prefs');
+    if(!raw) return new Set();
+    const prefs = JSON.parse(raw);
+    return new Set(prefs.langkeys || []);
+  } catch(e){ return new Set(); }
+}
+const selLangKeys = loadSelectedLangs(); // 與主頁共用
+
+let DATA = null;
+
+// ── Load data ─────────────────────────────────────────
+fetch('data/letters.json').then(r=>r.json()).then(d=>{
+  DATA = d;
+  // 過濾出當前選取語別/方言別範圍內的字母
+  buildFilters();
+  render();
+}).catch(e=>{
+  document.getElementById('mainContent').innerHTML =
+    `<div class="empty-state">⚠ 載入失敗：${e.message}</div>`;
+});
+
+// ── 語別/方言 篩選邏輯：以共用的 selLangKeys 為準 ─────
+// selLangKeys 內容範例："阿美語"（整個語別）或 "阿美語|1"（限定方言別）
+function langMatchesSelection(lang, dial){
+  if(selLangKeys.size === 0) return true; // 未選 = 全部
+  if(selLangKeys.has(lang)) return true;
+  if(selLangKeys.has(lang+'|'+dial)) return true;
+  return false;
+}
+
+// ── 取得當前語別範圍內的所有 letter 列 ─────────────
+function getInScopeLetters(){
+  return DATA.letters.filter(l => langMatchesSelection(l.lang, l.dial));
+}
+
+// ── 動態建立篩選器 ───────────────────────────────
+function buildFilters(){
+  const scope = getInScopeLetters();
+
+  // 類型篩選（固定三選項，但只列出範圍內存在的）
+  const typesPresent = new Set(scope.map(l=>l.type));
+  const typeOpts = TYPE_ORDER.filter(t => typesPresent.has(t));
+
+  // 進一步以當前選取類型再過濾，取得可用的子篩選器選項
+  const subScope = scope.filter(l => sel.types.size===0 || sel.types.has(l.type));
+
+  // 依「目前選取的類型」決定發音位置/方式的固定順序
+  const onlyVowel = sel.types.size===1 && sel.types.has('元音');
+  const onlyCons  = sel.types.size===1 && sel.types.has('輔音');
+  const onlySym   = sel.types.size===1 && sel.types.has('符號');
+
+  const posOrder    = onlyVowel ? VOWEL_POS_ORDER    : onlyCons ? CONS_POS_ORDER    : [...VOWEL_POS_ORDER, ...CONS_POS_ORDER];
+  const mannerOrder = onlyVowel ? VOWEL_MANNER_ORDER : onlyCons ? CONS_MANNER_ORDER : [...VOWEL_MANNER_ORDER, ...CONS_MANNER_ORDER];
+  const voiceOrder  = onlyVowel ? VOWEL_VOICE_ORDER  : onlyCons ? CONS_VOICE_ORDER  : [...VOWEL_VOICE_ORDER, ...CONS_VOICE_ORDER];
+
+  function sorted(values, fixedOrder){
+    const set = new Set(values.filter(Boolean));
+    const fixed = fixedOrder.filter(x => set.has(x));
+    const rest = [...set].filter(x => !fixedOrder.includes(x)).sort();
+    return [...fixed, ...rest];
+  }
+
+  const posOpts    = sorted(subScope.map(l=>l.pos),    posOrder);
+  const mannerOpts = sorted(subScope.map(l=>l.manner), mannerOrder);
+  const voiceOpts  = sorted(subScope.map(l=>l.voice),  voiceOrder);
+  const ipaOpts    = [...new Set(subScope.map(l=>l.ipa).filter(Boolean))].sort();
+
+  const html = `
+    ${renderFilterRow('類型', typeOpts, sel.types, 'types', true)}
+    ${onlySym ? '' : `
+      ${posOpts.length    ? renderFilterRow('發音位置', posOpts, sel.pos, 'pos') : ''}
+      ${mannerOpts.length ? renderFilterRow(onlyVowel?'高低':'發音方式', mannerOpts, sel.manner, 'manner') : ''}
+      ${voiceOpts.length  ? renderFilterRow(onlyVowel?'唇形':'清濁', voiceOpts, sel.voice, 'voice') : ''}
+    `}
+    ${ipaOpts.length ? renderFilterRow('IPA', ipaOpts, sel.ipa, 'ipa') : ''}
+  `;
+  document.getElementById('filters').innerHTML = html;
+}
+
+function renderFilterRow(label, opts, selSet, key, isExclusive){
+  const allActive = selSet.size === 0;
+  const chips = opts.map(opt =>
+    `<span class="chip ${selSet.has(opt)?'active':''}"
+        onclick="toggleFilter('${key}','${escapeAttr(opt)}',${isExclusive?'true':'false'})">${escapeHtml(opt)}</span>`
+  ).join('');
+  return `
+    <div class="filter-row">
+      <div class="filter-label">${label}</div>
+      <div class="filter-chips">
+        <span class="chip all ${allActive?'active':''}" onclick="clearFilter('${key}')">全選</span>
+        ${chips}
+      </div>
+    </div>
+  `;
+}
+
+function toggleFilter(key, val, isExclusive){
+  const s = sel[key];
+  if(isExclusive){
+    s.clear();
+    s.add(val);
+    // 切換類型時清空次篩選（因為元音/輔音的次篩選標準不同）
+    if(key === 'types'){
+      sel.pos.clear(); sel.manner.clear(); sel.voice.clear(); sel.ipa.clear();
+    }
+  } else {
+    if(s.has(val)) s.delete(val); else s.add(val);
+  }
+  buildFilters(); render();
+}
+function clearFilter(key){
+  sel[key].clear();
+  if(key === 'types'){
+    sel.pos.clear(); sel.manner.clear(); sel.voice.clear(); sel.ipa.clear();
+  }
+  buildFilters(); render();
+}
+
+// ── 篩選一個字母列是否符合所有目前條件 ─────────────
+function letterPasses(l){
+  if(sel.types.size && !sel.types.has(l.type)) return false;
+  if(sel.pos.size && !sel.pos.has(l.pos)) return false;
+  if(sel.manner.size && !sel.manner.has(l.manner)) return false;
+  if(sel.voice.size && !sel.voice.has(l.voice)) return false;
+  if(sel.ipa.size && !sel.ipa.has(l.ipa)) return false;
+  return true;
+}
+
+// ── 排序鍵：先語別、再方言別、再字母編號 ─────────────
+function letterSortKey(l){
+  const li = _langIdx[l.lang] ?? 999;
+  const di = parseInt(l.dial||'0',10) || 0;
+  const no = parseInt(l.no,10) || 0;
+  return [li, di, no];
+}
+function cmpKey(a,b){
+  for(let i=0;i<a.length;i++){ if(a[i]!==b[i]) return a[i]-b[i]; }
+  return 0;
+}
+
+// ── 上標數字 ─────────────────────────────────────
+const SUP_DIGITS = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+function toSup(n){ return String(n).split('').map(c=>SUP_DIGITS[c]||c).join(''); }
+
+// ── 主渲染 ────────────────────────────────────────
+function render(){
+  if(!DATA){ return; }
+  const scope = getInScopeLetters().filter(letterPasses);
+  scope.sort((a,b)=>cmpKey(letterSortKey(a),letterSortKey(b)));
+
+  // 注意事項全域連續編號：依語別順序、語別內依代號排序
+  // 收集所有「字母列引用到的注意事項代號」（只算當前可見的字母列）
+  const refsByLang = {}; // {lang: Set<code>}
+  scope.forEach(l => {
+    if(!l.note_ref) return;
+    refsByLang[l.lang] = refsByLang[l.lang] || new Set();
+    refsByLang[l.lang].add(l.note_ref);
+  });
+
+  // 建立 code → 全域編號 對照
+  const noteNumMap = {}; // {lang+'|'+code: globalNum}
+  const orderedLangs = LANG_LIST.map(l=>l.name).filter(name => refsByLang[name]);
+  let counter = 0;
+  const notesToShow = []; // [{globalNum, lang, code, text}]
+  orderedLangs.forEach(lang => {
+    const codes = [...refsByLang[lang]].sort();
+    codes.forEach(code => {
+      counter++;
+      noteNumMap[lang+'|'+code] = counter;
+      const noteRow = DATA.notes.find(n => n.lang===lang && n.code===code);
+      notesToShow.push({
+        globalNum: counter, lang, code,
+        text: noteRow ? noteRow.text : '（注意事項內容缺失）'
+      });
+    });
+  });
+
+  if(scope.length === 0){
+    document.getElementById('mainContent').innerHTML =
+      `<div class="empty-state">🔭 沒有符合條件的字母<br><br>請調整篩選或在主頁選擇語別/方言別</div>`;
+    return;
+  }
+
+  // 依語別+方言別分組顯示
+  let lastGroupKey = null;
+  let html = '';
+  scope.forEach(l => {
+    const dialName = (LANG_LIST.find(L=>L.name===l.lang)?.dialects.find(d=>d[0]===l.dial)?.[1]) || '';
+    const groupKey = l.lang + '/' + l.dial;
+    if(groupKey !== lastGroupKey){
+      if(lastGroupKey !== null) html += '</div>';
+      html += `<div class="lang-section">
+        <div class="lang-header">${escapeHtml(l.lang)}${dialName?'/'+escapeHtml(dialName):''}</div>`;
+      lastGroupKey = groupKey;
+    }
+
+    const noteNum = (l.note_ref && noteNumMap[l.lang+'|'+l.note_ref]) || null;
+    const noteText = noteNum ? (notesToShow.find(n=>n.globalNum===noteNum)?.text || '') : '';
+
+    const hasEx = l.examples.length > 0;
+    html += `
+      <div class="letter-block ${hasEx?'expanded':''}" id="lb-${l.no}-${l.lang}-${l.dial}">
+        <div class="letter-row ${hasEx?'':'no-examples'}"
+             ${hasEx?`onclick="toggleBlock(this.parentElement)"`:''}>
+          <span class="letter-toggle ${hasEx?'expanded':'invisible'}">▶</span>
+          <span class="letter-char">${escapeHtml(l.letter)}</span>
+          <span class="letter-ipa">${l.ipa?'['+escapeHtml(l.ipa)+']':''}</span>
+          <span class="letter-pos">${escapeHtml(l.pos||'')}</span>
+          <span class="letter-manner">${escapeHtml(l.manner||'')}</span>
+          <span class="letter-voice">${escapeHtml(l.voice||'')}</span>
+          <span class="letter-note-ref" ${noteNum?`data-tip="${escapeAttr(noteText)}"`:''}>${noteNum?toSup(noteNum):''}</span>
+        </div>
+        ${hasEx ? `<div class="examples">
+          ${l.examples.map((ex,i) => renderExample(ex, l, i)).join('')}
+        </div>` : ''}
+      </div>
+    `;
+  });
+  if(lastGroupKey !== null) html += '</div>';
+
+  // 注意事項區塊
+  if(notesToShow.length > 0){
+    html += `<div class="notes-section">
+      <div class="notes-header">注意事項</div>`;
+    let lastLang = null;
+    notesToShow.forEach(n => {
+      if(n.lang !== lastLang){
+        html += `<div class="note-lang-header">${escapeHtml(n.lang)}</div>`;
+        lastLang = n.lang;
+      }
+      html += `<div class="note-item">
+        <span class="note-num">${toSup(n.globalNum)}</span>
+        <span class="note-text">${escapeHtml(n.text)}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function renderExample(ex, letter, idx){
+  const audioPath = ex.audio ? `${letter.dial}/A/${ex.audio}.mp3` : '';
+  const audioUrl = audioPath ? AUDIO_BASE + audioPath : '';
+  return `<div class="example-card">
+    <button class="play-btn" ${audioUrl?'':'disabled'}
+      data-audio="${escapeAttr(audioUrl)}"
+      onclick="playExample(this)" title="${audioUrl?'播放':'無音檔'}">${audioUrl?'▶':'—'}</button>
+    <div class="example-text">
+      <div class="example-sentence">${escapeHtml(ex.sentence)}</div>
+      <div class="example-translation">${escapeHtml(ex.translation||'')}</div>
+    </div>
+  </div>`;
+}
+
+function toggleBlock(block){
+  block.classList.toggle('expanded');
+  const toggle = block.querySelector('.letter-toggle');
+  if(toggle) toggle.classList.toggle('expanded');
+}
+
+// ── 音檔播放 ─────────────────────────────────────
+let currentAudio = null, currentBtn = null;
+function playExample(btn){
+  const url = btn.dataset.audio;
+  if(!url) return;
+  if(currentAudio){
+    currentAudio.pause();
+    if(currentBtn){ currentBtn.textContent='▶'; currentBtn.classList.remove('active'); }
+    if(currentBtn === btn){ currentAudio = null; currentBtn = null; return; }
+  }
+  currentAudio = new Audio(url);
+  currentBtn = btn;
+  btn.textContent='⏸'; btn.classList.add('active');
+  currentAudio.play().catch(()=>{
+    btn.textContent='▶'; btn.classList.remove('active');
+    currentAudio=null; currentBtn=null;
+  });
+  currentAudio.onended = () => {
+    btn.textContent='▶'; btn.classList.remove('active');
+    currentAudio=null; currentBtn=null;
+  };
+}
+
+// ── 返回主頁 ─────────────────────────────────────
+function goBack(){
+  // 清除字母模式旗標，回到主搜尋
+  try { localStorage.removeItem('sos_view_mode'); } catch(e){}
+  location.href = 'index.html';
+}
+
+function onSearchInput(e){
+  const v = e.target.value.trim();
+  if(v.length === 0) return;
+  // 任何輸入 → 回到主頁並帶上搜尋字串
+  try {
+    localStorage.setItem('sos_pending_search', v);
+    localStorage.removeItem('sos_view_mode');
+  } catch(e){}
+  location.href = 'index.html';
+}
+
+// ── 主題 ─────────────────────────────────────────
+(function applyTheme(){
+  try {
+    const t = localStorage.getItem('sos_theme');
+    if(t === 'light') document.body.classList.add('light');
+  } catch(e){}
+})();
+
+// ── 工具 ─────────────────────────────────────────
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s).replace(/'/g,"&#39;"); }
+</script>
+
+</body>
+</html>
