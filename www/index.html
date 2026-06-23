@@ -692,50 +692,9 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
 .sb-expand-btn:hover { color: var(--accent); }
 
 /* ── Subscription lock overlay (App only) ── */
-#subOverlay {
-  display:none; position:fixed; inset:0; z-index:9999;
-  background:var(--bg); flex-direction:column;
-  align-items:center; justify-content:center; padding:32px; text-align:center;
-}
-#subOverlay.show { display:flex; }
-#subOverlay .sub-icon { font-size:3rem; margin-bottom:16px; }
-#subOverlay h2 { font-size:1.2rem; margin-bottom:10px; color:var(--text); }
-#subOverlay p { font-size:0.9rem; color:var(--muted); margin-bottom:24px; line-height:1.6; max-width:340px; }
-#subOverlay .sub-input {
-  width:100%; max-width:300px; padding:12px 16px; font-size:1rem;
-  border:1px solid var(--border); border-radius:10px;
-  background:var(--surface); color:var(--text); text-align:center;
-  letter-spacing:1px; margin-bottom:14px; font-family:'Space Mono',monospace;
-}
-#subOverlay .sub-input:focus { outline:none; border-color:var(--accent); }
-#subOverlay .sub-btn {
-  width:100%; max-width:300px; padding:12px; font-size:1rem;
-  background:var(--accent); color:var(--bg); border:none;
-  border-radius:10px; cursor:pointer; font-family:inherit; font-weight:700;
-  margin-bottom:14px;
-}
-#subOverlay .sub-btn:disabled { opacity:0.5; cursor:default; }
-#subOverlay .sub-hint { font-size:0.78rem; color:var(--muted); }
-#subOverlay .sub-msg { font-size:0.85rem; min-height:20px; margin-bottom:8px; }
-#subOverlay .sub-msg.err { color:#e57373; }
-#subOverlay .sub-msg.ok { color:var(--accent2); }
-#subOverlay .sub-login-note { font-size:0.8rem; color:var(--accent); margin-bottom:18px; }
-
 </style>
 </head>
 <body>
-<!-- Subscription lock overlay (App only) -->
-<div id="subOverlay">
-  <div class="sub-icon">🔒</div>
-  <h2 id="subTitle">輸入訂閱代碼</h2>
-  <p id="subDesc">本 App 為訂閱制功能。請輸入您的代碼以啟用，尚無代碼請至官網購買。</p>
-  <div class="sub-login-note" id="subLoginNote"></div>
-  <div class="sub-msg" id="subMsg"></div>
-  <input type="text" class="sub-input" id="subCodeInput" placeholder="輸入代碼" autocomplete="off">
-  <button class="sub-btn" id="subRedeemBtn" onclick="redeemSubCode()">啟用</button>
-  <div class="sub-hint">尚無代碼？請至<a href="https://haiangdict.github.io/Indigenous_SOS/about.html" target="_blank" style="color:var(--accent);text-decoration:underline;">官網</a>進一步了解獲得管道。</div>
-</div>
-
 
 <header>
   <div class="logo">
@@ -774,8 +733,8 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
   </div>
   <!-- Special character buttons -->
   <div class="char-btns">
-    <button class="char-btn" onclick="insertChar('’')" title="’ (U+2019)">’</button>
     <button class="char-btn" onclick="insertChar('é')"  title="é (U+00E9)">é</button>
+    <button class="char-btn" onclick="insertChar('ē')"  title="ē (U+0113)">ē</button>
     <button class="char-btn" onclick="insertChar('ɨ')"  title="ɨ (U+0268)">ɨ</button>
     <button class="char-btn" onclick="insertChar('ṟ')"  title="ṟ (U+1E5F)">ṟ</button>
     <button class="char-btn" onclick="insertChar('ʉ')"  title="ʉ (U+0289)">ʉ</button>
@@ -808,6 +767,7 @@ body.light .row-item.row-title { background: rgba(0,0,0,0.08); }
 <script>
 let allData = [];
 let filteredData = [];
+let _hasActiveSearchQuery = false; // true 時：排序以語別/方言為主；false 時：以資料位置為主（同位置各語言並排）
 const isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 let currentPage = 1;
 const PAGE_SIZE = 60;
@@ -1315,9 +1275,7 @@ function toggleExact(){
 }
 
 function toggleScope(which){
-  // Must keep at least one active
-  const other = which==='sentence'?'translation':'sentence';
-  if(searchScope[which] && !searchScope[other]) return; // can't deselect last one
+  // 兩個範圍都可以取消勾選：未勾選任何範圍 = 不限制範圍 = 同時搜尋語句與翻譯
   searchScope[which] = !searchScope[which];
   // Update UI
   const lbl = document.getElementById('scope-'+(which==='sentence'?'s':'t'));
@@ -1330,8 +1288,8 @@ function toggleScope(which){
 // ── Special character input ──────────────────────────────────────
 // Three chars each have lower + upper form
 const SPECIAL_CHARS = {
-  '’': '’', // U+2019 right single quotation mark (no case distinction)
   'é': 'É',   // U+00E9 / U+00C9
+  'ē': 'Ē',   // U+0113 / U+0112
   'ɨ': 'Ɨ',   // U+0268 / U+0197
   'ṟ': 'Ṟ',   // U+1E5F / U+1E5E
   'ʉ': 'Ʉ',   // U+0289 / U+0244
@@ -1359,7 +1317,7 @@ function cycleCase(){
     btn.textContent = _charCase === 'upper' ? 'ABC' : 'abc';
     btn.classList.toggle('upper', _charCase === 'upper');
     // Also update char button labels to show upper/lower
-    const labels = { '’':'’', 'é':'É', 'ɨ':'Ɨ', 'ṟ':'Ṟ', 'ʉ':'Ʉ' };
+    const labels = { 'é':'É', 'ē':'Ē', 'ɨ':'Ɨ', 'ṟ':'Ṟ', 'ʉ':'Ʉ' };
     document.querySelectorAll('.char-btn').forEach(b => {
       const lower = b.title.split(' ')[0];
       b.textContent = _charCase === 'upper' ? (labels[lower]||lower) : lower;
@@ -1790,9 +1748,12 @@ async function _loadMonolithic(){
 }
 
 // ── Offline audio support ─────────────────────────────────────
-if(isNativeApp){
+// 已放棄訂閱制：能下載安裝本 App 本身即代表已通過測試名單篩選，
+// 離線下載功能對所有 App 使用者無條件開放，不需登入、不需代碼。
+function refreshOfflineDlBtnVisibility(){
   const dlBtn = document.getElementById('dlBtn');
-  if(dlBtn) dlBtn.style.display = '';
+  if(!dlBtn) return;
+  dlBtn.style.display = isNativeApp ? '' : 'none';
 }
 
 async function getLocalAudioURI(relPath){
@@ -2041,7 +2002,8 @@ function onSearchInput(){
 function applyFilters(){
   if(!_filterCache) _buildFilterCache();
   const rawQ = document.getElementById('searchInput').value;
-  const q = rawQ.trim().toLowerCase();
+  // 將撇音符號家族（' ʹ ` ‘）統一正規化為 ’（U+2019），與資料庫一致後再比對
+  const q = rawQ.trim().toLowerCase().replace(/[\u0027\u02B9\u0060\u2018]/g, '\u2019');
 
   // Fast path: collect candidate index sets and intersect
   let candidates = null; // null = all
@@ -2107,15 +2069,23 @@ function applyFilters(){
     rows=sorted.map(i=>allData[i]);
   }
 
+  // 標記是否有搜尋字串：影響 groupSortKey 的排序優先順序（見該函式註解）
+  _hasActiveSearchQuery = !!q;
+
   // Text search — apply last on filtered set, respecting scope
+  // 注意：兩個範圍勾選框都未勾選時，視為「不限制範圍」= 同時搜尋語句與翻譯，
+  // 與語別篩選「未選取任何語別 = 不限制」的邏輯一致。
   if(q){
+    const noScope = !searchScope.sentence && !searchScope.translation;
+    const useSentence = noScope || searchScope.sentence;
+    const useTranslation = noScope || searchScope.translation;
     rows=rows.filter(r=>{
       if(exactSearch){
-        if(searchScope.sentence && (r['語句']||'') === rawQ) return true;
-        if(searchScope.translation && (r['翻譯']||'') === rawQ) return true;
+        if(useSentence && (r['語句']||'') === rawQ) return true;
+        if(useTranslation && (r['翻譯']||'') === rawQ) return true;
       } else {
-        if(searchScope.sentence && (r['語句']||'').toLowerCase().includes(q)) return true;
-        if(searchScope.translation && (r['翻譯']||'').includes(q)) return true;
+        if(useSentence && (r['語句']||'').toLowerCase().includes(q)) return true;
+        if(useTranslation && (r['翻譯']||'').toLowerCase().includes(q)) return true;
       }
       return false;
     });
@@ -2194,9 +2164,13 @@ function groupSortKey(r){
   const cat = r['分類']||'';
   function pad(s){
     const n = (s||'').trim();
-    // Extract numeric prefix for proper numeric sorting
-    const m = n.match(/^(\d+)/);
-    return m ? m[1].padStart(4,'0') + n.slice(m[1].length) : n;
+    // 格式：數字補零(4位) + 字母後綴補位(1位，空白=無後綴排在a之前) + 中文內容
+    // 例：'03問關係'  → '0003 問關係'
+    //     '03a問關係' → '0003a問關係'
+    // 空白(0x20) < 'a'(0x61)，確保 03 < 03a
+    const m = n.match(/^(\d+)([a-zA-Z]?)(.*)/);
+    if(m) return m[1].padStart(4,'0') + (m[2] || ' ') + m[3];
+    return n;
   }
   const cat1 = pad(r['分類1']);
   const cat2 = pad(r['分類2']);
@@ -2207,7 +2181,16 @@ function groupSortKey(r){
   // Append level to sort key for P/V when levels are selected
   const lvlOrder = {'B':'1','I':'2','S':'3','U':'4'};
   const lvl = (r['分類']==='P'||r['分類']==='V') ? (lvlOrder[r['等級']]||'9') : '';
-  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+langOrd+'|'+dialOrd+'|'+lvl;
+  // 排序優先順序依情境切換：
+  // ・無搜尋字串（瀏覽模式）：資料位置 → 語別 → 方言 → 等級
+  //   讓同一資料位置（同句型/同篇）的各語言並排對照。
+  // ・有搜尋字串（查找模式）：語別 → 方言 → 資料位置 → 等級
+  //   因為命中的資料位置在不同語言間本來就不對齊，
+  //   以語別/方言為主鍵讓使用者能系統性地依語言檢視結果。
+  if(_hasActiveSearchQuery){
+    return langOrd+'|'+dialOrd+'|'+cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+lvl;
+  }
+  return cat+'|'+cat1+'|'+cat2+'|'+cat3+'|'+cat4+'|'+lvl+'|'+langOrd+'|'+dialOrd;
 }
 
 // ── Render one row (no col-tags — info in card header) ─────────────
@@ -2741,7 +2724,6 @@ _loadPrefs();
 const GAPI_CLIENT_ID = '879339990160-3q0p058b1kbtdiifp9qhq9fm6bj0mem7.apps.googleusercontent.com';
 const GAPI_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 // 邀請碼驗證後端 (Google Apps Script Web App URL) — 部署後填入
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCOX4y9-TsjKGZS4RoIVMQ5ImJsX3kcGwwuDqenQJgTIXob5wTQdJf-0umOgBIlR65/exec';
 const SPREADSHEET_TITLE = 'Indigenous SOS 詞彙表';
 const SHEET_HEADERS = ['語句','翻譯','語別','教材','等級','音檔路徑','編號','收藏時間','備註'];
 
@@ -2830,7 +2812,6 @@ function signInWeb() {
       await loadStarredIds();
       await loadPrefsFromSheets(); // load saved prefs from Sheets
       renderPage();
-      if(isNativeApp) checkSubscription();
     }
   }).requestAccessToken();
 }
@@ -2856,30 +2837,30 @@ let _nativeSignInPending = false;
 async function signInNative() {
   if(_nativeSignInPending) return;
   _nativeSignInPending = true;
-  _debugLog('signInNative: start');
+
+  // 登入現為選用功能，失敗僅用 toast 提示，不影響主頁使用
+  function _loginErr(msg) {
+    showToast(msg);
+  }
 
   try {
     const { SocialLogin } = window.Capacitor.Plugins;
     if(!SocialLogin) {
-      showToast('❌ 登入插件未載入，請重新安裝 App');
+      _loginErr('❌ 登入插件未載入，請重新安裝 App');
       return;
     }
 
     await _ensureSocialLoginInit();
-    _debugLog('initialize OK');
 
     const res = await SocialLogin.login({
       provider: 'google',
       options: {
-        // 要求 email/profile 以及 Sheets/Drive 權限，
-        // 觸發原生授權同意畫面並回傳帶有這些 scope 的 access token。
         scopes: [
           'email',
           'profile',
           'https://www.googleapis.com/auth/spreadsheets',
           'https://www.googleapis.com/auth/drive.file'
         ],
-        // 讓使用受監護（Family Link）帳號的裝置也能看到帳號
         filterByAuthorizedAccounts: false,
         forceRefreshToken: true,
       }
@@ -2889,12 +2870,10 @@ async function signInNative() {
     const accessToken = result && result.accessToken ? result.accessToken.token : null;
     const profile = result ? result.profile : null;
 
-    _debugLog('login OK, token: ' + (accessToken ? accessToken.substring(0,12)+'…' : 'null')
-      + ', user: ' + (profile && profile.email));
-
     if(!accessToken) {
-      _debugLog('accessToken 為 null — 多半是 OAuth 同意畫面尚未加入 Sheets/Drive scope，或此帳號未列為測試人員');
-      showToast('❌ 無法取得存取金鑰，請確認已被加入測試人員並重試');
+      // 把完整的 result 結構顯示出來以便診斷
+      const detail = JSON.stringify(result, null, 0).substring(0, 200);
+      _loginErr('❌ token 為 null。result: ' + detail);
       return;
     }
 
@@ -2911,11 +2890,10 @@ async function signInNative() {
     await loadStarredIds();
     await loadPrefsFromSheets();
     renderPage();
-    if(isNativeApp) checkSubscription();
 
   } catch(e) {
-    _debugLog('signInNative error: ' + (e && (e.message || String(e))));
-    showToast('❌ 登入失敗：' + (e && (e.message || String(e))));
+    const msg = (e && (e.message || String(e))) || 'unknown error';
+    _loginErr('❌ 登入例外：' + msg);
   } finally {
     _nativeSignInPending = false;
   }
@@ -2933,11 +2911,6 @@ function signOut() {
   showToast('✓ 已登出');
 }
 
-// ── Subscription system (App only) ─────────────────────────────
-// Only enforced in native app; website is always free to use.
-let _subActive = false;
-let _subExpiry = null;
-
 // 偵錯訊息僅輸出至 console（用 chrome://inspect 查看），不顯示在畫面上。
 function _debugLog(msg){
   if(!isNativeApp) return;
@@ -2945,144 +2918,8 @@ function _debugLog(msg){
 }
 
 
-// 確認訂閱狀態；未登入或訂閱無效時顯示 lock overlay（App 限定）。
-async function checkSubscription(){
-  if(!isNativeApp) return true;
-
-  // 未登入 → 顯示登入畫面
-  if(!_gToken || !_gUser || !_gUser.email){
-    showSubOverlay(true);
-    return false;
-  }
-
-  // 本地快取有效 → 放行，背景靜默向伺服器確認
-  try {
-    const raw = localStorage.getItem('sos_sub');
-    if(raw){
-      const sub = JSON.parse(raw);
-      if(sub.email === _gUser.email && sub.expiryISO){
-        const exp = new Date(sub.expiryISO);
-        if(exp > new Date()){
-          _subActive = true; _subExpiry = exp;
-          hideSubOverlay();
-          _verifySubServer(); // 背景確認，不 await
-          return true;
-        }
-      }
-    }
-  } catch(e){}
-
-  // 快取過期或不存在 → 向伺服器確認
-  return await _verifySubServer();
-}
-
-async function _verifySubServer(){
-  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_')===0) {
-    hideSubOverlay();
-    return true;
-  }
-  try {
-    const url = APPS_SCRIPT_URL + '?action=status&email=' + encodeURIComponent(_gUser.email);
-    const res = await fetch(url);
-    const data = await res.json();
-    if(data.ok && data.active){
-      _subActive = true;
-      _subExpiry = data.expiryISO ? new Date(data.expiryISO) : null;
-      try { localStorage.setItem('sos_sub', JSON.stringify({email:_gUser.email, expiryISO:data.expiryISO})); } catch{}
-      hideSubOverlay();
-      return true;
-    } else {
-      _subActive = false;
-      // 若伺服器回傳到期時間，更新本地記錄（讓 overlay 標題正確顯示「已到期」）
-      if(data.expiryISO) _subExpiry = new Date(data.expiryISO);
-      try { localStorage.removeItem('sos_sub'); } catch(e){}
-      showSubOverlay(false);
-      return false;
-    }
-  } catch(e){
-    // 網路失敗：信任本地快取，不擋使用者；訂閱過期與否等下次上線再確認
-    _debugLog('_verifySubServer network error: ' + (e && e.message));
-    hideSubOverlay();
-    return true;
-  }
-}
-
-function showSubOverlay(needLogin){
-  const ov = document.getElementById('subOverlay');
-  if(!ov) return;
-  const note = document.getElementById('subLoginNote');
-  const input = document.getElementById('subCodeInput');
-  const btn = document.getElementById('subRedeemBtn');
-  const title = document.getElementById('subTitle');
-  const desc = document.getElementById('subDesc');
-
-  if(needLogin){
-    title.textContent = '請先登入';
-    desc.textContent = '輸入代碼前，請先使用 Google 帳號登入。';
-    note.innerHTML = '<button class="sub-btn" style="max-width:300px" onclick="signIn()">使用 Google 登入</button>';
-    if(input) input.style.display = 'none';
-    if(btn) btn.style.display = 'none';
-  } else {
-    title.textContent = _subExpiry ? '訂閱已到期' : '輸入訂閱代碼';
-    desc.textContent = _subExpiry
-      ? '您的訂閱已到期，請輸入新代碼以繼續使用。'
-      : '本 App 為訂閱制功能。請輸入您的代碼以啟用，尚無代碼請至官網購買。';
-    note.innerHTML = '';
-    if(input) input.style.display = 'block';
-    if(btn) btn.style.display = 'block';
-  }
-  ov.classList.add('show');
-}
-
-function hideSubOverlay(){
-  const ov = document.getElementById('subOverlay');
-  if(ov) ov.classList.remove('show');
-}
-
-async function redeemSubCode(){
-  const input = document.getElementById('subCodeInput');
-  const btn = document.getElementById('subRedeemBtn');
-  const msg = document.getElementById('subMsg');
-  const code = (input?.value || '').trim();
-
-  if(!code){ msg.className='sub-msg err'; msg.textContent='請輸入代碼'; return; }
-  if(!_gUser || !_gUser.email){ msg.className='sub-msg err'; msg.textContent='請先登入 Google 帳號'; return; }
-
-  btn.disabled = true; btn.textContent = '驗證中…';
-  msg.className='sub-msg'; msg.textContent='';
-
-  try {
-    const url = APPS_SCRIPT_URL + '?action=redeem'
-      + '&code=' + encodeURIComponent(code)
-      + '&email=' + encodeURIComponent(_gUser.email);
-    const res = await fetch(url);
-    const data = await res.json();
-
-    if(data.ok){
-      _subActive = true;
-      _subExpiry = data.expiryISO ? new Date(data.expiryISO) : null;
-      try { localStorage.setItem('sos_sub', JSON.stringify({email:_gUser.email, expiryISO:data.expiryISO})); } catch{}
-      msg.className='sub-msg ok';
-      msg.textContent = `✓ 啟用成功！有效期至 ${data.expiry}`;
-      setTimeout(()=>{ hideSubOverlay(); }, 1500);
-    } else {
-      const errMsg = {
-        'invalid_code': '代碼無效',
-        'code_already_used': '此代碼已被使用',
-        'event_already_used': '您已使用過此活動代碼',
-        'missing_params': '參數錯誤',
-        'sheet_not_found': '伺服器設定錯誤',
-      }[data.error] || ('錯誤：'+(data.error||'未知'));
-      msg.className='sub-msg err';
-      msg.textContent = errMsg;
-    }
-  } catch(e){
-    msg.className='sub-msg err';
-    msg.textContent = '連線失敗，請檢查網路';
-  } finally {
-    btn.disabled = false; btn.textContent = '啟用';
-  }
-}
+// 確認訂閱狀態（僅供「離線下載」功能使用，不再鎖住整個主頁）。
+// App 主功能（搜尋、線上播放）一律可用，與網頁版邏輯一致。
 
 
 // ── Sheets API helpers ─────────────────────────────────────────
@@ -3167,11 +3004,10 @@ document.addEventListener('visibilitychange', ()=>{
             }
           }
         } catch(e){ _debugLog('silent token refresh failed: '+(e&&e.message)); }
-        // 刷新失敗：清除舊 token，要求重新登入
+        // 刷新失敗：清除舊 token，回到未登入狀態（主頁仍可正常使用）
         _gToken=null; _gUser=null;
         try { localStorage.removeItem('gsis_token'); } catch(e){}
         updateAuthUI();
-        checkSubscription();
       })();
     }
   }
@@ -3321,11 +3157,8 @@ if(_loadToken()) {
 }
 
 loadBuiltInCSV();
-
-// App-only: check subscription on startup
-if(isNativeApp){
-  checkSubscription();
-}
+// 離線下載對所有 App 使用者無條件開放（已放棄訂閱制），不需登入即可使用。
+refreshOfflineDlBtnVisibility();
 </script>
 <button id="scrollTopBtn" onclick="scrollToTop()" title="跳至最上方">↑</button>
 </body>
