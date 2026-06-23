@@ -97,8 +97,9 @@ header {
 table {
   width:100%; border-collapse:collapse; min-width:700px;
 }
-/* App 版（手機等窄螢幕）：固定欄寬，隱藏欄位後其餘欄位向左聚攏不跑位 */
-table.app-fixed-layout { table-layout:fixed; }
+/* App 版（手機等窄螢幕）：固定欄寬，隱藏欄位後其餘欄位向左聚攏不跑位。
+   移除 min-width:700px，否則表格永遠比螢幕寬，水平捲動會蓋掉聚攏效果。 */
+table.app-fixed-layout { table-layout:fixed; min-width:0; }
 thead th {
   padding:10px 16px; text-align:left;
   font-family:'Space Mono',monospace; font-size:0.6rem; font-weight:700;
@@ -481,17 +482,23 @@ function renderTable() {
     </tr>`;
   }).join('');
 
+  // App 版欄寬縮小以符合手機螢幕（避免固定欄寬總和超過視窗，導致水平捲動蓋掉聚攏效果）；
+  // 網頁版維持原寬度（在 table-layout:auto 下這些只是建議值，仍會依內容自動調整）。
+  const colW = isNativeApp
+    ? { play:'28px', lang:'56px', source:'48px', level:'40px', time:'72px', note:'80px', del:'28px' }
+    : { play:'36px', lang:'100px', source:'90px', level:'70px', time:'110px', note:'160px', del:'36px' };
+
   document.getElementById('tableContainer').innerHTML=`<table class="${isNativeApp?'app-fixed-layout':''}">
     <colgroup>
-      <col style="width:36px">
+      <col style="width:${colW.play}">
       <col style="width:26%">
       <col style="width:26%">
-      <col class="col-lang" style="width:100px">
-      <col class="col-source" style="width:90px">
-      <col class="col-level" style="width:70px">
-      <col class="col-time" style="width:110px">
-      <col class="col-note" style="width:160px">
-      <col style="width:36px">
+      <col class="col-lang" style="width:${colW.lang}">
+      <col class="col-source" style="width:${colW.source}">
+      <col class="col-level" style="width:${colW.level}">
+      <col class="col-time" style="width:${colW.time}">
+      <col class="col-note" style="width:${colW.note}">
+      <col style="width:${colW.del}">
     </colgroup>
     <thead><tr>
       <th></th>
