@@ -97,9 +97,13 @@ header {
 table {
   width:100%; border-collapse:collapse; min-width:700px;
 }
-/* App 版（手機等窄螢幕）：固定欄寬，隱藏欄位後其餘欄位向左聚攏不跑位。
-   移除 min-width:700px，否則表格永遠比螢幕寬，水平捲動會蓋掉聚攏效果。 */
-table.app-fixed-layout { table-layout:fixed; min-width:0; }
+/* App 版（手機等窄螢幕）：固定欄寬避免欄位互相擠壓重疊；
+   表格寬度超出視窗時由 .table-wrap 的 overflow-x:auto 處理水平捲動，
+   使用者可橫向滑動或旋轉裝置至橫向檢視。 */
+table.app-fixed-layout { table-layout:fixed; }
+/* App 版縮小儲存格內距，讓固定欄寬內容有更多可用空間 */
+table.app-fixed-layout thead th { padding:8px 6px; }
+table.app-fixed-layout td { padding:8px 6px; }
 thead th {
   padding:10px 16px; text-align:left;
   font-family:'Space Mono',monospace; font-size:0.6rem; font-weight:700;
@@ -482,17 +486,21 @@ function renderTable() {
     </tr>`;
   }).join('');
 
-  // App 版欄寬縮小以符合手機螢幕（避免固定欄寬總和超過視窗，導致水平捲動蓋掉聚攏效果）；
+  // App 版欄寬以「能放下實際內容、不互相擠壓」為設計目標；
+  // 表格總寬可能超過手機直向寬度，但 .table-wrap 的 overflow-x:auto 提供水平捲動，
+  // 使用者可旋轉至橫向、或捲動檢視。
   // 網頁版維持原寬度（在 table-layout:auto 下這些只是建議值，仍會依內容自動調整）。
   const colW = isNativeApp
-    ? { play:'28px', lang:'56px', source:'48px', level:'40px', time:'72px', note:'80px', del:'28px' }
-    : { play:'36px', lang:'100px', source:'90px', level:'70px', time:'110px', note:'160px', del:'36px' };
+    ? { play:'36px', sentence:'200px', translation:'200px',
+        lang:'80px', source:'100px', level:'56px', time:'90px', note:'120px', del:'36px' }
+    : { play:'36px', sentence:'26%', translation:'26%',
+        lang:'100px', source:'90px', level:'70px', time:'110px', note:'160px', del:'36px' };
 
   document.getElementById('tableContainer').innerHTML=`<table class="${isNativeApp?'app-fixed-layout':''}">
     <colgroup>
       <col style="width:${colW.play}">
-      <col style="width:26%">
-      <col style="width:26%">
+      <col style="width:${colW.sentence}">
+      <col style="width:${colW.translation}">
       <col class="col-lang" style="width:${colW.lang}">
       <col class="col-source" style="width:${colW.source}">
       <col class="col-level" style="width:${colW.level}">
@@ -586,8 +594,16 @@ function _applyColVisibility(){
 
 function _loadColVisibility(){
   try {
-    const saved = JSON.parse(localStorage.getItem('vocab_hidden_cols') || '[]');
-    saved.forEach(col => _hiddenCols.add(col));
+    const raw = localStorage.getItem('vocab_hidden_cols');
+    if(raw){
+      // 有儲存的偏好 → 沿用使用者選擇
+      const saved = JSON.parse(raw);
+      saved.forEach(col => _hiddenCols.add(col));
+    } else if(isNativeApp){
+      // App 首次使用、沒有偏好紀錄 → 預設只顯示語句/翻譯，
+      // 避免手機螢幕一進來就被擠壓變形；使用者可手動勾選需要的欄位。
+      ['lang','source','level','time','note'].forEach(col => _hiddenCols.add(col));
+    }
   } catch{}
   _applyColVisibility();
 }

@@ -2734,11 +2734,16 @@ let _starredIds = new Set(); // set of 編號 strings
 let _vocabRows = [];      // local cache of vocab rows
 
 // ── Token persistence ──────────────────────────────────────────
+// 設計：access token 壽命 1 小時（Google OAuth 規範），但使用者身分資訊
+// 永久保留至本地（直到登出）。啟動時若 token 過期，會自動透過
+// SocialLogin.refresh() 靜默換新 token，使用者無感維持登入狀態。
 function _saveToken(token, user) {
   _gToken=token; _gUser=user;
   try {
-    // 存 50 分鐘（3000秒），預留 10 分鐘緩衝
+    // token 存 50 分鐘（預留 10 分鐘緩衝，標準壽命 60 分鐘）
     localStorage.setItem('gsis_token', JSON.stringify({token,user,exp:Date.now()+3500000}));
+    // 使用者身分另外永久儲存，用於 token 過期後的 refresh 流程辨識
+    localStorage.setItem('gsis_user', JSON.stringify(user));
   } catch(e) {}
 }
 function _loadToken() {
@@ -2750,6 +2755,20 @@ function _loadToken() {
     _gToken=token; _gUser=user;
     return true;
   } catch(e) { return false; }
+}
+// 載入永久儲存的使用者身分（即使 token 已過期也能取得）
+function _loadPersistentUser() {
+  try {
+    const raw=localStorage.getItem('gsis_user');
+    if(!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+function _clearPersistentUser() {
+  try {
+    localStorage.removeItem('gsis_user');
+    localStorage.removeItem('gsis_token');
+  } catch(e) {}
 }
 
 // Token 是否即將過期（剩餘不足 5 分鐘）
@@ -2832,6 +2851,40 @@ async function _ensureSocialLoginInit() {
   _socialLoginReady = true;
 }
 
+// 嘗試靜默換新 access token（不需要使用者互動）。
+// 成功：更新 _gToken / localStorage 並回傳 true；失敗：回傳 false。
+// 共用於：啟動時恢復登入狀態、API 呼叫遇到 401 時自動重試。
+let _refreshPending = null; // 避免並發呼叫
+async function tryRefreshToken() {
+  if(_refreshPending) return _refreshPending;
+  _refreshPending = (async () => {
+    try {
+      if(isNativeApp) {
+        const { SocialLogin } = window.Capacitor?.Plugins || {};
+        if(!SocialLogin) return false;
+        await _ensureSocialLoginInit();
+        const r = await SocialLogin.refresh({ provider: 'google' });
+        const token = r && r.accessToken && r.accessToken.token;
+        if(!token) return false;
+        // user 資訊使用本地永久儲存的版本（refresh 不會重新回傳 profile）
+        const user = _gUser || _loadPersistentUser();
+        if(!user) return false;
+        _saveToken(token, user);
+        return true;
+      } else {
+        // 網頁版：GIS 沒有對等的 silent refresh（需要使用者再次點擊登入）
+        return false;
+      }
+    } catch(e) {
+      console.warn('tryRefreshToken failed:', e && (e.message||e));
+      return false;
+    } finally {
+      _refreshPending = null;
+    }
+  })();
+  return _refreshPending;
+}
+
 let _nativeSignInPending = false;
 
 async function signInNative() {
@@ -2903,9 +2956,16 @@ function signOut() {
   if(_gToken && typeof google!=='undefined') {
     google.accounts.oauth2.revoke(_gToken, ()=>{});
   }
+  // App 端額外通知插件登出，撤銷 refresh token
+  if(isNativeApp) {
+    try {
+      const { SocialLogin } = window.Capacitor?.Plugins || {};
+      if(SocialLogin) SocialLogin.logout({ provider:'google' }).catch(()=>{});
+    } catch(e){}
+  }
   _gToken=null; _gUser=null; _spreadsheetId=null;
   _starredIds=new Set(); _vocabRows=[];
-  try { localStorage.removeItem('gsis_token'); } catch(e) {}
+  _clearPersistentUser(); // 清除永久使用者紀錄，避免下次啟動又自動 refresh
   updateAuthUI();
   renderPage();
   showToast('✓ 已登出');
@@ -2988,27 +3048,16 @@ document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'hidden' && _gToken && _spreadsheetId){
     savePrefsToSheets();
   }
-  // App 從背景回到前景時，若 token 即將過期，靜默刷新；失敗才跳登入畫面
-  if(document.visibilityState === 'visible' && isNativeApp){
+  // App 從背景回到前景時，若 token 即將過期，背景靜默刷新
+  if(document.visibilityState === 'visible' && isNativeApp && _gUser){
     if(_isTokenExpiringSoon()){
-      (async()=>{
-        try {
-          const { SocialLogin } = window.Capacitor.Plugins;
-          if(SocialLogin){
-            const r = await SocialLogin.refresh({ provider:'google' });
-            const token = r && r.accessToken && r.accessToken.token;
-            if(token && _gUser){
-              _saveToken(token, _gUser);
-              updateAuthUI();
-              return;
-            }
-          }
-        } catch(e){ _debugLog('silent token refresh failed: '+(e&&e.message)); }
-        // 刷新失敗：清除舊 token，回到未登入狀態（主頁仍可正常使用）
-        _gToken=null; _gUser=null;
-        try { localStorage.removeItem('gsis_token'); } catch(e){}
-        updateAuthUI();
-      })();
+      tryRefreshToken().then(ok => {
+        if(!ok){
+          // 刷新失敗：保留未登入狀態但不打擾使用者；下次操作 API 仍會嘗試一次
+          _gToken=null;
+          try { localStorage.removeItem('gsis_token'); } catch(e){}
+        }
+      });
     }
   }
 });
@@ -3037,22 +3086,29 @@ function _loadPrefsLocal(){
 }
 
 async function sheetsReq(method, path, body) {
-  const url='https://sheets.googleapis.com/v4/spreadsheets'+path;
-  const opts={method, headers:{'Authorization':'Bearer '+_gToken,'Content-Type':'application/json'}};
-  if(body) opts.body=JSON.stringify(body);
-  const r=await fetch(url,opts);
-  if(!r.ok) {
-    const e=await r.json().catch(()=>({}));
-    throw new Error(e.error?.message||r.status);
-  }
-  return r.json();
+  return _authedFetch('https://sheets.googleapis.com/v4/spreadsheets'+path, method, body);
 }
 async function driveReq(method, path, body) {
-  const url='https://www.googleapis.com/drive/v3'+path;
-  const opts={method, headers:{'Authorization':'Bearer '+_gToken,'Content-Type':'application/json'}};
-  if(body) opts.body=JSON.stringify(body);
-  const r=await fetch(url,opts);
-  if(!r.ok) throw new Error(r.status);
+  return _authedFetch('https://www.googleapis.com/drive/v3'+path, method, body);
+}
+
+// 共用的帶授權 fetch：401 時自動嘗試 refresh token 並重試一次
+async function _authedFetch(url, method, body, _retried) {
+  const opts = {
+    method,
+    headers: {'Authorization':'Bearer '+_gToken, 'Content-Type':'application/json'}
+  };
+  if(body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  if(r.status === 401 && !_retried && isNativeApp) {
+    // token 過期 → 嘗試靜默換新，成功則重試該請求
+    const ok = await tryRefreshToken();
+    if(ok) return _authedFetch(url, method, body, true);
+  }
+  if(!r.ok) {
+    const e = await r.json().catch(()=>({}));
+    throw new Error(e.error?.message || r.status);
+  }
   return r.json();
 }
 
@@ -3150,11 +3206,36 @@ async function removeStar(eid, btn) {
 }
 
 // ── Boot ───────────────────────────────────────────────────────
-// Try restore session
-if(_loadToken()) {
-  updateAuthUI();
-  // Lazily init spreadsheet after data loads
-}
+// 嘗試恢復登入狀態：
+//   1) token 仍有效 → 直接套用
+//   2) token 過期但有永久使用者紀錄 → 顯示登入狀態並背景靜默 refresh
+//   3) 都沒有 → 維持未登入
+(async function restoreSession(){
+  if(_loadToken()) {
+    updateAuthUI();
+    return;
+  }
+  const persistentUser = _loadPersistentUser();
+  if(persistentUser && isNativeApp) {
+    // 先以舊使用者資訊顯示「已登入」UI，避免閃爍
+    _gUser = persistentUser;
+    updateAuthUI();
+    // 背景嘗試 refresh，成功則接著載入個人資料
+    const ok = await tryRefreshToken();
+    if(ok) {
+      try {
+        await initSpreadsheet();
+        await loadStarredIds();
+        await loadPrefsFromSheets();
+        renderPage();
+      } catch(e){ console.warn('restore-session post-refresh error:', e); }
+    } else {
+      // refresh 失敗 → 清回未登入狀態，但不騷擾使用者，等他下次主動點登入
+      _gUser = null;
+      updateAuthUI();
+    }
+  }
+})();
 
 loadBuiltInCSV();
 // 離線下載對所有 App 使用者無條件開放（已放棄訂閱制），不需登入即可使用。
