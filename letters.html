@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>字母分類 — Indigenous SOS</title>
 <style>
+  /* 與主頁一致的字型載入 */
+  @font-face {
+    font-family: 'jf-openhuninn';
+    src: url('https://cdn.jsdelivr.net/gh/justfont/open-huninn-font@v2.1/font/jf-openhuninn-2.1.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/gh/justfont/open-huninn-font@v2.1/font/jf-openhuninn-2.1.ttf') format('truetype');
+    font-display: swap;
+  }
+
   :root {
     --bg:#0e0e0e; --surface:#1a1a1a; --surface2:#222;
     --text:#e8e4dc; --muted:#8a8478; --border:#333;
@@ -16,7 +24,7 @@
     --accent:#a87f1e; --accent2:#3d7a4f;
   }
   * { box-sizing: border-box; }
-  body { margin:0; font-family:system-ui,-apple-system,'Microsoft JhengHei',sans-serif;
+  body { margin:0; font-family:'jf-openhuninn','Noto Serif TC',system-ui,-apple-system,'Microsoft JhengHei',sans-serif;
     background:var(--bg); color:var(--text); }
   a { color:var(--accent); }
 
@@ -30,10 +38,30 @@
   .search-wrap input { width:100%; background:var(--surface2); border:1px solid var(--border);
     color:var(--text); padding:6px 10px; border-radius:6px; font-size:0.9rem; }
 
-  .layout { display:flex; gap:16px; max-width:1400px; margin:0 auto; padding:16px; align-items:flex-start; }
-  .sidebar { width:260px; flex-shrink:0; background:var(--surface); border:1px solid var(--border);
-    border-radius:8px; padding:12px; position:sticky; top:64px; max-height:calc(100vh - 80px); overflow-y:auto; }
+  .layout { display:flex; gap:16px; max-width:1400px; margin:0 auto; padding:16px 16px 16px 0; align-items:flex-start; }
+  .sidebar { width:240px; flex-shrink:0; background:var(--surface); border:1px solid var(--border);
+    border-radius:0 8px 8px 0; padding:12px; position:sticky; top:64px; max-height:calc(100vh - 80px); overflow-y:auto;
+    border-left:none; }
+  /* 與 index.html 主頁一致的細捲軸 */
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .sidebar::-webkit-scrollbar-thumb:hover { background: var(--muted); }
   .main { flex:1; min-width:0; }
+
+  /* 語別/方言階層 */
+  .sb-lang-list { display:flex; flex-direction:column; gap:1px; }
+  .sb-lang-all { padding:5px 8px; font-size:0.78rem; font-weight:600; color:var(--text);
+    cursor:pointer; border-radius:4px; background:var(--surface2); margin-bottom:4px; }
+  .sb-lang-all.active { background:var(--accent); color:#000; }
+  .sb-lang-row { padding:4px 8px; font-size:0.82rem; color:var(--text); cursor:pointer;
+    border-radius:4px; border-left:2px solid transparent; }
+  .sb-lang-row:hover { background:var(--surface2); }
+  .sb-lang-row.active { color:var(--accent); border-left-color:var(--accent); font-weight:600; }
+  .sb-dial-row { padding:3px 8px 3px 22px; font-size:0.76rem; color:var(--muted); cursor:pointer;
+    border-radius:4px; }
+  .sb-dial-row:hover { background:var(--surface2); color:var(--text); }
+  .sb-dial-row.active { color:var(--accent2); font-weight:600; }
 
   .sb-sec { margin-bottom:14px; }
   .sb-sec-hdr { font-size:0.72rem; color:var(--muted); font-weight:600;
@@ -49,7 +77,7 @@
   .sb-chip.ipa { font-family:'Doulos SIL','Charis SIL',serif; }
   .sb-subgroup-label { font-size:0.7rem; color:var(--muted); margin:6px 0 3px; }
 
-  table.letters-table { width:100%; border-collapse:collapse; }
+  table.letters-table { width:100%; border-collapse:collapse; table-layout:fixed; }
   .letters-table thead th { position:sticky; top:60px; background:var(--surface);
     z-index:10; padding:8px 10px; text-align:left; font-size:0.72rem;
     font-weight:600; color:var(--muted); letter-spacing:0.06em;
@@ -58,7 +86,7 @@
   .letters-table tbody tr.letter-row { cursor:pointer; }
   .letters-table tbody tr.letter-row.no-examples { cursor:default; }
   .letters-table tbody tr.letter-row:hover:not(.no-examples) td { background:var(--surface2); }
-  .letters-table td { padding:8px 10px; vertical-align:middle; }
+  .letters-table td { padding:8px 10px; vertical-align:middle; overflow:hidden; text-overflow:ellipsis; }
   .col-toggle { width:24px; }
   .col-letter { width:60px; }
   .col-lang { width:140px; }
@@ -83,19 +111,27 @@
 
   .examples-row td { padding:0; background:var(--bg); }
   .examples-row.collapsed { display:none; }
-  .examples-container { display:flex; gap:8px; flex-wrap:wrap; padding:8px 12px 12px; }
+  .examples-container { display:flex; gap:8px; flex-wrap:wrap; padding:8px 12px 12px 56px; }
+  /* 例子卡片 — 模仿主頁搜尋結果列：播放鈕 | 語句 | 翻譯 同一水平 */
   .example-card { background:var(--surface); border:1px solid var(--border); border-radius:6px;
-    padding:8px 12px; display:flex; align-items:center; gap:10px;
-    flex:1 1 240px; min-width:200px; max-width:320px; }
-  .play-btn { width:32px; height:32px; border-radius:50%; border:1px solid var(--accent);
-    background:transparent; color:var(--accent); cursor:pointer; font-size:0.9rem;
-    display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .play-btn:disabled { opacity:0.3; cursor:not-allowed; border-color:var(--muted); color:var(--muted); }
-  .play-btn.active { background:var(--accent); color:#000; }
-  .example-text { flex:1; min-width:0; }
-  .example-sentence { font-weight:500; word-break:break-word; font-size:0.95rem;
-    font-family:'Doulos SIL','Charis SIL',serif; }
-  .example-translation { font-size:0.85rem; color:var(--muted); word-break:break-word; margin-top:2px; }
+    padding:10px 13px; display:flex; align-items:flex-start; gap:10px;
+    flex:1 1 340px; min-width:280px; max-width:480px; }
+  /* 播放鈕：與主頁完全一致（預設灰、hover 變金） */
+  .play-btn { width:32px; height:32px; border-radius:50%;
+    border:1.5px solid var(--border); background:transparent; color:var(--muted);
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:0.75rem; transition:all 0.18s; flex-shrink:0; }
+  .play-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(212,168,67,0.08); }
+  .play-btn.active { border-color:var(--accent2); color:var(--accent2); background:rgba(139,196,168,0.1); }
+  .play-btn:disabled { opacity:0.22; cursor:not-allowed; }
+  /* 語句與翻譯：同水平、各佔比例（與主頁 row-item 結構一致） */
+  .example-body { flex:1; min-width:0; display:flex; gap:12px; align-items:flex-start; }
+  .example-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em;
+    line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:break-word;
+    flex:3; min-width:0; padding-right:8px; }
+  .example-translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em;
+    line-height:1.5; color:var(--text); word-break:break-word;
+    flex:2; min-width:0; }
   .hl-letter { color:var(--accent); font-weight:600; }
 
   .notes-section { margin-top:32px; padding:0 4px; }
@@ -347,19 +383,24 @@ function buildLangChips(){
   const c = document.getElementById('sb-langs');
   if(!c) return;
   const langsWithData = new Set(DATA.letters.map(l => l.lang));
-  let html = `<span class="sb-chip all ${sel.langKeys.size===0?'active':''}" onclick="clearFilter('langKeys')">全選</span>`;
+  // 標題列：全選
+  let html = `<div class="sb-lang-list">
+    <div class="sb-lang-all ${sel.langKeys.size===0?'active':''}" onclick="clearFilter('langKeys')">全部語別</div>`;
   LANG_LIST.forEach(L => {
     if(!langsWithData.has(L.name)) return;
     const allDialKeys = L.dialects.length ? L.dialects.map(d => L.name+'|'+d[0]) : [L.name];
     const isLangAllSelected = sel.langKeys.has(L.name) ||
       (L.dialects.length && allDialKeys.every(k => sel.langKeys.has(k)));
-    html += `<span class="sb-chip ${isLangAllSelected?'active':''}" onclick="toggleLang('${escapeAttr(L.name)}')">${escapeHtml(L.name)}</span>`;
-    L.dialects.forEach(d => {
-      const k = L.name+'|'+d[0];
-      const isSelected = sel.langKeys.has(L.name) || sel.langKeys.has(k);
-      html += `<span class="sb-chip ${isSelected?'active':''}" style="font-size:0.72rem;margin-left:8px;" onclick="toggleLang('${escapeAttr(L.name)}','${d[0]}')">${escapeHtml(d[1])}</span>`;
-    });
+    html += `<div class="sb-lang-row ${isLangAllSelected?'active':''}" onclick="toggleLang('${escapeAttr(L.name)}')">${escapeHtml(L.name)}</div>`;
+    if(L.dialects.length){
+      L.dialects.forEach(d => {
+        const k = L.name+'|'+d[0];
+        const isSelected = sel.langKeys.has(L.name) || sel.langKeys.has(k);
+        html += `<div class="sb-dial-row ${isSelected?'active':''}" onclick="toggleLang('${escapeAttr(L.name)}','${d[0]}')">${escapeHtml(d[1])}</div>`;
+      });
+    }
   });
+  html += `</div>`;
   c.innerHTML = html;
 }
 
@@ -441,8 +482,11 @@ function findNote(lang, ref){
 // 先在語句中標記這些 blocker 位置佔用，target 只在未被佔用處標記高亮。
 function highlightLetter(sentence, targetLetter, dialectLetters){
   if(!sentence || !targetLetter) return escapeHtml(sentence||'');
-  const target = targetLetter;
-  const blockers = dialectLetters.filter(L =>
+  // 防呆：資料若殘留空白會讓比對失敗
+  const target = String(targetLetter).trim();
+  if(!target) return escapeHtml(sentence);
+  const cleanDialLetters = dialectLetters.map(L => String(L).trim()).filter(Boolean);
+  const blockers = cleanDialLetters.filter(L =>
     L !== target && L.length > target.length && L.toLowerCase().includes(target.toLowerCase())
   ).sort((a,b) => b.length - a.length);
 
@@ -491,6 +535,14 @@ function render(){
   const scope = getLettersInLangScope().filter(letterPasses);
   scope.sort((a,b)=>cmpKey(letterSortKey(a),letterSortKey(b)));
 
+  // 標記同方言同字母的第 2 筆起為 allophone/free variant：顯示時加括號
+  const seenInDialect = {};
+  scope.forEach(l => {
+    const k = l.lang + '|' + l.dial + '|' + l.letter;
+    seenInDialect[k] = (seenInDialect[k] || 0) + 1;
+    l._displayLetter = seenInDialect[k] > 1 ? `(${l.letter})` : l.letter;
+  });
+
   const dialectLetterMap = {};
   DATA.letters.forEach(l => {
     const k = l.lang+'|'+l.dial;
@@ -528,6 +580,16 @@ function render(){
   });
 
   let html = `<table class="letters-table">
+    <colgroup>
+      <col style="width:30px">
+      <col style="width:70px">
+      <col style="width:150px">
+      <col style="width:70px">
+      <col style="width:100px">
+      <col style="width:110px">
+      <col style="width:90px">
+      <col style="width:50px">
+    </colgroup>
     <thead><tr>
       <th class="col-toggle"></th>
       <th class="col-letter">字母</th>
@@ -552,15 +614,15 @@ function render(){
     html += `<tr class="letter-row ${hasEx?'':'no-examples'}" id="${rowId}"
         ${hasEx?`onclick="toggleEx('${exRowId}', '${rowId}')"`:''}>
       <td class="col-toggle"><span class="letter-toggle ${hasEx?'expanded':'invisible'}">▶</span></td>
-      <td class="col-letter"><span class="letter-char">${escapeHtml(l.letter)}</span></td>
+      <td class="col-letter"><span class="letter-char">${escapeHtml(l._displayLetter || l.letter)}</span></td>
       <td class="col-lang"><span class="lang-cell">${escapeHtml(langDisplay)}</span></td>
       <td class="col-ipa"><span class="letter-ipa">${l.ipa?'['+escapeHtml(l.ipa)+']':''}</span></td>
       <td class="col-pos"><span class="letter-attr">${escapeHtml(l.pos||'')}</span></td>
       <td class="col-manner"><span class="letter-attr">${escapeHtml(l.manner||'')}</span></td>
       <td class="col-voice"><span class="letter-attr">${escapeHtml(l.voice||'')}</span></td>
       <td class="col-noteref">${noteNum?`<a class="letter-noteref" href="#note-${noteNum}"
-        onmouseenter="showTip(event, ${noteNum}, ${escapeAttrJS(noteText)})"
-        onmouseleave="hideTip()"
+        data-note-num="${noteNum}"
+        data-note-text="${escapeAttr(noteText)}"
         onclick="event.stopPropagation()">${toSup(noteNum)}</a>`:''}</td>
     </tr>`;
     if(hasEx){
@@ -595,7 +657,6 @@ function render(){
 }
 
 function renderExample(ex, letter, dialLetters){
-  // 方言別 1~9 補零（10 以上不變）
   let dialPath = letter.dial || '';
   if(/^\d+$/.test(dialPath) && dialPath.length === 1) dialPath = '0' + dialPath;
   const audioUrl = ex.audio ? AUDIO_BASE + dialPath + '/A/' + ex.audio + '.mp3' : '';
@@ -604,7 +665,7 @@ function renderExample(ex, letter, dialLetters){
     <button class="play-btn" ${audioUrl?'':'disabled'}
       data-audio="${escapeAttr(audioUrl)}"
       onclick="event.stopPropagation();playExample(this)" title="${audioUrl?'播放':'無音檔'}">${audioUrl?'▶':'—'}</button>
-    <div class="example-text">
+    <div class="example-body">
       <div class="example-sentence">${highlighted}</div>
       <div class="example-translation">${escapeHtml(ex.translation||'')}</div>
     </div>
@@ -643,11 +704,27 @@ function playExample(btn){
 
 const tipEl = document.getElementById('tipPopup');
 let _tipHideTimer = null;
-function showTip(e, noteNum, text){
+// 事件委派：對所有 .letter-noteref 統一處理，動態插入的元素也能正確觸發
+document.body.addEventListener('mouseenter', e => {
+  const t = e.target;
+  if(t && t.classList && t.classList.contains('letter-noteref')){
+    const num = parseInt(t.dataset.noteNum, 10);
+    const text = t.dataset.noteText || '';
+    showTip(t, num, text);
+  }
+}, true);
+document.body.addEventListener('mouseleave', e => {
+  const t = e.target;
+  if(t && t.classList && t.classList.contains('letter-noteref')){
+    hideTip();
+  }
+}, true);
+
+function showTip(targetEl, noteNum, text){
   clearTimeout(_tipHideTimer);
   tipEl.innerHTML = `${escapeHtml(text)}<br><a href="#note-${noteNum}" onclick="hideTipNow()">→ 跳至注意事項 ${toSup(noteNum)}</a>`;
   tipEl.style.display = 'block';
-  const rect = e.target.getBoundingClientRect();
+  const rect = targetEl.getBoundingClientRect();
   const tipW = 340, tipH = tipEl.offsetHeight || 100;
   let left = rect.left;
   let top = rect.bottom + 8;
