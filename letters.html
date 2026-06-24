@@ -38,10 +38,11 @@
   .search-wrap input { width:100%; background:var(--surface2); border:1px solid var(--border);
     color:var(--text); padding:6px 10px; border-radius:6px; font-size:0.9rem; }
 
-  .layout { display:flex; gap:16px; max-width:1400px; margin:0 auto; padding:16px 16px 16px 0; align-items:flex-start; }
-  .sidebar { width:240px; flex-shrink:0; background:var(--surface); border:1px solid var(--border);
-    border-radius:0 8px 8px 0; padding:12px; position:sticky; top:64px; max-height:calc(100vh - 80px); overflow-y:auto;
-    border-left:none; }
+  .layout { display:flex; gap:16px; margin:0; padding:0 16px 16px 0; align-items:flex-start; }
+  .sidebar { width:240px; flex-shrink:0; background:var(--surface);
+    border:1px solid var(--border); border-left:none;
+    border-radius:0 8px 8px 0; padding:12px;
+    position:sticky; top:64px; max-height:calc(100vh - 80px); overflow-y:auto; }
   /* 與 index.html 主頁一致的細捲軸 */
   .sidebar::-webkit-scrollbar { width: 3px; }
   .sidebar::-webkit-scrollbar-track { background: transparent; }
@@ -79,14 +80,17 @@
 
   table.letters-table { width:100%; border-collapse:collapse; table-layout:fixed; }
   .letters-table thead th { position:sticky; top:60px; background:var(--surface);
-    z-index:10; padding:8px 10px; text-align:left; font-size:0.72rem;
+    z-index:10; padding:8px 12px; text-align:left; font-size:0.72rem;
     font-weight:600; color:var(--muted); letter-spacing:0.06em;
     text-transform:uppercase; border-bottom:2px solid var(--border); }
   .letters-table tbody tr { border-bottom:1px solid var(--border); }
   .letters-table tbody tr.letter-row { cursor:pointer; }
   .letters-table tbody tr.letter-row.no-examples { cursor:default; }
   .letters-table tbody tr.letter-row:hover:not(.no-examples) td { background:var(--surface2); }
-  .letters-table td { padding:8px 10px; vertical-align:middle; overflow:hidden; text-overflow:ellipsis; }
+  .letters-table td { padding:8px 12px; vertical-align:middle; }
+  /* 字母字元字型較大，垂直置中且不要影響欄寬計算 */
+  .letter-char { font-size:1.2rem; font-weight:600; color:var(--accent);
+    font-family:'Doulos SIL','Charis SIL',serif; line-height:1; }
   .col-toggle { width:24px; }
   .col-letter { width:60px; }
   .col-lang { width:140px; }
@@ -100,8 +104,6 @@
     display:inline-block; transition:transform 0.15s; }
   .letter-toggle.expanded { transform:rotate(90deg); }
   .letter-toggle.invisible { visibility:hidden; }
-  .letter-char { font-size:1.4rem; font-weight:600; color:var(--accent);
-    font-family:'Doulos SIL','Charis SIL',serif; }
   .lang-cell { font-size:0.85rem; color:var(--accent2); }
   .letter-ipa { color:var(--muted); font-family:'Doulos SIL','Charis SIL',serif; }
   .letter-attr { font-size:0.82rem; color:var(--muted); }
@@ -112,10 +114,10 @@
   .examples-row td { padding:0; background:var(--bg); }
   .examples-row.collapsed { display:none; }
   .examples-container { display:flex; gap:8px; flex-wrap:wrap; padding:8px 12px 12px 56px; }
-  /* 例子卡片 — 模仿主頁搜尋結果列：播放鈕 | 語句 | 翻譯 同一水平 */
+  /* 例子卡片 — 三個平均分配剩餘空間（flex:1 1 0），不設 min-width 讓它彈性壓縮 */
   .example-card { background:var(--surface); border:1px solid var(--border); border-radius:6px;
     padding:10px 13px; display:flex; align-items:flex-start; gap:10px;
-    flex:1 1 340px; min-width:280px; max-width:480px; }
+    flex:1 1 0; min-width:0; }
   /* 播放鈕：與主頁完全一致（預設灰、hover 變金） */
   .play-btn { width:32px; height:32px; border-radius:50%;
     border:1.5px solid var(--border); background:transparent; color:var(--muted);
