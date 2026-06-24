@@ -56,10 +56,13 @@
     border-radius:4px; border-left:2px solid transparent; }
   .sb-lang-row:hover { background:var(--surface2); }
   .sb-lang-row.active { color:var(--accent); border-left-color:var(--accent); font-weight:600; }
-  .sb-dial-row { padding:3px 8px 3px 22px; font-size:0.76rem; color:var(--muted); cursor:pointer;
-    border-radius:4px; }
-  .sb-dial-row:hover { background:var(--surface2); color:var(--text); }
-  .sb-dial-row.active { color:var(--accent2); font-weight:600; }
+  /* 方言按鈕橫向排列在語別下方 */
+  .sb-dial-group { display:flex; flex-wrap:wrap; gap:3px; padding:2px 8px 4px 16px; }
+  .sb-dial-chip { background:var(--surface2); border:1px solid var(--border); color:var(--muted);
+    padding:2px 7px; border-radius:10px; cursor:pointer; font-size:0.72rem;
+    user-select:none; line-height:1.3; }
+  .sb-dial-chip:hover { border-color:var(--accent2); color:var(--text); }
+  .sb-dial-chip.active { background:var(--accent2); color:#000; border-color:var(--accent2); font-weight:600; }
 
   .sb-sec { margin-bottom:14px; }
   .sb-sec-hdr { font-size:0.72rem; color:var(--muted); font-weight:600;
@@ -294,11 +297,47 @@ function buildSidebar(){
   </div>`;
 
   const letterSet = new Set(inScope.map(l => l.letter).filter(Boolean));
+  // 自訂字母排序：
+  //   特殊字元插入相鄰位置：é/ē 在 e 後、ɨ 在 i 後、ṟ 在 r 後、ʉ 在 u 後
+  //   非英文字母（如 '、^、:）排到最後
+  const LETTER_SORT_BUCKETS = {
+    // 將每個字元正規化到一個排序鍵：小寫英文字母為主，特殊字元附在對應字母後
+    'é': 'e1', 'É': 'e1',
+    'ē': 'e2', 'Ē': 'e2',
+    'ɨ': 'i1', 'Ɨ': 'i1',
+    'ṟ': 'r1', 'Ṟ': 'r1',
+    'ʉ': 'u1', 'Ʉ': 'u1',
+  };
+  function letterFilterSortKey(s){
+    if(!s) return ['z','9',s];
+    if(LETTER_SORT_BUCKETS[s]) {
+      // 衍生字元（如 é/ē/ɨ/ṟ/ʉ）：第二鍵 '1'，排在純小寫單字元（'0'）之後、純大寫單字元（'2'）之前
+      const k = LETTER_SORT_BUCKETS[s];
+      return [k[0], '1' + k.slice(1), s];
+    }
+    const first = s[0];
+    if(/^[a-zA-Z]/.test(first)) {
+      const base = first.toLowerCase();
+      // 第二鍵：'0' = 純小寫單字元、'2' = 純大寫單字元、'3' = 小寫多字元、'4' = 大寫多字元
+      // 確保 e → 衍生(é/ē) → E → ey 的順序
+      const isSingle = s.length === 1;
+      const isLower = (first === first.toLowerCase());
+      let priority;
+      if(isSingle && isLower)      priority = '0';
+      else if(isSingle && !isLower) priority = '2';
+      else if(!isSingle && isLower) priority = '3';
+      else                          priority = '4';
+      return [base, priority, s];
+    }
+    return ['z2', s, s];
+  }
   const letterOpts = [...letterSet].sort((a,b) => {
-    const aAlpha = /^[a-zA-Z]/.test(a);
-    const bAlpha = /^[a-zA-Z]/.test(b);
-    if(aAlpha !== bAlpha) return aAlpha ? -1 : 1;
-    return a.localeCompare(b);
+    const ka = letterFilterSortKey(a), kb = letterFilterSortKey(b);
+    for(let i=0; i<3; i++){
+      if(ka[i] < kb[i]) return -1;
+      if(ka[i] > kb[i]) return 1;
+    }
+    return 0;
   });
 
   const subScope = inScope.filter(l =>
@@ -335,8 +374,8 @@ function buildSidebar(){
   if(posOpts.length)    html += sectionHTML('發音位置', posOpts, sel.pos, 'pos');
   if(heightOpts.length) html += sectionHTML('高低', heightOpts, sel.height, 'height');
   if(mannerOpts.length) html += sectionHTML('發音方式', mannerOpts, sel.manner, 'manner');
-  if(voicingOpts.length)html += sectionHTML('清濁', voicingOpts, sel.voicing, 'voicing');
   if(lipOpts.length)    html += sectionHTML('唇形', lipOpts, sel.lip, 'lip');
+  if(voicingOpts.length)html += sectionHTML('清濁', voicingOpts, sel.voicing, 'voicing');
 
   if(ipa.vowel.length || ipa.consonant.length){
     html += `<div class="sb-sec">
@@ -391,11 +430,13 @@ function buildLangChips(){
       (L.dialects.length && allDialKeys.every(k => sel.langKeys.has(k)));
     html += `<div class="sb-lang-row ${isLangAllSelected?'active':''}" onclick="toggleLang('${escapeAttr(L.name)}')">${escapeHtml(L.name)}</div>`;
     if(L.dialects.length){
+      html += `<div class="sb-dial-group">`;
       L.dialects.forEach(d => {
         const k = L.name+'|'+d[0];
         const isSelected = sel.langKeys.has(L.name) || sel.langKeys.has(k);
-        html += `<div class="sb-dial-row ${isSelected?'active':''}" onclick="toggleLang('${escapeAttr(L.name)}','${d[0]}')">${escapeHtml(d[1])}</div>`;
+        html += `<span class="sb-dial-chip ${isSelected?'active':''}" onclick="toggleLang('${escapeAttr(L.name)}','${d[0]}')">${escapeHtml(d[1])}</span>`;
       });
+      html += `</div>`;
     }
   });
   html += `</div>`;
@@ -471,9 +512,9 @@ function toSup(n){ return String(n).split('').map(c=>SUP_DIGITS[c]||c).join('');
 
 // 阿美語的 ref 是 3 位數，但對應的 code 是 4 位數（ref + 1 個尾碼）。
 // 其他語別 ref 與 code 完全相同。用「前綴雙向匹配」涵蓋兩種情況。
+// 注意事項對應規則：字母列的「注意事項」欄位值 == 注意事項列的「字母編號」（嚴格相等）
 function findNote(lang, ref){
-  return DATA.notes.find(n => n.lang===lang && n.code.startsWith(ref))
-      || DATA.notes.find(n => n.lang===lang && ref.startsWith(n.code));
+  return DATA.notes.find(n => n.lang===lang && n.code===ref);
 }
 
 // 處理 digraph：找出同方言中比 target 長且含 target 為子字串的字母，
@@ -583,11 +624,9 @@ function render(){
       // 顯示該語別所有 notes
       noteCodesByLang[lang] = allCodes;
     } else {
-      // 只顯示被字母列引用到的（用寬鬆比對：refs 為 code 前綴 或 code 為 refs 前綴）
+      // 只顯示被字母列引用到的（嚴格相等比對）
       const refs = refsByLang[lang] || new Set();
-      noteCodesByLang[lang] = allCodes.filter(code =>
-        [...refs].some(ref => code.startsWith(ref) || ref.startsWith(code))
-      );
+      noteCodesByLang[lang] = allCodes.filter(code => refs.has(code));
     }
   });
 
@@ -601,12 +640,8 @@ function render(){
     codes.forEach(code => {
       counter++;
       noteCodeNumMap[lang+'|'+code] = counter;
-      // 同時將「字母列引用的 ref」也指向同一個編號（寬鬆比對）
-      (refsByLang[lang] || new Set()).forEach(ref => {
-        if(code.startsWith(ref) || ref.startsWith(code)){
-          noteNumMap[lang+'|'+ref] = counter;
-        }
-      });
+      // 字母列引用的 ref 直接等於 code，同一編號
+      noteNumMap[lang+'|'+code] = counter;
       const noteRow = DATA.notes.find(n => n.lang===lang && n.code===code);
       notesToShow.push({
         globalNum: counter, lang, code,
