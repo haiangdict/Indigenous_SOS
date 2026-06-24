@@ -187,6 +187,7 @@
 <div class="topbar">
   <button class="back-btn" onclick="goBack()">← 返回</button>
   <div class="title">字母分類</div>
+  <button class="back-btn" id="toggleAllBtn" onclick="toggleAllExamples()" style="margin-left:auto;">全部收合</button>
 </div>
 
 <div class="layout">
@@ -301,9 +302,9 @@ function buildSidebar(){
   //   特殊字元插入相鄰位置：é/ē 在 e 後、ɨ 在 i 後、ṟ 在 r 後、ʉ 在 u 後
   //   非英文字母（如 '、^、:）排到最後
   const LETTER_SORT_BUCKETS = {
-    // 將每個字元正規化到一個排序鍵：小寫英文字母為主，特殊字元附在對應字母後
+    // 衍生字元插入對應標準字母的後面（不含 ē/Ē —— 該字元僅在主頁搜尋的外來語借詞情境使用，
+    // 不屬於任何固有字母表，letters.html 永不出現）
     'é': 'e1', 'É': 'e1',
-    'ē': 'e2', 'Ē': 'e2',
     'ɨ': 'i1', 'Ɨ': 'i1',
     'ṟ': 'r1', 'Ṟ': 'r1',
     'ʉ': 'u1', 'Ʉ': 'u1',
@@ -739,6 +740,18 @@ function toggleEx(exRowId, lrId){
   exRow.classList.toggle('collapsed');
   const tog = document.querySelector(`#${lrId} .letter-toggle`);
   if(tog) tog.classList.toggle('expanded');
+}
+
+// 全部收合 / 全部展開 雙態切換
+let _allCollapsed = false;
+function toggleAllExamples(){
+  _allCollapsed = !_allCollapsed;
+  const exRows = document.querySelectorAll('.examples-row');
+  const toggles = document.querySelectorAll('.letter-row:not(.no-examples) .letter-toggle');
+  exRows.forEach(r => r.classList.toggle('collapsed', _allCollapsed));
+  toggles.forEach(t => t.classList.toggle('expanded', !_allCollapsed));
+  const btn = document.getElementById('toggleAllBtn');
+  if(btn) btn.textContent = _allCollapsed ? '全部展開' : '全部收合';
 }
 
 let currentAudio = null, currentBtn = null;
