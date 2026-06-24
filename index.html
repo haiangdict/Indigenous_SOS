@@ -3251,24 +3251,6 @@ async function removeStar(eid, btn) {
 loadBuiltInCSV();
 // 離線下載對所有 App 使用者無條件開放（已放棄訂閱制），不需登入即可使用。
 refreshOfflineDlBtnVisibility();
-
-// 若從字母頁面帶來「待執行的搜尋字串」，自動填入搜尋框並觸發
-try {
-  const pending = localStorage.getItem('sos_pending_search');
-  if(pending){
-    localStorage.removeItem('sos_pending_search');
-    // 等待 loadBuiltInCSV 完成資料載入後再執行
-    const tryApply = setInterval(()=>{
-      const input = document.getElementById('searchInput');
-      if(input && allData.length){
-        input.value = pending;
-        onSearchInput();
-        clearInterval(tryApply);
-      }
-    }, 100);
-    setTimeout(()=>clearInterval(tryApply), 8000); // 8 秒後放棄
-  }
-} catch(e){}
 </script>
 <button id="scrollTopBtn" onclick="scrollToTop()" title="跳至最上方">↑</button>
 </body>

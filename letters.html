@@ -34,9 +34,6 @@
     padding:6px 14px; border-radius:6px; cursor:pointer; font-size:0.9rem; }
   .back-btn:hover { border-color:var(--accent); }
   .title { font-size:1rem; font-weight:600; }
-  .search-wrap { flex:1; max-width:340px; margin-left:auto; }
-  .search-wrap input { width:100%; background:var(--surface2); border:1px solid var(--border);
-    color:var(--text); padding:6px 10px; border-radius:6px; font-size:0.9rem; }
 
   .layout { display:flex; gap:16px; margin:0; padding:0 16px 16px 0; align-items:flex-start; }
   .sidebar { width:240px; flex-shrink:0; background:var(--surface);
@@ -89,8 +86,8 @@
   .letters-table tbody tr.letter-row:hover:not(.no-examples) td { background:var(--surface2); }
   .letters-table td { padding:8px 12px; vertical-align:middle; }
   /* 字母字元字型較大，垂直置中且不要影響欄寬計算 */
-  .letter-char { font-size:1.2rem; font-weight:600; color:var(--accent);
-    font-family:'Doulos SIL','Charis SIL',serif; line-height:1; }
+  .letter-char { font-size:1em; font-weight:600; color:var(--accent);
+    font-family:'Doulos SIL','Charis SIL',serif; line-height:1.5; }
   .col-toggle { width:24px; }
   .col-letter { width:60px; }
   .col-lang { width:140px; }
@@ -104,20 +101,22 @@
     display:inline-block; transition:transform 0.15s; }
   .letter-toggle.expanded { transform:rotate(90deg); }
   .letter-toggle.invisible { visibility:hidden; }
-  .lang-cell { font-size:0.85rem; color:var(--accent2); }
-  .letter-ipa { color:var(--muted); font-family:'Doulos SIL','Charis SIL',serif; }
-  .letter-attr { font-size:0.82rem; color:var(--muted); }
+  .lang-cell { font-size:1em; color:var(--accent2); }
+  .letter-ipa { font-size:1em; color:var(--muted); font-family:'Doulos SIL','Charis SIL',serif; }
+  .letter-attr { font-size:1em; color:var(--muted); }
   .letter-noteref { font-size:0.9rem; color:var(--accent2); cursor:help;
     text-decoration:none; }
   .letter-noteref:hover { color:var(--accent); }
 
   .examples-row td { padding:0; background:var(--bg); }
   .examples-row.collapsed { display:none; }
-  .examples-container { display:flex; gap:8px; flex-wrap:wrap; padding:8px 12px 12px 56px; }
-  /* 例子卡片 — 三個平均分配剩餘空間（flex:1 1 0），不設 min-width 讓它彈性壓縮 */
+  /* 固定 3 欄佈局：第 1 個例子永遠在最左 1/3 格、第 2 個在中間、第 3 個在右側。
+     例子不足 3 個時，剩餘格子留空，方塊寬度保持一致不變。 */
+  .examples-container { display:grid; grid-template-columns:repeat(3, 1fr);
+    gap:8px; padding:8px 12px 12px 56px; }
   .example-card { background:var(--surface); border:1px solid var(--border); border-radius:6px;
     padding:10px 13px; display:flex; align-items:flex-start; gap:10px;
-    flex:1 1 0; min-width:0; }
+    min-width:0; }
   /* 播放鈕：與主頁完全一致（預設灰、hover 變金） */
   .play-btn { width:32px; height:32px; border-radius:50%;
     border:1.5px solid var(--border); background:transparent; color:var(--muted);
@@ -130,10 +129,10 @@
   .example-body { flex:1; min-width:0; display:flex; gap:12px; align-items:flex-start; }
   .example-sentence { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em;
     line-height:1.5; color:var(--text); word-break:keep-all; overflow-wrap:break-word;
-    flex:3; min-width:0; padding-right:8px; }
+    flex:1; min-width:0; padding-right:8px; }
   .example-translation { font-family:'jf-openhuninn','Noto Serif TC',serif; font-size:1em;
     line-height:1.5; color:var(--text); word-break:break-word;
-    flex:2; min-width:0; }
+    flex:1; min-width:0; }
   .hl-letter { color:var(--accent); font-weight:600; }
 
   .notes-section { margin-top:32px; padding:0 4px; }
@@ -185,9 +184,6 @@
 <div class="topbar">
   <button class="back-btn" onclick="goBack()">← 返回</button>
   <div class="title">字母分類</div>
-  <div class="search-wrap">
-    <input type="text" id="globalSearch" placeholder="輸入文字將回到搜尋模式" oninput="onSearchInput(event)">
-  </div>
 </div>
 
 <div class="layout">
@@ -558,24 +554,62 @@ function render(){
     return;
   }
 
+  // 注意事項顯示邏輯：
+  //  ・若僅選了語別/方言別、其他篩選器全部「全選」 → 顯示該語別全部注意事項（包含未被引用者）
+  //  ・若有其他篩選器（字母、類型、發音相關、IPA）→ 僅顯示「目前可見字母列實際引用到」的注意事項
+  const onlyLangFilter =
+    sel.letters.size === 0 && sel.types.size === 0 && sel.pos.size === 0 &&
+    sel.height.size === 0 && sel.manner.size === 0 && sel.voicing.size === 0 &&
+    sel.lip.size === 0 && sel.ipa.size === 0;
+
+  // 「scope 中出現的語別」清單（依 LANG_LIST 順序）
+  const scopeLangs = new Set(scope.map(l => l.lang));
+  const orderedLangs = LANG_LIST.map(l=>l.name).filter(name => scopeLangs.has(name));
+
+  // 字母列引用過的代號（用於決定「字母列上的上標號碼」對應到哪個 note）
   const refsByLang = {};
   scope.forEach(l => {
     if(!l.note_ref) return;
     refsByLang[l.lang] = refsByLang[l.lang] || new Set();
     refsByLang[l.lang].add(l.note_ref);
   });
-  const noteNumMap = {};
-  const orderedLangs = LANG_LIST.map(l=>l.name).filter(name => refsByLang[name]);
+
+  // 蒐集每個語別「要顯示的所有 note codes」
+  const noteCodesByLang = {};
+  orderedLangs.forEach(lang => {
+    const allNotesOfLang = DATA.notes.filter(n => n.lang === lang);
+    const allCodes = [...new Set(allNotesOfLang.map(n => n.code))].sort();
+    if(onlyLangFilter){
+      // 顯示該語別所有 notes
+      noteCodesByLang[lang] = allCodes;
+    } else {
+      // 只顯示被字母列引用到的（用寬鬆比對：refs 為 code 前綴 或 code 為 refs 前綴）
+      const refs = refsByLang[lang] || new Set();
+      noteCodesByLang[lang] = allCodes.filter(code =>
+        [...refs].some(ref => code.startsWith(ref) || ref.startsWith(code))
+      );
+    }
+  });
+
+  // 全域連續編號 + 對應字母列引用編號
+  const noteNumMap = {};       // "lang|ref" → globalNum，供字母列上標號碼查詢
+  const noteCodeNumMap = {};   // "lang|code" → globalNum，供 notes 區塊顯示
   let counter = 0;
   const notesToShow = [];
   orderedLangs.forEach(lang => {
-    const codes = [...refsByLang[lang]].sort();
-    codes.forEach(ref => {
+    const codes = noteCodesByLang[lang] || [];
+    codes.forEach(code => {
       counter++;
-      noteNumMap[lang+'|'+ref] = counter;
-      const noteRow = findNote(lang, ref);
+      noteCodeNumMap[lang+'|'+code] = counter;
+      // 同時將「字母列引用的 ref」也指向同一個編號（寬鬆比對）
+      (refsByLang[lang] || new Set()).forEach(ref => {
+        if(code.startsWith(ref) || ref.startsWith(code)){
+          noteNumMap[lang+'|'+ref] = counter;
+        }
+      });
+      const noteRow = DATA.notes.find(n => n.lang===lang && n.code===code);
       notesToShow.push({
-        globalNum: counter, lang, ref,
+        globalNum: counter, lang, code,
         text: noteRow ? noteRow.text : '（注意事項內容缺失）'
       });
     });
@@ -592,16 +626,6 @@ function render(){
       <col style="width:90px">
       <col style="width:50px">
     </colgroup>
-    <thead><tr>
-      <th class="col-toggle"></th>
-      <th class="col-letter">字母</th>
-      <th class="col-lang">語別 / 方言</th>
-      <th class="col-ipa">IPA</th>
-      <th class="col-pos">發音位置</th>
-      <th class="col-manner">高低 / 方式</th>
-      <th class="col-voice">清濁 / 唇形</th>
-      <th class="col-noteref">附註</th>
-    </tr></thead>
     <tbody>`;
 
   scope.forEach((l, idx) => {
@@ -745,15 +769,6 @@ tipEl.addEventListener('mouseleave', hideTip);
 
 function goBack(){
   try { localStorage.removeItem('sos_view_mode'); } catch(e){}
-  location.href = 'index.html';
-}
-function onSearchInput(e){
-  const v = e.target.value.trim();
-  if(v.length === 0) return;
-  try {
-    localStorage.setItem('sos_pending_search', v);
-    localStorage.removeItem('sos_view_mode');
-  } catch(e){}
   location.href = 'index.html';
 }
 
