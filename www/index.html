@@ -901,6 +901,17 @@ function buildLangSidebar(){
   <div class="sb-sec-body ${catSecOpen?'':'closed'}" id="catSecBody">`;
 
   const types=['C','P','R','T','V','W'];
+
+  // 「字母」分類（代號 A）：獨立頁面，不可展開、不在 allData 中，
+  // 點擊直接導向 letters.html（會沿用目前語別選擇）。
+  html+=`<div class="sb-l1-row" onclick="location.href='letters.html'" style="cursor:pointer;">
+    <div class="sb-l1-btn" style="gap:6px;">
+      <span style="font-family:'Space Mono',monospace;font-size:0.68rem;background:${TYPE_BG['A']};color:${TYPE_CLR['A']};padding:1px 6px;border-radius:4px;">A</span>
+      <span style="font-size:0.82rem;">${TYPE_LABELS['A']}</span>
+    </div>
+    <span style="min-width:32px;color:var(--muted);text-align:center;">→</span>
+  </div>`;
+
   for(const type of types){
     const td=allData.filter(r=>r['分類']===type);
     if(!td.length) continue;
@@ -1257,7 +1268,7 @@ function langClearAll(){
 function langNameClick(el){ /* legacy stub */ }
 
 
-const TYPE_LABELS = { C:'會話', P:'句型', R:'閱讀', T:'十二階', V:'詞彙', W:'文化' };
+const TYPE_LABELS = { A:'字母', C:'會話', P:'句型', R:'閱讀', T:'十二階', V:'詞彙', W:'文化' };
 const LEVEL_MAP = {B:'初',I:'中',S:'中高',U:'高'};
 function fmtLevel(raw){ return (raw||'').split('/').map(p=>LEVEL_MAP[p.trim()]||p.trim()).join('/'); }
 
@@ -1362,8 +1373,8 @@ function msClear(which){
 }
 
 function updateMsPills(which){ buildLangSidebar(); }
-const TYPE_BG  = { C:'rgba(212,168,67,0.18)', P:'rgba(168,196,212,0.18)', R:'rgba(212,149,106,0.18)', W:'rgba(180,140,200,0.18)', T:'rgba(139,196,168,0.18)', V:'rgba(212,168,212,0.18)' };
-const TYPE_CLR = { C:'#d4a843', P:'#a8c4d4', R:'#d4956a', W:'#b48cc8', T:'#8bc4a8', V:'#d4a8c4' };
+const TYPE_BG  = { A:'rgba(126,184,138,0.18)', C:'rgba(212,168,67,0.18)', P:'rgba(168,196,212,0.18)', R:'rgba(212,149,106,0.18)', W:'rgba(180,140,200,0.18)', T:'rgba(139,196,168,0.18)', V:'rgba(212,168,212,0.18)' };
+const TYPE_CLR = { A:'#7eb88a', C:'#d4a843', P:'#a8c4d4', R:'#d4956a', W:'#b48cc8', T:'#8bc4a8', V:'#d4a8c4' };
 
 // ── CSV ────────────────────────────────────────────────────────────
 function parseCSV(text) {
