@@ -32,7 +32,14 @@ jobs:
           SPREADSHEET_ID_RUKAI:  ${{ secrets.SPREADSHEET_ID_RUKAI }}
           SPREADSHEET_ID_PUYUMA: ${{ secrets.SPREADSHEET_ID_PUYUMA }}
           SPREADSHEET_ID_TSOU:   ${{ secrets.SPREADSHEET_ID_TSOU }}
+          SPREADSHEET_ID_LETTERS: ${{ secrets.SPREADSHEET_ID_LETTERS }}
         run: python scripts/sync_sheets.py
+
+      - name: Sync Letters → JSON
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SPREADSHEET_ID_LETTERS: ${{ secrets.SPREADSHEET_ID_LETTERS }}
+        run: python scripts/sync_letters.py
 
       - name: Commit and push if data changed
         run: |

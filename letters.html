@@ -255,14 +255,35 @@ function loadInitialLangKeys(){
 }
 loadInitialLangKeys();
 
-fetch('data/letters.json').then(r=>r.json()).then(d=>{
-  DATA = d;
+// 載入順序：線上權威版（GitHub Pages 上的 data/letters.json，由 sync_letters.py 每日同步）
+// → 失敗時回退到 App 內建備援（www/data/letters.json，打包進 APK，離線可用）
+const LETTERS_REMOTE = 'https://haiangdict.github.io/Indigenous_SOS/data/letters.json';
+const LETTERS_LOCAL  = './data/letters.json';
+
+(async function loadLetters(){
+  let loaded = null;
+  try {
+    const res = await fetch(LETTERS_REMOTE, { cache: 'no-cache' });
+    if(res.ok) loaded = await res.json();
+  } catch(e){ /* 無網路 / CORS / 任何錯誤 → 退到本地 */ }
+
+  if(!loaded){
+    try {
+      const res = await fetch(LETTERS_LOCAL);
+      if(res.ok) loaded = await res.json();
+    } catch(e){}
+  }
+
+  if(!loaded){
+    document.getElementById('mainContent').innerHTML =
+      `<div class="empty-state">⚠ 無法載入字母資料（線上與本地皆失敗）</div>`;
+    return;
+  }
+
+  DATA = loaded;
   buildSidebar();
   render();
-}).catch(e=>{
-  document.getElementById('mainContent').innerHTML =
-    `<div class="empty-state">⚠ 載入失敗：${e.message}</div>`;
-});
+})();
 
 function langMatches(lang, dial){
   if(sel.langKeys.size === 0) return true;
