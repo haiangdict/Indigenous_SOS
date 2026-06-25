@@ -762,7 +762,25 @@ function render(){
     html += `</div>`;
   }
 
+  // 在重渲染前保存使用者目前的捲動位置
+  const prevScrollY = window.scrollY;
+
   document.getElementById('mainContent').innerHTML = html;
+
+  // 篩選後若主內容變短，瀏覽器會自動把 scrollY clamp 至新文檔的最大值（可能就是底部），
+  // 造成「篩選後跳到頁面最下方」的現象。
+  // 等下個 frame 讓瀏覽器完成 layout，若 scrollY 與我們保存的不同（被 clamp 了），就還原到原位。
+  // 如原位也超出新文檔範圍，回到頂部。
+  requestAnimationFrame(() => {
+    if(window.scrollY !== prevScrollY){
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      window.scrollTo(0, Math.min(prevScrollY, maxScroll));
+      // 若仍與原意不符（差距很大），直接回頂部，避免落在無關位置
+      if(Math.abs(window.scrollY - prevScrollY) > window.innerHeight){
+        window.scrollTo(0, 0);
+      }
+    }
+  });
 }
 
 function renderExample(ex, letter, blockers){
