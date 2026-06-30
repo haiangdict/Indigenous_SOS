@@ -2,8 +2,8 @@ name: Sync Google Sheets to CSV
 
 on:
   schedule:
-    - cron: '37 1 * * *'   # UTC 01:37 = 台灣 09:37
-    - cron: '17 9 * * *'   # UTC 09:17 = 台灣 17:17
+    - cron: '9 0 * * *'   # UTC 00:09 = 台灣 08:09
+    - cron: '9 12 * * *'   # UTC 08:09 = 台灣 20:09
   workflow_dispatch:        # 可在 GitHub Actions 頁面手動觸發
 
 jobs:
