@@ -2004,44 +2004,6 @@ function _applyTsouSubstitution(input){
   }
 }
 
-// ── 布農語 - ↔ ' 雙向等價搜尋 ────────────────────────────────
-// 布農語（方言別 18–22）中，連字符 - (U+002D) 與右單引號 ' (U+2019) 在同一位置可互換。
-// 搜尋時：若使用者輸入含 - 的字串，也要比對含 ' 的資料；反之亦然。
-// 僅在「選取的語言/方言全部都是布農語方言（18–22）」時啟用，
-// 一旦有任何非布農語的語言被選取，此規則完全不適用。
-const BUNUN_DIAL_IDS = new Set(['18','19','20','21','22']);
-
-function _isBununOnly(){
-  if(sel.langkeys.size === 0) return false;
-  // sel.langkeys 可能是 'langKey' 或 'langKey|dialId'
-  // 布農語的 langKey 在 LANG_LIST 裡是 '布農語'
-  for(const lk of sel.langkeys){
-    const parts = lk.split('|');
-    const langKey = parts[0];
-    const dialId  = parts[1]; // 若沒有方言別則 undefined
-    // 如果不是布農語，立刻排除
-    if(langKey !== '布農語') return false;
-    // 若是「布農語」不帶方言（代表全選布農語所有方言）→ 視為符合
-    if(!dialId) continue;
-    // 若是特定方言，確認在 18–22 範圍內
-    if(!BUNUN_DIAL_IDS.has(dialId)) return false;
-  }
-  return true;
-}
-
-// 給定一個已正規化的搜尋字串（小寫、apostrophe 已統一為 U+2019），
-// 回傳「布農語雙向等價後的所有可能查詢版本」：
-//   - 將 - (U+002D) 全部替換為 ' (U+2019) 的版本
-//   - 將 ' (U+2019) 全部替換為 - (U+002D) 的版本
-//   - 以及原版本本身
-// 去重後回傳陣列（通常 2–3 個）。
-function _getBununVariants(q){
-  const withApos  = q.replace(/\u002D/g, '\u2019');
-  const withDash  = q.replace(/\u2019/g, '\u002D');
-  // 用 Set 去重（若原字串不含 - 也不含 '，三者相同）
-  return [...new Set([q, withApos, withDash])];
-}
-
 // Hook into searchInput oninput to apply substitution before filtering
 function onSearchInput(){
   if(_isTsouOnly()) _applyTsouSubstitution();
@@ -2128,23 +2090,13 @@ function applyFilters(){
     const noScope = !searchScope.sentence && !searchScope.translation;
     const useSentence = noScope || searchScope.sentence;
     const useTranslation = noScope || searchScope.translation;
-    // 布農語雙向等價：僅在只選布農語方言（18–22）時啟用
-    // 產生 - ↔ ' 的所有等價查詢版本，任一版本 match 即算命中
-    const bununOnly = _isBununOnly();
-    const queries = bununOnly ? _getBununVariants(q) : [q];
-    // exactSearch 模式下的等價版本（保留大小寫，以 rawQ 為基礎）
-    const rawQueries = bununOnly ? _getBununVariants(rawQ.toLowerCase()).map(
-      v => v // rawQ 也先 toLowerCase 以便比對，因為資料庫語句大小寫不一定一致
-    ) : [rawQ];
     rows=rows.filter(r=>{
       if(exactSearch){
-        const s = (r['語句']||'').toLowerCase();
-        const t = (r['翻譯']||'').toLowerCase();
-        if(useSentence && rawQueries.some(qv => s === qv)) return true;
-        if(useTranslation && rawQueries.some(qv => t === qv)) return true;
+        if(useSentence && (r['語句']||'').toLowerCase() === q) return true;
+        if(useTranslation && (r['翻譯']||'').toLowerCase() === q) return true;
       } else {
-        if(useSentence && queries.some(qv => (r['語句']||'').toLowerCase().includes(qv))) return true;
-        if(useTranslation && queries.some(qv => (r['翻譯']||'').toLowerCase().includes(qv))) return true;
+        if(useSentence && (r['語句']||'').toLowerCase().includes(q)) return true;
+        if(useTranslation && (r['翻譯']||'').toLowerCase().includes(q)) return true;
       }
       return false;
     });
